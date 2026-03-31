@@ -16,17 +16,14 @@ dependencies:
 
   # Notifications
   flutter_local_notifications: ^17.2.3
-  workmanager: ^0.5.2
   timezone: ^0.9.4
 
   # State management
   provider: ^6.1.2
 
   # Ads
-  google_mobile_ads: ^5.1.0
 
   # Subscription / billing
-  purchases_flutter: ^9.15.1
 
   # Utilities
   shared_preferences: ^2.3.2
