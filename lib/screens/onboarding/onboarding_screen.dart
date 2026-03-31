@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/notifications/notification_service.dart';
 import '../../models/question.dart';
 import '../home/home_screen.dart';
 import 'first_question_page.dart';
@@ -37,10 +38,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _onWelcomeNext() {
-    _goToPage(1);
-  }
-
   void _onFirstQuestionNext(String question, String answer, int categoryId) {
     setState(() {
       _questionText = question;
@@ -61,34 +58,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final db = DatabaseHelper.instance;
-      final newQuestion = Question(
+      // Save first question to DB
+      await DatabaseHelper.instance.insertQuestion(Question(
         question: _questionText!,
         answer: _answerText!,
         categoryId: _categoryId!,
         createdAt: DateTime.now(),
-      );
-      await db.insertQuestion(newQuestion);
+      ));
 
+      // Save notification prefs
       final prefs = await SharedPreferences.getInstance();
       await Future.wait([
         prefs.setBool('notif_random_anytime', randomAnytime),
         prefs.setInt('notif_start_hour', startHour),
         prefs.setInt('notif_end_hour', endHour),
         prefs.setInt('notif_frequency', frequency),
-        prefs.setString(
-            'notif_active_days', activeDays.map((d) => d.toString()).join(',')),
+        prefs.setString('notif_active_days', activeDays.map((d) => d.toString()).join(',')),
         prefs.setBool('onboarding_complete', true),
       ]);
+
+      // Schedule notifications
+      await NotificationService.instance.scheduleNotifications();
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, animation, __) => const HomeScreen(),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 500),
         ),
       );
@@ -113,7 +110,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             controller: _pageController,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              WelcomePage(onNext: _onWelcomeNext),
+              WelcomePage(onNext: () => _goToPage(1)),
               FirstQuestionPage(onNext: _onFirstQuestionNext),
               NotificationSetupPage(
                 onComplete: ({

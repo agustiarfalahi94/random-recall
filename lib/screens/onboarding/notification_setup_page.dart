@@ -34,28 +34,22 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
   }
 
   Future<void> _pickTime({required bool isStart}) async {
-    final initial = TimeOfDay(hour: isStart ? _startHour : _endHour, minute: 0);
     final picked = await showTimePicker(
       context: context,
-      initialTime: initial,
+      initialTime: TimeOfDay(hour: isStart ? _startHour : _endHour, minute: 0),
       helpText: isStart ? 'Select start time' : 'Select end time',
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
       if (isStart) {
         _startHour = picked.hour;
-        if (_endHour <= _startHour) {
-          _endHour = (_startHour + 1).clamp(0, 23);
-        }
+        if (_endHour <= _startHour) _endHour = (_startHour + 1).clamp(0, 23);
       } else {
         if (picked.hour > _startHour) {
           _endHour = picked.hour;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('End time must be after start time'),
-              duration: Duration(seconds: 2),
-            ),
+            const SnackBar(content: Text('End time must be after start time')),
           );
         }
       }
@@ -84,34 +78,26 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 48),
-
-            // Step indicator
             _buildStepIndicator(colorScheme),
-
             const SizedBox(height: 28),
-
             Text(
               'When should we\nremind you?',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: colorScheme.onSurface,
-                letterSpacing: -0.3,
                 height: 1.2,
               ),
             ),
-
             const SizedBox(height: 8),
-
             Text(
               'You can change these settings later in the app.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-
             const SizedBox(height: 32),
 
-            // Timing mode toggle
+            // Timing toggle
             _SectionCard(
               colorScheme: colorScheme,
               child: Column(
@@ -137,13 +123,10 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
               ),
             ),
 
-            // Time range pickers (conditional)
             if (!_randomAnytime) ...[
               const SizedBox(height: 20),
-
               _SectionLabel(label: 'Time window', colorScheme: colorScheme),
               const SizedBox(height: 10),
-
               _SectionCard(
                 colorScheme: colorScheme,
                 child: Column(
@@ -164,12 +147,9 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
-
               _SectionLabel(label: 'Active days', colorScheme: colorScheme),
               const SizedBox(height: 10),
-
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -179,6 +159,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
                   return FilterChip(
                     label: Text(_dayLabels[index]),
                     selected: isSelected,
+                    showCheckmark: false,
                     onSelected: (selected) {
                       setState(() {
                         if (selected) {
@@ -189,7 +170,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
                       });
                     },
                     selectedColor: colorScheme.primaryContainer,
-                    checkmarkColor: colorScheme.primary,
                     labelStyle: TextStyle(
                       color: isSelected
                           ? colorScheme.onPrimaryContainer
@@ -202,7 +182,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
                           : colorScheme.outlineVariant,
                     ),
                     backgroundColor: colorScheme.surface,
-                    showCheckmark: false,
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   );
                 }),
@@ -210,11 +189,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
             ],
 
             const SizedBox(height: 24),
-
-            // Frequency
             _SectionLabel(label: 'How many times per day?', colorScheme: colorScheme),
             const SizedBox(height: 10),
-
             _SectionCard(
               colorScheme: colorScheme,
               child: Padding(
@@ -222,9 +198,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: _frequency > 1
-                          ? () => setState(() => _frequency--)
-                          : null,
+                      onPressed: _frequency > 1 ? () => setState(() => _frequency--) : null,
                       icon: const Icon(Icons.remove_rounded),
                       style: IconButton.styleFrom(
                         backgroundColor: colorScheme.primaryContainer,
@@ -247,18 +221,13 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
                           ),
                           Text(
                             _frequency == 1 ? 'time per day' : 'times per day',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      onPressed: _frequency < 10
-                          ? () => setState(() => _frequency++)
-                          : null,
+                      onPressed: _frequency < 10 ? () => setState(() => _frequency++) : null,
                       icon: const Icon(Icons.add_rounded),
                       style: IconButton.styleFrom(
                         backgroundColor: colorScheme.primaryContainer,
@@ -275,12 +244,10 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
             ),
 
             const SizedBox(height: 40),
-
             ElevatedButton(
               onPressed: _onComplete,
               child: const Text('Start Recalling! 🚀'),
             ),
-
             const SizedBox(height: 32),
           ],
         ),
@@ -291,15 +258,12 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
   Widget _buildStepIndicator(ColorScheme colorScheme) {
     return Row(
       children: List.generate(3, (index) {
-        final isActive = index < 3;
         return Expanded(
           child: Container(
             margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
             height: 4,
             decoration: BoxDecoration(
-              color: isActive
-                  ? (index == 2 ? colorScheme.primary : colorScheme.primaryContainer)
-                  : colorScheme.surfaceContainerHighest,
+              color: index == 2 ? colorScheme.primary : colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -309,11 +273,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
   }
 }
 
-// Helper widgets
-
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label, required this.colorScheme});
-
   final String label;
   final ColorScheme colorScheme;
 
@@ -333,7 +294,6 @@ class _SectionLabel extends StatelessWidget {
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({required this.child, required this.colorScheme});
-
   final Widget child;
   final ColorScheme colorScheme;
 
@@ -360,7 +320,6 @@ class _TimingOptionTile extends StatelessWidget {
     required this.colorScheme,
     required this.onTap,
   });
-
   final String title;
   final String subtitle;
   final String icon;
@@ -428,7 +387,6 @@ class _TimePickerRow extends StatelessWidget {
     required this.colorScheme,
     required this.onTap,
   });
-
   final String label;
   final String timeText;
   final ColorScheme colorScheme;

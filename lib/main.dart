@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/notifications/notification_service.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -9,8 +10,17 @@ import 'screens/onboarding/onboarding_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialise notification service
+  await NotificationService.instance.init();
+  await NotificationService.instance.requestPermission();
+
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+
+  // If onboarding is done, reschedule notifications on every app launch
+  if (onboardingComplete) {
+    await NotificationService.instance.scheduleNotifications();
+  }
 
   runApp(RandomRecallApp(onboardingComplete: onboardingComplete));
 }
@@ -66,7 +76,7 @@ class RandomRecallApp extends StatelessWidget {
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

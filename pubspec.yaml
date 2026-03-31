@@ -21,10 +21,6 @@ dependencies:
   # State management
   provider: ^6.1.2
 
-  # Ads
-
-  # Subscription / billing
-
   # Utilities
   shared_preferences: ^2.3.2
   uuid: ^4.4.2

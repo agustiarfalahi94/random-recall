@@ -19,7 +19,6 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
   final _formKey = GlobalKey<FormState>();
   final _questionController = TextEditingController();
   final _answerController = TextEditingController();
-
   int? _selectedCategoryId;
   late Future<List<Category>> _categoriesFuture;
 
@@ -60,23 +59,16 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 48),
-
-              // Step indicator
               _StepIndicator(currentStep: 2, totalSteps: 3, colorScheme: colorScheme),
-
               const SizedBox(height: 28),
-
               Text(
                 'Your first question',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
-                  letterSpacing: -0.3,
                 ),
               ),
-
               const SizedBox(height: 8),
-
               Text(
                 'Add something you want to remember. You can add more later.',
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -84,10 +76,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                   height: 1.5,
                 ),
               ),
-
               const SizedBox(height: 36),
-
-              // Question field
               _FieldLabel(label: 'Question', colorScheme: colorScheme),
               const SizedBox(height: 8),
               TextFormField(
@@ -99,19 +88,12 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                   hintText: 'e.g. What is the capital of France?',
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a question';
-                  }
-                  if (value.trim().length < 5) {
-                    return 'Question is too short';
-                  }
+                  if (value == null || value.trim().isEmpty) return 'Please enter a question';
+                  if (value.trim().length < 5) return 'Question is too short';
                   return null;
                 },
               ),
-
               const SizedBox(height: 20),
-
-              // Answer field
               _FieldLabel(label: 'Answer', colorScheme: colorScheme),
               const SizedBox(height: 8),
               TextFormField(
@@ -119,20 +101,13 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                 maxLines: 3,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Paris',
-                ),
+                decoration: const InputDecoration(hintText: 'e.g. Paris'),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an answer';
-                  }
+                  if (value == null || value.trim().isEmpty) return 'Please enter an answer';
                   return null;
                 },
               ),
-
               const SizedBox(height: 20),
-
-              // Category dropdown
               _FieldLabel(label: 'Category', colorScheme: colorScheme),
               const SizedBox(height: 8),
               FutureBuilder<List<Category>>(
@@ -154,7 +129,6 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                       ),
                     );
                   }
-
                   if (snapshot.hasError) {
                     return Container(
                       height: 52,
@@ -169,14 +143,10 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                       ),
                     );
                   }
-
                   final categories = snapshot.data ?? [];
-
                   return DropdownButtonFormField<int>(
                     value: _selectedCategoryId,
-                    decoration: const InputDecoration(
-                      hintText: 'Select a category',
-                    ),
+                    decoration: const InputDecoration(hintText: 'Select a category'),
                     borderRadius: BorderRadius.circular(12),
                     items: categories
                         .map((cat) => DropdownMenuItem<int>(
@@ -190,9 +160,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                               ),
                             ))
                         .toList(),
-                    onChanged: (value) {
-                      setState(() => _selectedCategoryId = value);
-                    },
+                    onChanged: (value) => setState(() => _selectedCategoryId = value),
                     validator: (value) {
                       if (value == null) return 'Please select a category';
                       return null;
@@ -200,14 +168,11 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                   );
                 },
               ),
-
               const SizedBox(height: 40),
-
               ElevatedButton(
                 onPressed: _submit,
                 child: const Text('Next →'),
               ),
-
               const SizedBox(height: 32),
             ],
           ),
@@ -219,7 +184,6 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
 
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel({required this.label, required this.colorScheme});
-
   final String label;
   final ColorScheme colorScheme;
 
@@ -243,7 +207,6 @@ class _StepIndicator extends StatelessWidget {
     required this.totalSteps,
     required this.colorScheme,
   });
-
   final int currentStep;
   final int totalSteps;
   final ColorScheme colorScheme;

@@ -22,20 +22,11 @@ class _WelcomePageState extends State<WelcomePage>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
-
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.08),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
-
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
     _animController.forward();
   }
 
@@ -62,8 +53,6 @@ class _WelcomePageState extends State<WelcomePage>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: size.height * 0.10),
-
-                // App icon badge
                 Container(
                   width: 96,
                   height: 96,
@@ -82,10 +71,7 @@ class _WelcomePageState extends State<WelcomePage>
                     child: Text('🧠', style: TextStyle(fontSize: 48)),
                   ),
                 ),
-
                 const SizedBox(height: 32),
-
-                // App name
                 Text(
                   'Random Recall',
                   style: theme.textTheme.headlineLarge?.copyWith(
@@ -95,10 +81,7 @@ class _WelcomePageState extends State<WelcomePage>
                   ),
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 12),
-
-                // Tagline
                 Text(
                   'Quiz yourself on anything.\nRandomly.',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -108,10 +91,7 @@ class _WelcomePageState extends State<WelcomePage>
                   ),
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 28),
-
-                // Divider
                 Container(
                   width: 48,
                   height: 3,
@@ -120,10 +100,7 @@ class _WelcomePageState extends State<WelcomePage>
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-
                 const SizedBox(height: 28),
-
-                // Description
                 Text(
                   'Add your own questions, pick when you want to be reminded, '
                   'and let Random Recall keep your knowledge sharp — one random quiz at a time.',
@@ -133,10 +110,7 @@ class _WelcomePageState extends State<WelcomePage>
                   ),
                   textAlign: TextAlign.center,
                 ),
-
                 const Spacer(),
-
-                // Feature chips
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -147,15 +121,11 @@ class _WelcomePageState extends State<WelcomePage>
                     _FeatureChip(icon: '📊', label: 'Analytics', colorScheme: colorScheme),
                   ],
                 ),
-
                 const SizedBox(height: 32),
-
-                // Get Started button
                 ElevatedButton(
                   onPressed: widget.onNext,
                   child: const Text('Get Started →'),
                 ),
-
                 const SizedBox(height: 24),
               ],
             ),
