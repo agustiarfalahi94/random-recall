@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -13,6 +14,10 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+
+  /// Global navigator key — set this in main.dart so we can navigate
+  /// from outside the widget tree when a notification is tapped.
+  GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
 
@@ -39,9 +44,8 @@ class NotificationService {
   // ── Permission request (Android 13+) ──────────────────────────────────────
 
   Future<bool> requestPermission() async {
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
     final granted = await android?.requestNotificationsPermission();
     return granted ?? false;
   }
@@ -56,32 +60,22 @@ class NotificationService {
     final endHour = prefs.getInt('notif_end_hour') ?? 20;
     final frequency = prefs.getInt('notif_frequency') ?? 3;
     final activeDaysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5';
-    final activeDays =
-        activeDaysStr.split(',').map(int.parse).toList();
+    final activeDays = activeDaysStr.split(',').map(int.parse).toList();
 
-    // Cancel existing before rescheduling
     await cancelAll();
 
     final now = tz.TZDateTime.now(tz.local);
-
-    // Generate 'frequency' random times within the allowed window
     final random = Random();
     final effectiveStart = randomAnytime ? 0 : startHour;
     final effectiveEnd = randomAnytime ? 23 : endHour;
-    final windowHours =
-        (effectiveEnd - effectiveStart).clamp(1, 23);
+    final windowHours = (effectiveEnd - effectiveStart).clamp(1, 23);
 
     for (int i = 0; i < frequency; i++) {
-      // Pick a random hour within the window
-      final randomHour =
-          effectiveStart + random.nextInt(windowHours);
+      final randomHour = effectiveStart + random.nextInt(windowHours);
       final randomMinute = random.nextInt(60);
 
-      // Schedule for each active day of the week
       for (final weekday in activeDays) {
         final notifId = _notifId(weekday, i);
-
-        // Find the next occurrence of this weekday
         final base = _nextWeekday(now, weekday);
         var scheduledDate = tz.TZDateTime(
           tz.local,
@@ -93,17 +87,13 @@ class NotificationService {
           0,
         );
 
-        // If it's already passed today, push to next week
         if (scheduledDate.isBefore(now)) {
-          scheduledDate =
-              scheduledDate.add(const Duration(days: 7));
+          scheduledDate = scheduledDate.add(const Duration(days: 7));
         }
 
         await _scheduleNotification(
           id: notifId,
           scheduledDate: scheduledDate,
-          weekday: weekday,
-          slotIndex: i,
         );
       }
     }
@@ -114,13 +104,10 @@ class NotificationService {
   Future<void> _scheduleNotification({
     required int id,
     required tz.TZDateTime scheduledDate,
-    required int weekday,
-    required int slotIndex,
   }) async {
-    // Pick a random question for the title
-    final question =
-        await DatabaseHelper.instance.getRandomQuestion();
+    final question = await DatabaseHelper.instance.getRandomQuestion();
     final title = question?.question ?? 'Time for a quick recall! 🧠';
+    final payload = question?.id?.toString();
 
     const androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
@@ -144,6 +131,7 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      payload: payload,
     );
   }
 
@@ -152,6 +140,7 @@ class NotificationService {
   Future<void> sendTestNotification() async {
     final question = await DatabaseHelper.instance.getRandomQuestion();
     final title = question?.question ?? 'This is a test notification! 🧠';
+    final payload = question?.id?.toString();
 
     const androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
@@ -170,6 +159,7 @@ class NotificationService {
       title,
       'Tap to reveal the answer ✨',
       details,
+      payload: payload,
     );
   }
 
@@ -182,17 +172,20 @@ class NotificationService {
   // ── Notification tap handler ───────────────────────────────────────────────
 
   void _onNotificationTapped(NotificationResponse response) {
-    // Navigation is handled in main.dart via navigatorKey
-    // The payload can be used later to pass questionId
+    final navigator = navigatorKey?.currentState;
+    if (navigator == null) return;
+
+    // Parse questionId from payload (may be null)
+    final questionId = int.tryParse(response.payload ?? '');
+
+    // Navigate to QuestionScreen — import done lazily to avoid circular deps
+    navigator.pushNamed('/question', arguments: questionId);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  /// Generate a stable unique notification ID from weekday + slot.
   int _notifId(int weekday, int slotIndex) => weekday * 100 + slotIndex;
 
-  /// Returns the next [tz.TZDateTime] that falls on the given ISO weekday
-  /// (1 = Monday … 7 = Sunday).
   tz.TZDateTime _nextWeekday(tz.TZDateTime from, int weekday) {
     var date = from;
     while (date.weekday != weekday) {

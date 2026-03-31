@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../question/question_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: const [
-          _PlaceholderTab(emoji: '🏠', title: 'Home', subtitle: 'Coming Soon'),
+          _HomeTab(),
           _PlaceholderTab(emoji: '📋', title: 'Questions', subtitle: 'Coming Soon'),
           _PlaceholderTab(emoji: '📊', title: 'Analytics', subtitle: 'Coming Soon'),
         ],
@@ -190,6 +191,76 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             onTap: null,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Home tab with Practice Now button ────────────────────────────────────────
+
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withOpacity(0.2),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text('🧠', style: TextStyle(fontSize: 48)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Ready to recall?',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap below to practice anytime,\nor wait for a random notification.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const QuestionScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Practice Now'),
+            ),
+          ],
+        ),
       ),
     );
   }
