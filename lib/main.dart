@@ -6,18 +6,22 @@ import 'core/notifications/notification_service.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/question/question_screen.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialise notification service
+  // Wire up navigator key so notification taps can navigate
+  NotificationService.instance.navigatorKey = navigatorKey;
+
   await NotificationService.instance.init();
   await NotificationService.instance.requestPermission();
 
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
 
-  // If onboarding is done, reschedule notifications on every app launch
   if (onboardingComplete) {
     await NotificationService.instance.scheduleNotifications();
   }
@@ -39,12 +43,23 @@ class RandomRecallApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Random Recall',
         debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey,
         theme: _buildTheme(Brightness.light),
         darkTheme: _buildTheme(Brightness.dark),
         themeMode: ThemeMode.system,
         home: onboardingComplete
             ? const HomeScreen()
             : const OnboardingScreen(),
+        // Named routes for notification tap navigation
+        onGenerateRoute: (settings) {
+          if (settings.name == '/question') {
+            final questionId = settings.arguments as int?;
+            return MaterialPageRoute(
+              builder: (_) => QuestionScreen(questionId: questionId),
+            );
+          }
+          return null;
+        },
       ),
     );
   }

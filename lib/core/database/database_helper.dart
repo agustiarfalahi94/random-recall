@@ -132,6 +132,12 @@ class DatabaseHelper {
     return rows.map(Question.fromMap).toList();
   }
 
+  Future<Question?> getQuestionById(int id) async {
+    final rows = await (await database).query(_tableQuestions,
+        where: 'id = ?', whereArgs: [id], limit: 1);
+    return rows.isEmpty ? null : Question.fromMap(rows.first);
+  }
+
   Future<Question?> getRandomQuestion({int? categoryId}) async {
     final db = await database;
     final rows = await db.query(_tableQuestions,
