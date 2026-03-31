@@ -1,0 +1,272 @@
+import 'package:flutter/material.dart';
+
+import '../../core/database/database_helper.dart';
+import '../../models/category.dart';
+
+typedef OnFirstQuestionNext = void Function(
+    String question, String answer, int categoryId);
+
+class FirstQuestionPage extends StatefulWidget {
+  const FirstQuestionPage({super.key, required this.onNext});
+
+  final OnFirstQuestionNext onNext;
+
+  @override
+  State<FirstQuestionPage> createState() => _FirstQuestionPageState();
+}
+
+class _FirstQuestionPageState extends State<FirstQuestionPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _questionController = TextEditingController();
+  final _answerController = TextEditingController();
+
+  int? _selectedCategoryId;
+  late Future<List<Category>> _categoriesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesFuture = DatabaseHelper.instance.getAllCategories();
+  }
+
+  @override
+  void dispose() {
+    _questionController.dispose();
+    _answerController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      widget.onNext(
+        _questionController.text.trim(),
+        _answerController.text.trim(),
+        _selectedCategoryId!,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 48),
+
+              // Step indicator
+              _StepIndicator(currentStep: 2, totalSteps: 3, colorScheme: colorScheme),
+
+              const SizedBox(height: 28),
+
+              Text(
+                'Your first question',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface,
+                  letterSpacing: -0.3,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                'Add something you want to remember. You can add more later.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 36),
+
+              // Question field
+              _FieldLabel(label: 'Question', colorScheme: colorScheme),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _questionController,
+                maxLines: 3,
+                minLines: 1,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. What is the capital of France?',
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a question';
+                  }
+                  if (value.trim().length < 5) {
+                    return 'Question is too short';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // Answer field
+              _FieldLabel(label: 'Answer', colorScheme: colorScheme),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _answerController,
+                maxLines: 3,
+                minLines: 1,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Paris',
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an answer';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // Category dropdown
+              _FieldLabel(label: 'Category', colorScheme: colorScheme),
+              const SizedBox(height: 8),
+              FutureBuilder<List<Category>>(
+                future: _categoriesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Failed to load categories',
+                        style: TextStyle(color: colorScheme.onErrorContainer),
+                      ),
+                    );
+                  }
+
+                  final categories = snapshot.data ?? [];
+
+                  return DropdownButtonFormField<int>(
+                    value: _selectedCategoryId,
+                    decoration: const InputDecoration(
+                      hintText: 'Select a category',
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    items: categories
+                        .map((cat) => DropdownMenuItem<int>(
+                              value: cat.id,
+                              child: Row(
+                                children: [
+                                  Text(cat.icon, style: const TextStyle(fontSize: 18)),
+                                  const SizedBox(width: 10),
+                                  Text(cat.name),
+                                ],
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedCategoryId = value);
+                    },
+                    validator: (value) {
+                      if (value == null) return 'Please select a category';
+                      return null;
+                    },
+                  );
+                },
+              ),
+
+              const SizedBox(height: 40),
+
+              ElevatedButton(
+                onPressed: _submit,
+                child: const Text('Next →'),
+              ),
+
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel({required this.label, required this.colorScheme});
+
+  final String label;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurfaceVariant,
+        letterSpacing: 0.4,
+      ),
+    );
+  }
+}
+
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({
+    required this.currentStep,
+    required this.totalSteps,
+    required this.colorScheme,
+  });
+
+  final int currentStep;
+  final int totalSteps;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(totalSteps, (index) {
+        final isActive = index < currentStep;
+        final isCurrent = index == currentStep - 1;
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.only(right: index < totalSteps - 1 ? 6 : 0),
+            height: 4,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? (isCurrent ? colorScheme.primary : colorScheme.primaryContainer)
+                  : colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
