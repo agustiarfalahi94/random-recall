@@ -27,6 +27,11 @@ Future<void> main() async {
   }
 
   runApp(RandomRecallApp(onboardingComplete: onboardingComplete));
+
+  // Handle cold-start from notification tap (navigator not ready during init)
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    NotificationService.instance.handleNotificationLaunch();
+  });
 }
 
 class RandomRecallApp extends StatelessWidget {
