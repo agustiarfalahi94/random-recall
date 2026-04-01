@@ -6,7 +6,7 @@ import 'core/notifications/notification_service.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
-import 'screens/question/question_screen.dart';
+import 'screens/question/notification_question_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -55,7 +55,8 @@ class RandomRecallApp extends StatelessWidget {
           if (settings.name == '/question') {
             final questionId = settings.arguments as int?;
             return MaterialPageRoute(
-              builder: (_) => QuestionScreen(questionId: questionId),
+              builder: (_) =>
+                  NotificationQuestionScreen(questionId: questionId),
             );
           }
           return null;
