@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/score_record.dart';
 
-class QuestionScreen extends StatefulWidget {
-  /// Pass a specific questionId when coming from a notification tap.
-  /// If null, a random question is loaded.
+/// Shown when the user taps a notification (organic or test).
+/// No "next question" flow — grade once, see a brief toast, then app closes.
+class NotificationQuestionScreen extends StatefulWidget {
   final int? questionId;
 
-  const QuestionScreen({super.key, this.questionId});
+  const NotificationQuestionScreen({super.key, this.questionId});
 
   @override
-  State<QuestionScreen> createState() => _QuestionScreenState();
+  State<NotificationQuestionScreen> createState() =>
+      _NotificationQuestionScreenState();
 }
 
-class _QuestionScreenState extends State<QuestionScreen>
+class _NotificationQuestionScreenState
+    extends State<NotificationQuestionScreen>
     with SingleTickerProviderStateMixin {
   Question? _question;
   Category? _category;
@@ -24,7 +27,6 @@ class _QuestionScreenState extends State<QuestionScreen>
   bool _answerRevealed = false;
   bool _graded = false;
   bool _isCorrect = false;
-  int? _lastQuestionId; // prevents same question back-to-back
 
   late final AnimationController _revealController;
   late final Animation<double> _revealAnim;
@@ -58,8 +60,7 @@ class _QuestionScreenState extends State<QuestionScreen>
       if (widget.questionId != null) {
         question = await db.getQuestionById(widget.questionId!);
       }
-      // Fallback to random if no id given or question not found
-      question ??= await db.getRandomQuestion(excludeId: _lastQuestionId);
+      question ??= await db.getRandomQuestion();
 
       Category? category;
       if (question != null) {
@@ -67,12 +68,9 @@ class _QuestionScreenState extends State<QuestionScreen>
       }
 
       setState(() {
-        _lastQuestionId = question?.id;
         _question = question;
         _category = category;
         _isLoading = false;
-        _answerRevealed = false;
-        _graded = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -98,18 +96,13 @@ class _QuestionScreenState extends State<QuestionScreen>
         isCorrect: isCorrect,
         answeredAt: DateTime.now(),
       ));
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save score: $e')),
-        );
-      }
-    }
-  }
+    } catch (_) {}
 
-  void _nextQuestion() {
-    _revealController.reset();
-    _loadQuestion();
+    // Show toast for 2 seconds then close the app
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      SystemNavigator.pop();
+    }
   }
 
   @override
@@ -132,16 +125,9 @@ class _QuestionScreenState extends State<QuestionScreen>
             : const Text('Random Recall'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => SystemNavigator.pop(),
         ),
-        actions: [
-          // Next question button
-          IconButton(
-            icon: const Icon(Icons.skip_next_rounded),
-            tooltip: 'Skip to next question',
-            onPressed: _isLoading ? null : _nextQuestion,
-          ),
-        ],
+        // No skip/next button — notification flow is single question only
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -158,7 +144,7 @@ class _QuestionScreenState extends State<QuestionScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('📭', style: const TextStyle(fontSize: 64)),
+            const Text('📭', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
             Text(
               'No questions yet',
@@ -176,8 +162,8 @@ class _QuestionScreenState extends State<QuestionScreen>
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go back'),
+              onPressed: () => SystemNavigator.pop(),
+              child: const Text('Close'),
             ),
           ],
         ),
@@ -193,39 +179,33 @@ class _QuestionScreenState extends State<QuestionScreen>
         children: [
           const SizedBox(height: 8),
 
-          // ── Question card ────────────────────────────────────────────────
+          // ── Question card ──────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withOpacity(0.4),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colorScheme.primary.withOpacity(0.2),
-              ),
+              border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'QUESTION',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onPrimary,
-                          letterSpacing: 1,
-                        ),
-                      ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'QUESTION',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onPrimary,
+                      letterSpacing: 1,
                     ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -242,7 +222,7 @@ class _QuestionScreenState extends State<QuestionScreen>
 
           const SizedBox(height: 24),
 
-          // ── Reveal button or answer ──────────────────────────────────────
+          // ── Reveal button or answer ────────────────────────────────────────
           if (!_answerRevealed)
             ElevatedButton.icon(
               onPressed: _revealAnswer,
@@ -250,7 +230,6 @@ class _QuestionScreenState extends State<QuestionScreen>
               label: const Text('Reveal Answer'),
             )
           else ...[
-            // Answer card with fade-in animation
             FadeTransition(
               opacity: _revealAnim,
               child: SlideTransition(
@@ -264,32 +243,27 @@ class _QuestionScreenState extends State<QuestionScreen>
                     color: colorScheme.secondaryContainer.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: colorScheme.secondary.withOpacity(0.2),
-                    ),
+                        color: colorScheme.secondary.withOpacity(0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.secondary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'ANSWER',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onSecondary,
-                                letterSpacing: 1,
-                              ),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'ANSWER',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSecondary,
+                            letterSpacing: 1,
                           ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -308,7 +282,7 @@ class _QuestionScreenState extends State<QuestionScreen>
 
             const SizedBox(height: 32),
 
-            // ── Grade buttons or result ──────────────────────────────────
+            // ── Grade buttons or result toast ────────────────────────────────
             if (!_graded) ...[
               Text(
                 'Did you know it?',
@@ -321,7 +295,6 @@ class _QuestionScreenState extends State<QuestionScreen>
               const SizedBox(height: 16),
               Row(
                 children: [
-                  // ❌ Didn't know it
                   Expanded(
                     child: _GradeButton(
                       label: "Didn't know it",
@@ -332,7 +305,6 @@ class _QuestionScreenState extends State<QuestionScreen>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // ✅ Knew it
                   Expanded(
                     child: _GradeButton(
                       label: 'I knew it!',
@@ -345,7 +317,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                 ],
               ),
             ] else ...[
-              // Result feedback
+              // Result feedback — shows for 2s then app closes
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -376,9 +348,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                             ),
                           ),
                           Text(
-                            _isCorrect
-                                ? 'Score recorded ✓'
-                                : "You'll get it next time",
+                            'Closing in a moment...',
                             style: TextStyle(
                               fontSize: 13,
                               color: _isCorrect
@@ -392,23 +362,6 @@ class _QuestionScreenState extends State<QuestionScreen>
                   ],
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Next question button
-              ElevatedButton.icon(
-                onPressed: _nextQuestion,
-                icon: const Icon(Icons.arrow_forward_rounded),
-                label: const Text('Next Question'),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Back to home
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Back to Home'),
-              ),
             ],
           ],
 
@@ -419,7 +372,7 @@ class _QuestionScreenState extends State<QuestionScreen>
   }
 }
 
-// ── Grade button widget ───────────────────────────────────────────────────────
+// ── Grade button widget ────────────────────────────────────────────────────────
 
 class _GradeButton extends StatelessWidget {
   const _GradeButton({

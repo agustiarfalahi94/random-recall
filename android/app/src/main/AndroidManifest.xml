@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
-        android:label="random_recall"
+        android:label="Random Recall"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
