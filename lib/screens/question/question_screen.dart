@@ -89,12 +89,20 @@ class _QuestionScreenState extends State<QuestionScreen>
       _isCorrect = isCorrect;
     });
 
-    await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
-      questionId: _question!.id!,
-      categoryId: _question!.categoryId,
-      isCorrect: isCorrect,
-      answeredAt: DateTime.now(),
-    ));
+    try {
+      await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
+        questionId: _question!.id!,
+        categoryId: _question!.categoryId,
+        isCorrect: isCorrect,
+        answeredAt: DateTime.now(),
+      ));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save score: $e')),
+        );
+      }
+    }
   }
 
   void _nextQuestion() {
