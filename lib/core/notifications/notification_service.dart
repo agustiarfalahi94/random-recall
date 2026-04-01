@@ -7,6 +7,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../database/database_helper.dart';
+import '../../models/question.dart';
 
 class NotificationService {
   NotificationService._internal();
@@ -15,42 +16,42 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
-  /// Global navigator key — set this in main.dart so we can navigate
-  /// from outside the widget tree when a notification is tapped.
   GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
 
-  // ── Initialise once at app startup ────────────────────────────────────────
+  static const _groupKey = 'com.randomrecall.questions';
+
+  // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
     if (_initialized) return;
-
     tz.initializeTimeZones();
-
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const initSettings = InitializationSettings(android: androidSettings);
-
     await _plugin.initialize(
-      initSettings,
+      const InitializationSettings(android: androidSettings),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
-
     _initialized = true;
   }
 
-  // ── Permission request (Android 13+) ──────────────────────────────────────
+  // ── Permission ────────────────────────────────────────────────────────────
 
   Future<bool> requestPermission() async {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    final granted = await android?.requestNotificationsPermission();
-    return granted ?? false;
+    return await android?.requestNotificationsPermission() ?? false;
   }
 
-  // ── Schedule all daily notifications based on saved prefs ─────────────────
+  // ── Schedule 7 days of one-time notifications ─────────────────────────────
+  //
+  // Rules enforced:
+  //   1. No same question in the same day's slots (distinct per day).
+  //   2. Across 7 days, prefer questions not yet used this week (reduces
+  //      week-over-week repeats for small question pools).
+  //   3. Slots within a day are evenly spaced across the active window
+  //      with a small random jitter so they don't feel mechanical.
 
   Future<void> scheduleNotifications() async {
     final prefs = await SharedPreferences.getInstance();
@@ -60,55 +61,108 @@ class NotificationService {
     final endHour = prefs.getInt('notif_end_hour') ?? 20;
     final frequency = prefs.getInt('notif_frequency') ?? 3;
     final activeDaysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5';
-    final activeDays = activeDaysStr.split(',').map(int.parse).toList();
+    final activeDays = activeDaysStr.split(',').map(int.parse).toSet();
 
     await cancelAll();
 
     final now = tz.TZDateTime.now(tz.local);
+    final db = DatabaseHelper.instance;
     final random = Random();
+
     final effectiveStart = randomAnytime ? 0 : startHour;
     final effectiveEnd = randomAnytime ? 23 : endHour;
-    final windowHours = (effectiveEnd - effectiveStart).clamp(1, 23);
 
-    for (int i = 0; i < frequency; i++) {
-      final randomHour = effectiveStart + random.nextInt(windowHours);
-      final randomMinute = random.nextInt(60);
+    // Track IDs used across the full 7-day window to minimise week repeats
+    final weekUsedIds = <int>{};
 
-      for (final weekday in activeDays) {
-        final notifId = _notifId(weekday, i);
-        final base = _nextWeekday(now, weekday);
-        var scheduledDate = tz.TZDateTime(
+    int notifId = 1; // ID 0 reserved for group summary
+
+    for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+      final targetDate = now.add(Duration(days: dayOffset));
+      final weekday = targetDate.weekday; // 1=Mon … 7=Sun
+
+      if (!activeDays.contains(weekday)) continue;
+
+      // ── Pick distinct questions for every slot in this day ───────────────
+      final dayUsedIds = <int>{};
+      final dayQuestions = <Question>[];
+
+      for (int slot = 0; slot < frequency; slot++) {
+        // Prefer questions unused this whole week
+        Question? q = await db.getRandomQuestion(
+          excludeIds: {...weekUsedIds, ...dayUsedIds},
+        );
+        // Fallback: allow week repeats, but never same day
+        q ??= await db.getRandomQuestion(excludeIds: dayUsedIds);
+        // Last resort: only 1 question in DB
+        q ??= await db.getRandomQuestion();
+
+        if (q != null && q.id != null) {
+          dayQuestions.add(q);
+          dayUsedIds.add(q.id!);
+        }
+      }
+
+      weekUsedIds.addAll(dayUsedIds);
+
+      // ── Calculate evenly-spaced slot times with jitter ───────────────────
+      final slotHours = _generateSlotHours(
+        effectiveStart, effectiveEnd, dayQuestions.length, random,
+      );
+
+      // ── Schedule each as a one-time notification ─────────────────────────
+      for (int slot = 0; slot < dayQuestions.length; slot++) {
+        final hour = slotHours[slot];
+        final minute = random.nextInt(60);
+
+        final scheduledDate = tz.TZDateTime(
           tz.local,
-          base.year,
-          base.month,
-          base.day,
-          randomHour,
-          randomMinute,
+          targetDate.year,
+          targetDate.month,
+          targetDate.day,
+          hour,
+          minute,
           0,
         );
 
-        if (scheduledDate.isBefore(now)) {
-          scheduledDate = scheduledDate.add(const Duration(days: 7));
-        }
+        // Skip times that have already passed today
+        if (scheduledDate.isBefore(now)) continue;
 
-        await _scheduleNotification(
-          id: notifId,
+        await _scheduleOneTimeNotification(
+          id: notifId++,
           scheduledDate: scheduledDate,
+          question: dayQuestions[slot],
         );
       }
     }
   }
 
-  // ── Schedule a single notification ────────────────────────────────────────
+  // ── Evenly space `count` slots across [start, end) with small jitter ─────
 
-  Future<void> _scheduleNotification({
+  List<int> _generateSlotHours(
+      int start, int end, int count, Random random) {
+    if (count <= 0) return [];
+    final window = (end - start).clamp(1, 23);
+    final spacing = window / count;
+    final hours = <int>[];
+
+    for (int i = 0; i < count; i++) {
+      final base = start + (spacing * i).round();
+      final maxJitter = (spacing / 2).floor().clamp(0, 2);
+      final jitter = maxJitter > 0 ? random.nextInt(maxJitter + 1) : 0;
+      hours.add((base + jitter).clamp(start, end - 1));
+    }
+
+    return hours;
+  }
+
+  // ── Fire a single one-time notification (no matchDateTimeComponents) ──────
+
+  Future<void> _scheduleOneTimeNotification({
     required int id,
     required tz.TZDateTime scheduledDate,
+    required Question question,
   }) async {
-    final question = await DatabaseHelper.instance.getRandomQuestion();
-    final title = question?.question ?? 'Time for a quick recall! 🧠';
-    final payload = question?.id?.toString();
-
     const androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
       'Random Recall',
@@ -117,31 +171,27 @@ class NotificationService {
       priority: Priority.high,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
+      groupKey: _groupKey,
     );
-
-    const details = NotificationDetails(android: androidDetails);
 
     await _plugin.zonedSchedule(
       id,
-      title,
+      question.question,
       'Tap to reveal the answer ✨',
       scheduledDate,
-      details,
+      const NotificationDetails(android: androidDetails),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      // No matchDateTimeComponents → fires once, never repeats
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      payload: payload,
+      payload: question.id?.toString(),
     );
   }
 
-  // ── Send an immediate test notification ───────────────────────────────────
+  // ── Immediate test notification ───────────────────────────────────────────
 
   Future<void> sendTestNotification() async {
     final question = await DatabaseHelper.instance.getRandomQuestion();
-    final title = question?.question ?? 'This is a test notification! 🧠';
-    final payload = question?.id?.toString();
-
     const androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
       'Random Recall',
@@ -150,47 +200,44 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
+      groupKey: _groupKey,
     );
-
-    const details = NotificationDetails(android: androidDetails);
-
     await _plugin.show(
       9999,
-      title,
+      question?.question ?? 'Time for a quick recall! 🧠',
       'Tap to reveal the answer ✨',
-      details,
-      payload: payload,
+      const NotificationDetails(android: androidDetails),
+      payload: question?.id?.toString(),
     );
   }
 
-  // ── Cancel all scheduled notifications ────────────────────────────────────
+  // ── Cancel all ────────────────────────────────────────────────────────────
 
-  Future<void> cancelAll() async {
-    await _plugin.cancelAll();
-  }
+  Future<void> cancelAll() async => _plugin.cancelAll();
 
-  // ── Notification tap handler ───────────────────────────────────────────────
+  // ── Notification tap → navigate to NotificationQuestionScreen ────────────
 
   void _onNotificationTapped(NotificationResponse response) {
     final navigator = navigatorKey?.currentState;
     if (navigator == null) return;
-
-    // Parse questionId from payload (may be null)
     final questionId = int.tryParse(response.payload ?? '');
-
-    // Navigate to QuestionScreen — import done lazily to avoid circular deps
+    // Pop everything (sheets, dialogs, sub-screens) back to root first.
+    // This prevents the answer screen from revealing an open settings sheet
+    // or any other modal when the user closes it.
+    navigator.popUntil((route) => route.isFirst);
     navigator.pushNamed('/question', arguments: questionId);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Handle cold-start via notification tap ────────────────────────────────
+  // When the app is completely closed and the user taps a notification,
+  // onDidReceiveNotificationResponse fires before the navigator is mounted.
+  // We must check getNotificationAppLaunchDetails() after the first frame.
 
-  int _notifId(int weekday, int slotIndex) => weekday * 100 + slotIndex;
-
-  tz.TZDateTime _nextWeekday(tz.TZDateTime from, int weekday) {
-    var date = from;
-    while (date.weekday != weekday) {
-      date = date.add(const Duration(days: 1));
-    }
-    return date;
+  Future<void> handleNotificationLaunch() async {
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp != true) return;
+    final payload = details?.notificationResponse?.payload;
+    final questionId = int.tryParse(payload ?? '');
+    navigatorKey?.currentState?.pushNamed('/question', arguments: questionId);
   }
 }

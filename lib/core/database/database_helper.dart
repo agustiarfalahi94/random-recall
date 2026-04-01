@@ -138,33 +138,42 @@ class DatabaseHelper {
     return rows.isEmpty ? null : Question.fromMap(rows.first);
   }
 
-  Future<Question?> getRandomQuestion({int? categoryId, int? excludeId}) async {
+  Future<Question?> getRandomQuestion({
+    int? categoryId,
+    int? excludeId,
+    Set<int>? excludeIds,
+  }) async {
     final db = await database;
 
-    String? where;
-    List<dynamic>? whereArgs;
+    // Merge all exclusions into one set
+    final allExcluded = <int>{
+      if (excludeId != null) excludeId,
+      ...?excludeIds,
+    };
 
-    if (categoryId != null && excludeId != null) {
-      where = 'category_id = ? AND id != ?';
-      whereArgs = [categoryId, excludeId];
-    } else if (categoryId != null) {
-      where = 'category_id = ?';
-      whereArgs = [categoryId];
-    } else if (excludeId != null) {
-      where = 'id != ?';
-      whereArgs = [excludeId];
+    final conditions = <String>[];
+    final args = <dynamic>[];
+
+    if (categoryId != null) {
+      conditions.add('category_id = ?');
+      args.add(categoryId);
+    }
+    if (allExcluded.isNotEmpty) {
+      final placeholders = allExcluded.map((_) => '?').join(',');
+      conditions.add('id NOT IN ($placeholders)');
+      args.addAll(allExcluded);
     }
 
     final rows = await db.query(
       _tableQuestions,
-      where: where,
-      whereArgs: whereArgs,
+      where: conditions.isEmpty ? null : conditions.join(' AND '),
+      whereArgs: args.isEmpty ? null : args,
       orderBy: 'RANDOM()',
       limit: 1,
     );
 
-    // If no results (only 1 question in DB), fall back without exclusion
-    if (rows.isEmpty && excludeId != null) {
+    // Fallback: if nothing left after exclusions, allow any question
+    if (rows.isEmpty && allExcluded.isNotEmpty) {
       return getRandomQuestion(categoryId: categoryId);
     }
 

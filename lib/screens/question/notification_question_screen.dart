@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/score_record.dart';
@@ -28,6 +32,11 @@ class _NotificationQuestionScreenState
   bool _graded = false;
   bool _isCorrect = false;
 
+  // Timer
+  int _timerSeconds = 0;
+  int _remaining = 0;
+  Timer? _countdownTimer;
+
   late final AnimationController _revealController;
   late final Animation<double> _revealAnim;
 
@@ -42,13 +51,46 @@ class _NotificationQuestionScreenState
       parent: _revealController,
       curve: Curves.easeOutCubic,
     );
+    _loadTimerSetting();
     _loadQuestion();
   }
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _revealController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadTimerSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0);
+  }
+
+  void _startTimer() {
+    _countdownTimer?.cancel();
+    if (_timerSeconds <= 0) return;
+    setState(() => _remaining = _timerSeconds);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) { t.cancel(); return; }
+      setState(() => _remaining--);
+      if (_remaining <= 0) { t.cancel(); _grade(false); }
+    });
+  }
+
+  void _stopTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+  }
+
+  // Always pop — popUntil(isFirst) was called before pushing this screen,
+  // so HomeScreen is always directly beneath.
+  void _close() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      SystemNavigator.pop(); // edge case: cold start with no root yet
+    }
   }
 
   Future<void> _loadQuestion() async {
@@ -72,6 +114,7 @@ class _NotificationQuestionScreenState
         _category = category;
         _isLoading = false;
       });
+      _startTimer();
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -84,6 +127,7 @@ class _NotificationQuestionScreenState
 
   Future<void> _grade(bool isCorrect) async {
     if (_graded || _question == null) return;
+    _stopTimer();
     setState(() {
       _graded = true;
       _isCorrect = isCorrect;
@@ -96,12 +140,23 @@ class _NotificationQuestionScreenState
         isCorrect: isCorrect,
         answeredAt: DateTime.now(),
       ));
+
+      // Record streak if timer was active
+      if (_timerSeconds > 0) {
+        final result = await StreakService.recordActivity();
+        if (result.milestoneReached && mounted) {
+          await showDialog(
+            context: context,
+            builder: (_) => _StreakMilestoneDialog(streak: result.streak),
+          );
+        }
+      }
     } catch (_) {}
 
-    // Show toast for 2 seconds then close the app
+    // Show result for 2 seconds then close
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
-      SystemNavigator.pop();
+      _close();
     }
   }
 
@@ -127,6 +182,10 @@ class _NotificationQuestionScreenState
           icon: const Icon(Icons.close_rounded),
           onPressed: () => SystemNavigator.pop(),
         ),
+        actions: [
+          if (_timerSeconds > 0 && !_graded && !_isLoading)
+            _TimerBadge(remaining: _remaining, total: _timerSeconds),
+        ],
         // No skip/next button — notification flow is single question only
       ),
       body: _isLoading
@@ -366,6 +425,97 @@ class _NotificationQuestionScreenState
           ],
 
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Streak milestone dialog ───────────────────────────────────────────────────
+
+class _StreakMilestoneDialog extends StatelessWidget {
+  const _StreakMilestoneDialog({required this.streak});
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🔥', style: TextStyle(fontSize: 56)),
+          const SizedBox(height: 12),
+          Text(
+            '$streak-Day Streak!',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You\'ve answered with the timer on for $streak days straight. '
+            'You earned +1 bonus question slot! 🎉',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Awesome!'),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Timer badge ───────────────────────────────────────────────────────────────
+
+class _TimerBadge extends StatelessWidget {
+  const _TimerBadge({required this.remaining, required this.total});
+  final int remaining;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final fraction = total > 0 ? remaining / total : 0.0;
+    final color = fraction > 0.5
+        ? Colors.green
+        : fraction > 0.25
+            ? Colors.orange
+            : Colors.red;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: CircularProgressIndicator(
+              value: fraction.clamp(0.0, 1.0),
+              strokeWidth: 3,
+              backgroundColor: color.withOpacity(0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          Text(
+            '$remaining',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
