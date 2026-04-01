@@ -517,7 +517,8 @@ class _LockedCategorySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Blurred preview cards
-        Stack(
+        ClipRect(
+          child: Stack(
           children: [
             // Cards underneath
             Column(
@@ -543,6 +544,7 @@ class _LockedCategorySection extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
 
         // Lock CTA — in normal flow, no overflow possible

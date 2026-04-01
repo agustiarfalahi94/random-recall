@@ -138,13 +138,36 @@ class DatabaseHelper {
     return rows.isEmpty ? null : Question.fromMap(rows.first);
   }
 
-  Future<Question?> getRandomQuestion({int? categoryId}) async {
+  Future<Question?> getRandomQuestion({int? categoryId, int? excludeId}) async {
     final db = await database;
-    final rows = await db.query(_tableQuestions,
-        where: categoryId != null ? 'category_id = ?' : null,
-        whereArgs: categoryId != null ? [categoryId] : null,
-        orderBy: 'RANDOM()',
-        limit: 1);
+
+    String? where;
+    List<dynamic>? whereArgs;
+
+    if (categoryId != null && excludeId != null) {
+      where = 'category_id = ? AND id != ?';
+      whereArgs = [categoryId, excludeId];
+    } else if (categoryId != null) {
+      where = 'category_id = ?';
+      whereArgs = [categoryId];
+    } else if (excludeId != null) {
+      where = 'id != ?';
+      whereArgs = [excludeId];
+    }
+
+    final rows = await db.query(
+      _tableQuestions,
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'RANDOM()',
+      limit: 1,
+    );
+
+    // If no results (only 1 question in DB), fall back without exclusion
+    if (rows.isEmpty && excludeId != null) {
+      return getRandomQuestion(categoryId: categoryId);
+    }
+
     return rows.isEmpty ? null : Question.fromMap(rows.first);
   }
 
