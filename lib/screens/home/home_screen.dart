@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../analytics/analytics_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
 
@@ -32,14 +33,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          _HomeTab(),
-          const QuestionsListScreen(),
-          _PlaceholderTab(emoji: '📊', title: 'Analytics', subtitle: 'Coming Soon'),
-        ],
-      ),
+      body: [
+        const _HomeTab(),
+        const QuestionsListScreen(),
+        const AnalyticsScreen(),
+      ][_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
