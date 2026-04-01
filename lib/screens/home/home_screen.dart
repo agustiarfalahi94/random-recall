@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../question/question_screen.dart';
+import '../question/questions_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: const [
           _HomeTab(),
-          _PlaceholderTab(emoji: '📋', title: 'Questions', subtitle: 'Coming Soon'),
+          const QuestionsListScreen(),
           _PlaceholderTab(emoji: '📊', title: 'Analytics', subtitle: 'Coming Soon'),
         ],
       ),
