@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/notifications/notification_service.dart';
+import '../../core/streak/streak_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
+import '../settings/notification_schedule_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -185,9 +189,16 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               'Notification schedule',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
-            subtitle: const Text('Coming soon'),
+            subtitle: const Text('Set timing, days & frequency'),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: null,
+            onTap: () {
+              Navigator.of(context).pop(); // close bottom sheet first
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NotificationScheduleScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -197,69 +208,247 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
 // ── Home tab with Practice Now button ────────────────────────────────────────
 
-class _HomeTab extends StatelessWidget {
+class _HomeTab extends StatefulWidget {
   const _HomeTab();
+
+  @override
+  State<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<_HomeTab> {
+  int _streak = 0;
+  int _timerSeconds = 0;
+  int _bonusQuestions = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStreakData();
+  }
+
+  Future<void> _loadStreakData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final streak = await StreakService.getStreak();
+    final bonus = await StreakService.getBonusQuestions();
+    if (mounted) {
+      setState(() {
+        _streak = streak;
+        _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+        _bonusQuestions = bonus;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.2),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Text('🧠', style: TextStyle(fontSize: 48)),
-              ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+      child: Column(
+        children: [
+          // ── Hero section ─────────────────────────────────────────────────
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.2),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Ready to recall?',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
+            child: const Center(
+              child: Text('🧠', style: TextStyle(fontSize: 48)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Ready to recall?',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap below to practice anytime,\nor wait for a random notification.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const QuestionScreen()))
+                  .then((_) => _loadStreakData()); // refresh on return
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Practice Now'),
+          ),
+
+          const SizedBox(height: 32),
+
+          // ── Timer challenge card ─────────────────────────────────────────
+          _TimerChallengeCard(
+            streak: _streak,
+            timerSeconds: _timerSeconds,
+            bonusQuestions: _bonusQuestions,
+            onSetTimer: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NotificationScheduleScreen(),
+                ),
+              );
+              _loadStreakData();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Timer challenge card ──────────────────────────────────────────────────────
+
+class _TimerChallengeCard extends StatelessWidget {
+  const _TimerChallengeCard({
+    required this.streak,
+    required this.timerSeconds,
+    required this.bonusQuestions,
+    required this.onSetTimer,
+  });
+
+  final int streak;
+  final int timerSeconds;
+  final int bonusQuestions;
+  final VoidCallback onSetTimer;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final timerOn = timerSeconds > 0;
+    final daysToNext = timerOn ? (7 - (streak % 7)) : 7;
+    final progressInCycle = timerOn ? (streak % 7) : 0;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: timerOn
+              ? colorScheme.primary.withOpacity(0.3)
+              : colorScheme.outlineVariant.withOpacity(0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Timer Challenge',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
+              if (bonusQuestions > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '+$bonusQuestions bonus',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            timerOn
+                ? 'Answer daily with your timer on. '
+                    'Every 7 days earns +1 question slot!'
+                : 'Set a response timer to unlock this challenge.\n'
+                    'Answer daily for 7 days → earn +1 question slot!',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+
+          if (timerOn) ...[
+            const SizedBox(height: 16),
+            // Progress bar: days in current 7-day cycle
+            Row(
+              children: List.generate(7, (i) {
+                final filled = i < progressInCycle;
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 4),
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: filled
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                );
+              }),
             ),
             const SizedBox(height: 8),
             Text(
-              'Tap below to practice anytime,\nor wait for a random notification.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.5,
+              streak == 0
+                  ? 'Start today! Answer with timer on.'
+                  : '$streak day${streak == 1 ? '' : 's'} streak — '
+                      '$daysToNext more to earn a bonus!',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const QuestionScreen(),
+          ] else ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onSetTimer,
+                icon: const Icon(Icons.timer_outlined, size: 18),
+                label: const Text('Set a Timer'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              },
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Practice Now'),
+                ),
+              ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
