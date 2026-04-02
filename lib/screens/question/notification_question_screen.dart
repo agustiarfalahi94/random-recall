@@ -141,8 +141,8 @@ class _NotificationQuestionScreenState
         answeredAt: DateTime.now(),
       ));
 
-      // Record streak if timer was active
-      if (_timerSeconds > 0) {
+      // Record streak only when timer is ON and ≤ the challenge threshold.
+      if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
         final result = await StreakService.recordActivity();
         if (result.milestoneReached && mounted) {
           await showDialog(

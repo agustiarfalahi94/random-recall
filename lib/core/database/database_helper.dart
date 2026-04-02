@@ -7,7 +7,7 @@ import '../../models/score_record.dart';
 
 class DatabaseHelper {
   static const String _dbName = 'recall_quiz.db';
-  static const int _dbVersion = 1;
+  static const int _dbVersion = 3;
 
   static const String _tableCategories = 'categories';
   static const String _tableQuestions = 'questions';
@@ -41,7 +41,8 @@ class DatabaseHelper {
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
         name       TEXT    NOT NULL,
         icon       TEXT    NOT NULL,
-        created_at TEXT    NOT NULL
+        created_at TEXT    NOT NULL,
+        is_default INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
@@ -75,20 +76,37 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Future migrations go here
-    // if (oldVersion < 2) { await db.execute('ALTER TABLE ...'); }
+    if (oldVersion < 2) {
+      // v1 → v2: trim seeded categories from 4 down to 2.
+      await db.execute('''
+        DELETE FROM $_tableCategories
+        WHERE name IN ('Coffee', 'Cook')
+          AND id NOT IN (SELECT DISTINCT category_id FROM $_tableQuestions)
+      ''');
+    }
+    if (oldVersion < 3) {
+      // v2 → v3: add is_default column; mark General and Work as default.
+      await db.execute(
+        'ALTER TABLE $_tableCategories ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute(
+        "UPDATE $_tableCategories SET is_default = 1 WHERE name IN ('General', 'Work')",
+      );
+    }
   }
 
   Future<void> _seedDefaultCategories(Database db) async {
     final now = DateTime.now().toIso8601String();
     final batch = db.batch();
     for (final entry in [
-      {'name': 'Work',    'icon': '💼'},
-      {'name': 'Cook',    'icon': '🍳'},
-      {'name': 'Coffee',  'icon': '☕'},
       {'name': 'General', 'icon': '📌'},
+      {'name': 'Work',    'icon': '💼'},
     ]) {
-      batch.insert(_tableCategories, {...entry, 'created_at': now});
+      batch.insert(_tableCategories, {
+        ...entry,
+        'created_at': now,
+        'is_default': 1,
+      });
     }
     await batch.commit(noResult: true);
   }
@@ -178,6 +196,20 @@ class DatabaseHelper {
     }
 
     return rows.isEmpty ? null : Question.fromMap(rows.first);
+  }
+
+  Future<int> getQuestionCount() async {
+    final result = await (await database)
+        .rawQuery('SELECT COUNT(*) FROM $_tableQuestions');
+    return result.first.values.first as int? ?? 0;
+  }
+
+  /// Returns the set of category IDs that have at least one question.
+  Future<Set<int>> getUsedCategoryIds() async {
+    final rows = await (await database).rawQuery(
+      'SELECT DISTINCT category_id FROM $_tableQuestions',
+    );
+    return rows.map((r) => r['category_id'] as int).toSet();
   }
 
   Future<int> updateQuestion(Question q) async =>

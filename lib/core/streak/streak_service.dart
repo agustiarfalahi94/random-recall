@@ -10,6 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StreakService {
   StreakService._();
 
+  /// Maximum timer setting that qualifies for the streak challenge.
+  /// Timers above this value (e.g. 90s) are too relaxed to earn a streak —
+  /// the user must genuinely recall the answer under pressure.
+  static const int challengeThreshold = 20; // seconds
+
   static const _keyStreak = 'timer_streak_days';
   static const _keyLastDate = 'timer_streak_last_date';
   static const _keyBonusQuestions = 'timer_streak_bonus_questions';

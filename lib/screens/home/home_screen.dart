@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../analytics/analytics_screen.dart';
+import '../categories/manage_categories_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
 import '../settings/notification_schedule_screen.dart';
@@ -173,7 +174,6 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
           const Divider(),
 
-          // More settings coming soon
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: Container(
@@ -192,10 +192,39 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             subtitle: const Text('Set timing, days & frequency'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () {
-              Navigator.of(context).pop(); // close bottom sheet first
+              Navigator.of(context).pop();
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const NotificationScheduleScreen(),
+                ),
+              );
+            },
+          ),
+
+          const Divider(),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(child: Text('🏷️', style: TextStyle(fontSize: 20))),
+            ),
+            title: const Text(
+              'Manage categories',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('Add or remove question categories'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ManageCategoriesScreen(),
                 ),
               );
             },
@@ -305,7 +334,9 @@ class _HomeTabState extends State<_HomeTab> {
             onSetTimer: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => const NotificationScheduleScreen(),
+                  builder: (_) => const NotificationScheduleScreen(
+                    scrollToTimer: true,
+                  ),
                 ),
               );
               _loadStreakData();
@@ -337,10 +368,15 @@ class _TimerChallengeCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final timerOn = timerSeconds > 0;
-    final daysToNext = timerOn ? (7 - (streak % 7)) : 7;
-    final progressInCycle = timerOn ? (streak % 7) : 0;
+    // Challenge is only active when timer is ≤ threshold — relaxed timers don't count
+    final challengeActive = timerSeconds > 0 &&
+        timerSeconds <= StreakService.challengeThreshold;
+    final daysToNext = challengeActive ? (7 - (streak % 7)) : 7;
+    final progressInCycle = challengeActive ? (streak % 7) : 0;
 
-    return Container(
+    return GestureDetector(
+      onTap: onSetTimer,
+      child: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -384,22 +420,33 @@ class _TimerChallengeCard extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (timerOn) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
           Text(
             timerOn
-                ? 'Answer daily with your timer on. '
-                    'Every 7 days earns +1 question slot!'
-                : 'Set a response timer to unlock this challenge.\n'
-                    'Answer daily for 7 days → earn +1 question slot!',
+                ? (timerSeconds <= StreakService.challengeThreshold
+                    ? 'Timer set to ${timerSeconds}s — challenge active! '
+                        'Answer daily for 7 days to earn +1 question slot.'
+                    : 'Timer is ${timerSeconds}s — too relaxed for challenge. '
+                        'Set to ${StreakService.challengeThreshold}s or less to earn streaks.')
+                : 'Set a timer (${StreakService.challengeThreshold}s or less) to unlock '
+                    'the challenge. Answer daily for 7 days → earn +1 question slot!',
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
           ),
 
-          if (timerOn) ...[
+          if (challengeActive) ...[
             const SizedBox(height: 16),
             // Progress bar: days in current 7-day cycle
             Row(
@@ -422,7 +469,7 @@ class _TimerChallengeCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               streak == 0
-                  ? 'Start today! Answer with timer on.'
+                  ? 'Start today! Answer with the timer on.'
                   : '$streak day${streak == 1 ? '' : 's'} streak — '
                       '$daysToNext more to earn a bonus!',
               style: TextStyle(
@@ -450,7 +497,7 @@ class _TimerChallengeCard extends StatelessWidget {
           ],
         ],
       ),
-    );
+    )); // GestureDetector + Container
   }
 }
 

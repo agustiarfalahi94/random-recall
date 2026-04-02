@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
+import '../../widgets/upgrade_bottom_sheet.dart';
+import '../categories/manage_categories_screen.dart';
 import 'add_edit_question_screen.dart';
 
 class QuestionsListScreen extends StatefulWidget {
@@ -18,6 +21,11 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   bool _isLoading = true;
   int? _selectedCategoryId; // null = show all
 
+  // Plan limits
+  int _totalQuestionCount = 0;
+  int _questionLimit = PlanService.freeQuestionBase;
+  bool _isPremium = false;
+
   @override
   void initState() {
     super.initState();
@@ -29,9 +37,15 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
     final db = DatabaseHelper.instance;
     final questions = await db.getAllQuestions(categoryId: _selectedCategoryId);
     final categories = await db.getAllCategories();
+    final totalCount = await db.getQuestionCount();
+    final limit = await PlanService.getQuestionLimit();
+    final premium = await PlanService.isPremium();
     setState(() {
       _questions = questions;
       _categories = categories;
+      _totalQuestionCount = totalCount;
+      _questionLimit = limit;
+      _isPremium = premium;
       _isLoading = false;
     });
   }
@@ -69,12 +83,96 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   }
 
   Future<void> _openAddEdit({Question? question}) async {
+    // When adding (not editing), enforce the question limit
+    if (question == null) {
+      final canAdd = await PlanService.canAddQuestion(_totalQuestionCount);
+      if (!canAdd) {
+        if (!mounted) return;
+        UpgradeBottomSheet.show(
+          context,
+          trigger: UpgradeTrigger.questionLimit,
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => AddEditQuestionScreen(question: question),
       ),
     );
     if (result == true) _loadData();
+  }
+
+  /// Shows a bottom sheet with two choices: Add Question or Add Category.
+  void _showAddMenu() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final colorScheme = Theme.of(ctx).colorScheme;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+
+                // Add new question
+                _AddMenuTile(
+                  icon: Icons.quiz_outlined,
+                  iconColor: colorScheme.primary,
+                  iconBg: colorScheme.primaryContainer,
+                  title: 'New Question',
+                  subtitle: 'Add something you want to remember',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _openAddEdit();
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Add new category
+                _AddMenuTile(
+                  icon: Icons.label_outline_rounded,
+                  iconColor: colorScheme.tertiary,
+                  iconBg: colorScheme.tertiaryContainer,
+                  title: 'New Category',
+                  subtitle: 'Organise questions into a new group',
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ManageCategoriesScreen(),
+                      ),
+                    );
+                    _loadData();
+                  },
+                ),
+
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Category? _categoryFor(int categoryId) {
@@ -90,9 +188,73 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final atLimit = !_isPremium && _totalQuestionCount >= _questionLimit;
+
     return Scaffold(
       body: Column(
         children: [
+          // ── Question count pill ────────────────────────────────────────
+          if (!_isPremium && !_isLoading)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: atLimit
+                          ? colorScheme.errorContainer
+                          : colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          atLimit
+                              ? Icons.lock_rounded
+                              : Icons.library_books_outlined,
+                          size: 13,
+                          color: atLimit
+                              ? colorScheme.onErrorContainer
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          atLimit
+                              ? '$_totalQuestionCount / $_questionLimit — Limit reached'
+                              : '$_totalQuestionCount / $_questionLimit questions',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: atLimit
+                                ? colorScheme.onErrorContainer
+                                : colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (atLimit) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => UpgradeBottomSheet.show(
+                        context,
+                        trigger: UpgradeTrigger.questionLimit,
+                      ),
+                      child: Text(
+                        'Upgrade ›',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
           // ── Category filter chips ──────────────────────────────────────
           if (_categories.isNotEmpty)
             SizedBox(
@@ -149,6 +311,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                       ),
                     );
                   }),
+
                 ],
               ),
             ),
@@ -181,12 +344,12 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddEdit(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Question'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddMenu,
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
+        tooltip: 'Add',
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
     );
   }
@@ -217,6 +380,82 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
               ),
               textAlign: TextAlign.center,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Add menu tile ─────────────────────────────────────────────────────────────
+
+class _AddMenuTile extends StatelessWidget {
+  const _AddMenuTile({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: colorScheme.outlineVariant.withOpacity(0.4)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: colorScheme.onSurfaceVariant),
           ],
         ),
       ),

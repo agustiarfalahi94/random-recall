@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -27,6 +28,14 @@ class NotificationService {
   Future<void> init() async {
     if (_initialized) return;
     tz.initializeTimeZones();
+    // Set the local timezone so notifications fire at the correct local time.
+    // Without this, tz.local defaults to UTC and all scheduled times are wrong.
+    try {
+      final tzName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(tzName));
+    } catch (_) {
+      // Fallback: keep UTC if timezone detection fails (shouldn't happen in practice)
+    }
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(
@@ -42,6 +51,13 @@ class NotificationService {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     return await android?.requestNotificationsPermission() ?? false;
+  }
+
+  /// Returns true if the app currently has notification permission granted.
+  Future<bool> hasPermission() async {
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    return await android?.areNotificationsEnabled() ?? true;
   }
 
   // ── Schedule 7 days of one-time notifications ─────────────────────────────
@@ -180,7 +196,9 @@ class NotificationService {
       'Tap to reveal the answer ✨',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      // inexact: no special "Alarms & Reminders" permission needed on Android 12+.
+      // Can be delayed by up to a few minutes by the OS — perfectly fine for reminders.
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       // No matchDateTimeComponents → fires once, never repeats
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
