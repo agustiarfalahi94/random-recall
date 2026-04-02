@@ -15,7 +15,11 @@ import '../../models/score_record.dart';
 class NotificationQuestionScreen extends StatefulWidget {
   final int? questionId;
 
-  const NotificationQuestionScreen({super.key, this.questionId});
+  /// When true (test notification), score and streak are NOT recorded.
+  final bool isPractice;
+
+  const NotificationQuestionScreen(
+      {super.key, this.questionId, this.isPractice = false});
 
   @override
   State<NotificationQuestionScreen> createState() =>
@@ -134,21 +138,24 @@ class _NotificationQuestionScreenState
     });
 
     try {
-      await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
-        questionId: _question!.id!,
-        categoryId: _question!.categoryId,
-        isCorrect: isCorrect,
-        answeredAt: DateTime.now(),
-      ));
+      // Test notifications are practice — don't affect score or streak.
+      if (!widget.isPractice) {
+        await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
+          questionId: _question!.id!,
+          categoryId: _question!.categoryId,
+          isCorrect: isCorrect,
+          answeredAt: DateTime.now(),
+        ));
 
-      // Record streak only when timer is ON and ≤ the challenge threshold.
-      if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
-        final result = await StreakService.recordActivity();
-        if (result.milestoneReached && mounted) {
-          await showDialog(
-            context: context,
-            builder: (_) => _StreakMilestoneDialog(streak: result.streak),
-          );
+        // Record streak only when timer is ON and ≤ the challenge threshold.
+        if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
+          final result = await StreakService.recordActivity();
+          if (result.milestoneReached && mounted) {
+            await showDialog(
+              context: context,
+              builder: (_) => _StreakMilestoneDialog(streak: result.streak),
+            );
+          }
         }
       }
     } catch (_) {}

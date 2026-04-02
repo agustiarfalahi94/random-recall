@@ -220,12 +220,14 @@ class NotificationService {
       icon: '@mipmap/ic_launcher',
       groupKey: _groupKey,
     );
+    // Prefix payload with "test:" so the tap handler can route it to the
+    // practice (no-score) flow instead of the normal scored flow.
     await _plugin.show(
       9999,
       question?.question ?? 'Time for a quick recall! 🧠',
       'Tap to reveal the answer ✨',
       const NotificationDetails(android: androidDetails),
-      payload: question?.id?.toString(),
+      payload: 'test:${question?.id}',
     );
   }
 
@@ -238,12 +240,15 @@ class NotificationService {
   void _onNotificationTapped(NotificationResponse response) {
     final navigator = navigatorKey?.currentState;
     if (navigator == null) return;
-    final questionId = int.tryParse(response.payload ?? '');
-    // Pop everything (sheets, dialogs, sub-screens) back to root first.
-    // This prevents the answer screen from revealing an open settings sheet
-    // or any other modal when the user closes it.
+    final payload = response.payload ?? '';
+    // Test notifications have a "test:" prefix — route them to the practice
+    // (no-score) screen so they don't pollute the user's score history.
+    final isTest = payload.startsWith('test:');
+    final questionId = int.tryParse(isTest ? payload.substring(5) : payload);
+    // Pop everything back to root before pushing the answer screen.
     navigator.popUntil((route) => route.isFirst);
-    navigator.pushNamed('/question', arguments: questionId);
+    navigator.pushNamed(isTest ? '/question_practice' : '/question',
+        arguments: questionId);
   }
 
   // ── Handle cold-start via notification tap ────────────────────────────────
