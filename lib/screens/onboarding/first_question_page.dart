@@ -20,7 +20,10 @@ class FirstQuestionPage extends StatefulWidget {
   State<FirstQuestionPage> createState() => _FirstQuestionPageState();
 }
 
-class _FirstQuestionPageState extends State<FirstQuestionPage> {
+class _FirstQuestionPageState extends State<FirstQuestionPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final _formKey = GlobalKey<FormState>();
   final _questionController = TextEditingController();
   final _answerController = TextEditingController();
@@ -64,6 +67,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

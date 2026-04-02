@@ -26,7 +26,9 @@ class NotificationSetupPage extends StatefulWidget {
 }
 
 class _NotificationSetupPageState extends State<NotificationSetupPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   bool _randomAnytime = true;
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 20, minute: 0);
@@ -176,6 +178,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
