@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/database/database_helper.dart';
-import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
-import '../../widgets/upgrade_bottom_sheet.dart';
 
 class AddEditQuestionScreen extends StatefulWidget {
   /// Pass an existing question to edit, or null to add a new one.
@@ -25,7 +23,6 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
   int? _selectedCategoryId;
   bool _isLoading = false;
   bool _isSaving = false;
-  Set<int> _usedCategoryIds = {};
 
   bool get _isEditing => widget.question != null;
 
@@ -49,34 +46,15 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
 
   Future<void> _loadCategories() async {
     setState(() => _isLoading = true);
-    final db = DatabaseHelper.instance;
-    final categories = await db.getAllCategories();
-    final usedIds = await db.getUsedCategoryIds();
+    final categories = await DatabaseHelper.instance.getAllCategories();
     setState(() {
       _categories = categories;
-      _usedCategoryIds = usedIds;
       _isLoading = false;
     });
   }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    // For new questions only: check category limit before saving
-    if (!_isEditing && _selectedCategoryId != null) {
-      final canUse = await PlanService.canUseCategory(
-        categoryId: _selectedCategoryId!,
-        usedCategoryIds: _usedCategoryIds,
-      );
-      if (!canUse) {
-        if (!mounted) return;
-        UpgradeBottomSheet.show(
-          context,
-          trigger: UpgradeTrigger.categoryLimit,
-        );
-        return;
-      }
-    }
 
     setState(() => _isSaving = true);
 
@@ -186,75 +164,30 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                     _FieldLabel(
                         label: 'Category', colorScheme: colorScheme),
                     const SizedBox(height: 8),
-                    FutureBuilder<bool>(
-                      future: PlanService.isPremium(),
-                      builder: (context, snap) {
-                        final isPremium = snap.data ?? true;
-                        return DropdownButtonFormField<int>(
-                          value: _selectedCategoryId,
-                          decoration: const InputDecoration(
-                            hintText: 'Select a category',
+                    DropdownButtonFormField<int>(
+                      value: _selectedCategoryId,
+                      decoration: const InputDecoration(
+                        hintText: 'Select a category',
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      items: _categories.map((cat) {
+                        return DropdownMenuItem<int>(
+                          value: cat.id,
+                          child: Row(
+                            children: [
+                              Text(cat.icon,
+                                  style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 10),
+                              Text(cat.name),
+                            ],
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          items: _categories.map((cat) {
-                            // A category is locked if:
-                            // - user is not premium
-                            // - the category is NOT already used
-                            // - adding it would exceed the limit
-                            final alreadyUsed =
-                                _usedCategoryIds.contains(cat.id);
-                            final wouldExceedLimit = !alreadyUsed &&
-                                _usedCategoryIds.length >=
-                                    PlanService.freeCategoryLimit;
-                            final isLocked =
-                                !isPremium && wouldExceedLimit && !_isEditing;
-
-                            return DropdownMenuItem<int>(
-                              value: cat.id,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    cat.icon,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: isLocked
-                                          ? colorScheme.onSurface
-                                              .withOpacity(0.38)
-                                          : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    cat.name,
-                                    style: TextStyle(
-                                      color: isLocked
-                                          ? colorScheme.onSurface
-                                              .withOpacity(0.38)
-                                          : null,
-                                    ),
-                                  ),
-                                  if (isLocked) ...[
-                                    const SizedBox(width: 6),
-                                    Icon(
-                                      Icons.lock_rounded,
-                                      size: 14,
-                                      color: colorScheme.onSurface
-                                          .withOpacity(0.38),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) =>
-                              setState(() => _selectedCategoryId = value),
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Please select a category';
-                            }
-                            return null;
-                          },
                         );
+                      }).toList(),
+                      onChanged: (value) =>
+                          setState(() => _selectedCategoryId = value),
+                      validator: (value) {
+                        if (value == null) return 'Please select a category';
+                        return null;
                       },
                     ),
 

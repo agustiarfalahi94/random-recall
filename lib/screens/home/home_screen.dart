@@ -317,7 +317,9 @@ class _HomeTabState extends State<_HomeTab> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const QuestionScreen()))
+                  .push(MaterialPageRoute(
+                    builder: (_) => const QuestionScreen(isPractice: true),
+                  ))
                   .then((_) => _loadStreakData()); // refresh on return
             },
             icon: const Icon(Icons.play_arrow_rounded),
