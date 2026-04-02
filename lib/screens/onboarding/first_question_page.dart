@@ -7,9 +7,14 @@ typedef OnFirstQuestionNext = void Function(
     String question, String answer, int categoryId);
 
 class FirstQuestionPage extends StatefulWidget {
-  const FirstQuestionPage({super.key, required this.onNext});
+  const FirstQuestionPage({
+    super.key,
+    required this.onNext,
+    required this.onBack,
+  });
 
   final OnFirstQuestionNext onNext;
+  final VoidCallback onBack;
 
   @override
   State<FirstQuestionPage> createState() => _FirstQuestionPageState();
@@ -20,12 +25,13 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
   final _questionController = TextEditingController();
   final _answerController = TextEditingController();
   int? _selectedCategoryId;
-  late Future<List<Category>> _categoriesFuture;
+  List<Category> _categories = [];
+  bool _isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    _categoriesFuture = DatabaseHelper.instance.getAllCategories();
+    _loadCategories();
   }
 
   @override
@@ -33,6 +39,17 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
     _questionController.dispose();
     _answerController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCategories() async {
+    final categories = await DatabaseHelper.instance.getAllCategories();
+    // Pre-select "General" so the user doesn't have to pick manually
+    final general = categories.where((c) => c.name == 'General').firstOrNull;
+    setState(() {
+      _categories = categories;
+      _selectedCategoryId = general?.id ?? (categories.isNotEmpty ? categories.first.id : null);
+      _isLoadingCategories = false;
+    });
   }
 
   void _submit() {
@@ -58,7 +75,20 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 48),
+              const SizedBox(height: 16),
+
+              // ── Back button ─────────────────────────────────────────────────
+              TextButton.icon(
+                onPressed: widget.onBack,
+                icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
+                label: const Text('Back'),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+
+              const SizedBox(height: 16),
               _StepIndicator(currentStep: 2, totalSteps: 3, colorScheme: colorScheme),
               const SizedBox(height: 28),
               Text(
@@ -77,6 +107,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                 ),
               ),
               const SizedBox(height: 36),
+
               _FieldLabel(label: 'Question', colorScheme: colorScheme),
               const SizedBox(height: 8),
               TextFormField(
@@ -94,6 +125,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                 },
               ),
               const SizedBox(height: 20),
+
               _FieldLabel(label: 'Answer', colorScheme: colorScheme),
               const SizedBox(height: 8),
               TextFormField(
@@ -108,66 +140,49 @@ class _FirstQuestionPageState extends State<FirstQuestionPage> {
                 },
               ),
               const SizedBox(height: 20),
+
               _FieldLabel(label: 'Category', colorScheme: colorScheme),
               const SizedBox(height: 8),
-              FutureBuilder<List<Category>>(
-                future: _categoriesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Container(
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    return Container(
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Failed to load categories',
-                        style: TextStyle(color: colorScheme.onErrorContainer),
-                      ),
-                    );
-                  }
-                  final categories = snapshot.data ?? [];
-                  return DropdownButtonFormField<int>(
-                    value: _selectedCategoryId,
-                    decoration: const InputDecoration(hintText: 'Select a category'),
+
+              if (_isLoadingCategories)
+                Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
-                    items: categories
-                        .map((cat) => DropdownMenuItem<int>(
-                              value: cat.id,
-                              child: Row(
-                                children: [
-                                  Text(cat.icon, style: const TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 10),
-                                  Text(cat.name),
-                                ],
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (value) => setState(() => _selectedCategoryId = value),
-                    validator: (value) {
-                      if (value == null) return 'Please select a category';
-                      return null;
-                    },
-                  );
-                },
-              ),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              else
+                DropdownButtonFormField<int>(
+                  value: _selectedCategoryId,
+                  decoration: const InputDecoration(hintText: 'Select a category'),
+                  borderRadius: BorderRadius.circular(12),
+                  items: _categories
+                      .map((cat) => DropdownMenuItem<int>(
+                            value: cat.id,
+                            child: Row(
+                              children: [
+                                Text(cat.icon, style: const TextStyle(fontSize: 18)),
+                                const SizedBox(width: 10),
+                                Text(cat.name),
+                              ],
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (value) => setState(() => _selectedCategoryId = value),
+                  validator: (value) {
+                    if (value == null) return 'Please select a category';
+                    return null;
+                  },
+                ),
+
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _submit,

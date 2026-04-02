@@ -163,8 +163,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             physics: const NeverScrollableScrollPhysics(),
             children: [
               WelcomePage(onNext: () => _goToPage(1)),
-              FirstQuestionPage(onNext: _onFirstQuestionNext),
+              FirstQuestionPage(
+                onNext: _onFirstQuestionNext,
+                onBack: () => _goToPage(0),
+              ),
               NotificationSetupPage(
+                onBack: () => _goToPage(1),
                 onComplete: ({
                   required bool randomAnytime,
                   required int startHour,
