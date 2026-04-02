@@ -9,6 +9,12 @@ import 'first_question_page.dart';
 import 'notification_setup_page.dart';
 import 'welcome_page.dart';
 
+// SharedPreferences keys used to survive process death mid-onboarding
+const _kOnboardingPage = 'onboarding_draft_page';
+const _kOnboardingQuestion = 'onboarding_draft_question';
+const _kOnboardingAnswer = 'onboarding_draft_answer';
+const _kOnboardingCategoryId = 'onboarding_draft_category_id';
+
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -25,9 +31,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _restoreDraft();
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Restore in-progress onboarding if the app was killed mid-flow
+  /// (e.g. user left to enable notifications and Android killed the process).
+  Future<void> _restoreDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPage = prefs.getInt(_kOnboardingPage) ?? 0;
+    final savedQuestion = prefs.getString(_kOnboardingQuestion);
+    final savedAnswer = prefs.getString(_kOnboardingAnswer);
+    final savedCategoryId = prefs.getInt(_kOnboardingCategoryId);
+
+    // Only restore if there is valid question data (means the user got past page 1)
+    if (savedPage >= 2 && savedQuestion != null && savedAnswer != null && savedCategoryId != null) {
+      setState(() {
+        _questionText = savedQuestion;
+        _answerText = savedAnswer;
+        _categoryId = savedCategoryId;
+      });
+      // Jump without animation since this is a restoration, not user navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pageController.jumpToPage(savedPage);
+      });
+    }
   }
 
   void _goToPage(int index) {
@@ -38,12 +73,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _onFirstQuestionNext(String question, String answer, int categoryId) {
+  Future<void> _onFirstQuestionNext(String question, String answer, int categoryId) async {
     setState(() {
       _questionText = question;
       _answerText = answer;
       _categoryId = categoryId;
     });
+
+    // Persist draft so the app can recover if killed while the user is on
+    // the notification page (e.g. they went to Android settings and Android
+    // killed the process due to memory pressure).
+    final prefs = await SharedPreferences.getInstance();
+    await Future.wait([
+      prefs.setString(_kOnboardingQuestion, question),
+      prefs.setString(_kOnboardingAnswer, answer),
+      prefs.setInt(_kOnboardingCategoryId, categoryId),
+      prefs.setInt(_kOnboardingPage, 2),
+    ]);
+
     _goToPage(2);
   }
 
@@ -66,7 +113,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         createdAt: DateTime.now(),
       ));
 
-      // Save notification prefs
+      // Save notification prefs + mark onboarding complete
       final prefs = await SharedPreferences.getInstance();
       await Future.wait([
         prefs.setBool('notif_random_anytime', randomAnytime),
@@ -75,9 +122,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         prefs.setInt('notif_frequency', frequency),
         prefs.setString('notif_active_days', activeDays.map((d) => d.toString()).join(',')),
         prefs.setBool('onboarding_complete', true),
+        // Clear draft now that onboarding is fully complete
+        prefs.remove(_kOnboardingPage),
+        prefs.remove(_kOnboardingQuestion),
+        prefs.remove(_kOnboardingAnswer),
+        prefs.remove(_kOnboardingCategoryId),
       ]);
 
-      // Schedule notifications
+      // Schedule notifications (silently skipped if permission not granted)
       await NotificationService.instance.scheduleNotifications();
 
       if (!mounted) return;

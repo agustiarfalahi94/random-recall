@@ -513,6 +513,30 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                           ? 'Try again'
                           : 'Start Recalling! 🚀'),
             ),
+
+            // Skip option — only shown when permission is denied.
+            // Lets the user proceed without notifications and enable them
+            // later from the app's settings screen.
+            if (_showPermissionError && !_checkingPermission) ...[
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => widget.onComplete(
+                  randomAnytime: _randomAnytime,
+                  startHour: _startTime.hour,
+                  endHour: _endTime.hour,
+                  frequency: _frequency,
+                  activeDays: _activeDays.toList()..sort(),
+                ),
+                child: Text(
+                  'Skip for now — enable notifications later',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
           ],
         ),
