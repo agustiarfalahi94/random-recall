@@ -43,16 +43,18 @@ class _WelcomePageState extends State<WelcomePage>
     final size = MediaQuery.sizeOf(context);
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28.0),
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: SlideTransition(
-            position: _slideAnim,
+      // Animations wrap the scroll view so they don't interfere with scroll
+      // layout constraints — SlideTransition can cause overflow inside scrollable.
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: size.height * 0.10),
+                SizedBox(height: size.height * 0.08),
                 Container(
                   width: 96,
                   height: 96,
@@ -110,14 +112,14 @@ class _WelcomePageState extends State<WelcomePage>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 40),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     _FeatureChip(icon: '⚡', label: 'Random', colorScheme: colorScheme),
-                    const SizedBox(width: 8),
                     _FeatureChip(icon: '🔔', label: 'Notifications', colorScheme: colorScheme),
-                    const SizedBox(width: 8),
                     _FeatureChip(icon: '📊', label: 'Analytics', colorScheme: colorScheme),
                   ],
                 ),
@@ -126,13 +128,13 @@ class _WelcomePageState extends State<WelcomePage>
                   onPressed: widget.onNext,
                   child: const Text('Get Started →'),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 40),
               ],
             ),
           ),
         ),
       ),
-    );
+    ); // SafeArea
   }
 }
 

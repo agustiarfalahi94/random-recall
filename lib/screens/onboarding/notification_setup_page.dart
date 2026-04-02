@@ -1,4 +1,7 @@
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+
+import '../../core/notifications/notification_service.dart';
 
 typedef OnNotificationSetupComplete = void Function({
   required bool randomAnytime,
@@ -17,14 +20,66 @@ class NotificationSetupPage extends StatefulWidget {
   State<NotificationSetupPage> createState() => _NotificationSetupPageState();
 }
 
-class _NotificationSetupPageState extends State<NotificationSetupPage> {
+class _NotificationSetupPageState extends State<NotificationSetupPage>
+    with WidgetsBindingObserver {
   bool _randomAnytime = true;
   int _startHour = 8;
   int _endHour = 20;
   int _frequency = 3;
   final Set<int> _activeDays = {1, 2, 3, 4, 5};
+  bool _showPermissionError = false;
+  bool _checkingPermission = false;
+  bool _permPermanentlyDenied = false; // true after first denial
+  // True while we wait for the user to return from Android notification settings
+  bool _waitingForSettingsReturn = false;
 
   static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Called by Android when the app comes back to foreground.
+  /// If we were waiting for the user to return from notification settings,
+  /// check permission now — this is when the change actually takes effect.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _waitingForSettingsReturn) {
+      _waitingForSettingsReturn = false;
+      _checkPermissionAfterSettings();
+    }
+  }
+
+  Future<void> _checkPermissionAfterSettings() async {
+    setState(() => _checkingPermission = true);
+    final granted = await NotificationService.instance.hasPermission();
+    if (!mounted) return;
+    setState(() => _checkingPermission = false);
+    if (granted) {
+      setState(() {
+        _showPermissionError = false;
+        _permPermanentlyDenied = false;
+      });
+      widget.onComplete(
+        randomAnytime: _randomAnytime,
+        startHour: _startHour,
+        endHour: _endHour,
+        frequency: _frequency,
+        activeDays: _activeDays.toList()..sort(),
+      );
+    } else {
+      // User came back but still hasn't granted — keep error visible
+      setState(() => _showPermissionError = true);
+    }
+  }
 
   String _formatHour(int hour) {
     if (hour == 0) return '12 AM';
@@ -43,20 +98,59 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
     setState(() {
       if (isStart) {
         _startHour = picked.hour;
+        // Auto-advance end hour if it's no longer at least 1 hour ahead
         if (_endHour <= _startHour) _endHour = (_startHour + 1).clamp(0, 23);
       } else {
         if (picked.hour > _startHour) {
           _endHour = picked.hour;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('End time must be after start time')),
+            const SnackBar(
+              content: Text('End time must be at least 1 hour after start time'),
+            ),
           );
         }
       }
     });
   }
 
-  void _onComplete() {
+  Future<void> _onComplete() async {
+    // If we already know permission is permanently denied, open the system
+    // settings page. We DON'T await it — it resolves immediately on Android
+    // (the moment the Settings app opens, not when user returns).
+    // Instead, WidgetsBindingObserver.didChangeAppLifecycleState will fire
+    // when the user comes back and we check permission there.
+    if (_permPermanentlyDenied) {
+      _waitingForSettingsReturn = true;
+      AppSettings.openAppSettings(type: AppSettingsType.notification);
+      return;
+    }
+
+    setState(() {
+      _checkingPermission = true;
+      _showPermissionError = false;
+    });
+
+    // First check if already granted (maybe they enabled it in Settings)
+    bool granted = await NotificationService.instance.hasPermission();
+    if (!granted) {
+      // Show the system dialog (only works once — OS ignores subsequent calls)
+      granted = await NotificationService.instance.requestPermission();
+    }
+
+    if (!mounted) return;
+
+    if (!granted) {
+      setState(() {
+        _checkingPermission = false;
+        _showPermissionError = true;
+        _permPermanentlyDenied = true; // next tap → open Settings
+      });
+      return;
+    }
+
+    setState(() => _checkingPermission = false);
+
     widget.onComplete(
       randomAnytime: _randomAnytime,
       startHour: _startHour,
@@ -244,9 +338,97 @@ class _NotificationSetupPageState extends State<NotificationSetupPage> {
             ),
 
             const SizedBox(height: 40),
+
+            // ── Permission error banner ────────────────────────────────────
+            if (_showPermissionError) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.notifications_off_rounded,
+                        color: colorScheme.onErrorContainer, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Notifications are turned off',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onErrorContainer,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _permPermanentlyDenied
+                                ? 'Tap the button below to open Notification Settings. '
+                                    'Enable "Random Recall" there, then come back here.'
+                                : 'Random Recall needs notifications to remind you. '
+                                    'Please go to Settings → Apps → Random Recall → '
+                                    'Notifications and enable them, then come back.',
+                            style: TextStyle(
+                              color: colorScheme.onErrorContainer,
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // ── "Checking…" hint — shown while verifying on return ──────────
+            if (_checkingPermission) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Checking notification permission…',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+
             ElevatedButton(
-              onPressed: _onComplete,
-              child: const Text('Start Recalling! 🚀'),
+              onPressed: _checkingPermission ? null : _onComplete,
+              child: _checkingPermission
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(_permPermanentlyDenied
+                      ? 'Open Notification Settings ↗'
+                      : _showPermissionError
+                          ? 'Try again'
+                          : 'Start Recalling! 🚀'),
             ),
             const SizedBox(height: 32),
           ],
