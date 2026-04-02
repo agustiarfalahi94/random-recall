@@ -31,8 +31,8 @@ class NotificationService {
     // Set the local timezone so notifications fire at the correct local time.
     // Without this, tz.local defaults to UTC and all scheduled times are wrong.
     try {
-      final tzName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(tzName));
+      final tzInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
     } catch (_) {
       // Fallback: keep UTC if timezone detection fails (shouldn't happen in practice)
     }
