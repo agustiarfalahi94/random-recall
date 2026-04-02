@@ -60,8 +60,14 @@ class RandomRecallApp extends StatelessWidget {
           if (settings.name == '/question') {
             final questionId = settings.arguments as int?;
             return MaterialPageRoute(
-              builder: (_) =>
-                  NotificationQuestionScreen(questionId: questionId),
+              builder: (_) => NotificationQuestionScreen(questionId: questionId),
+            );
+          }
+          if (settings.name == '/question_practice') {
+            final questionId = settings.arguments as int?;
+            return MaterialPageRoute(
+              builder: (_) => NotificationQuestionScreen(
+                  questionId: questionId, isPractice: true),
             );
           }
           return null;

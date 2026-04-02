@@ -7,11 +7,9 @@ class PlanService {
 
   // ── Limits ─────────────────────────────────────────────────────────────────
 
-  /// Max categories a free user can have questions in.
-  static const int freeCategoryLimit = 2;
-
   /// Max *custom* (non-default) categories a free user can create.
   /// Default categories (General, Work) are excluded from this count.
+  /// There is NO limit on which categories questions can be added to.
   static const int freeMaxCustomCategories = 1;
 
   static const int freeQuestionBase = 20;
@@ -23,12 +21,6 @@ class PlanService {
   static Future<int> getQuestionLimit() async {
     if (await isPremium()) return 999999;
     return StreakService.getFreeQuestionLimit();
-  }
-
-  /// Max distinct categories a free user may add questions to.
-  static Future<int> getCategoryLimit() async {
-    if (await isPremium()) return 999999;
-    return freeCategoryLimit;
   }
 
   /// Returns true if the user has not yet hit the question limit.
@@ -44,17 +36,5 @@ class PlanService {
   static Future<bool> canAddCategory(int currentCustomCount) async {
     if (await isPremium()) return true;
     return currentCustomCount < freeMaxCustomCategories;
-  }
-
-  /// Returns true if [categoryId] is allowed for the current user.
-  /// Premium: always allowed.
-  /// Free: allowed if already used, OR fewer than [freeCategoryLimit] used so far.
-  static Future<bool> canUseCategory({
-    required int categoryId,
-    required Set<int> usedCategoryIds,
-  }) async {
-    if (await isPremium()) return true;
-    if (usedCategoryIds.contains(categoryId)) return true;
-    return usedCategoryIds.length < freeCategoryLimit;
   }
 }
