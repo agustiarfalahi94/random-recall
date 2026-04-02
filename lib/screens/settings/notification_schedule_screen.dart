@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../../core/streak/streak_service.dart';
 
 class NotificationScheduleScreen extends StatefulWidget {
-  const NotificationScheduleScreen({super.key});
+  const NotificationScheduleScreen({super.key, this.scrollToTimer = false});
+
+  /// When true, the screen will auto-scroll to the Challenge Mode section.
+  final bool scrollToTimer;
 
   @override
   State<NotificationScheduleScreen> createState() =>
@@ -15,6 +19,9 @@ class _NotificationScheduleScreenState
     extends State<NotificationScheduleScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
+
+  final _scrollController = ScrollController();
+  final _timerSectionKey = GlobalKey();
 
   // Prefs state
   bool _randomAnytime = true;
@@ -31,6 +38,12 @@ class _NotificationScheduleScreenState
   void initState() {
     super.initState();
     _loadPrefs();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPrefs() async {
@@ -51,13 +64,30 @@ class _NotificationScheduleScreenState
       _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
       _isLoading = false;
     });
+
+    // Auto-scroll to timer section if requested
+    if (widget.scrollToTimer) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _timerSectionKey.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            alignment: 0.1, // place near top with a small offset
+          );
+        }
+      });
+    }
   }
 
   Future<void> _save() async {
-    if (!_randomAnytime && _startTime.hour >= _endTime.hour) {
+    // Since notification slots are spaced by hour, the window must span at
+    // least 1 full hour (e.g. 1 PM start requires 2 PM or later end).
+    if (!_randomAnytime && _endTime.hour <= _startTime.hour) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('End time must be after start time.'),
+          content: Text('End time must be at least 1 hour after start time.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -177,8 +207,135 @@ class _NotificationScheduleScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
               children: [
+                // ── 🔥 Challenge Mode (top — most exciting feature) ───────────
+                Container(
+                  key: _timerSectionKey,
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        colorScheme.primaryContainer,
+                        colorScheme.secondaryContainer,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Fire emoji scales up when timer is in the challenge zone
+                      _ChallengeFireDisplay(timerSeconds: _timerSeconds),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Challenge\nMode',
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: colorScheme.onPrimaryContainer,
+                          height: 1.05,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _timerSeconds == 0
+                            ? 'Set timer to ${StreakService.challengeThreshold}s or less → '
+                                'answer daily → hit a 7-day streak → earn +1 free question slot!'
+                            : _timerSeconds <= StreakService.challengeThreshold
+                                ? '🔥 Challenge active! Keep going daily for 7 days to earn +1 free question slot!'
+                                : 'Timer is too relaxed. Lower it to ${StreakService.challengeThreshold}s or less to activate the challenge.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onPrimaryContainer.withOpacity(0.85),
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                _SettingCard(
+                  colorScheme: colorScheme,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Response timer',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  _timerSeconds == 0
+                                      ? 'No time limit — relaxed mode'
+                                      : 'Auto-marks wrong if time runs out',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_timerSeconds > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: colorScheme.errorContainer,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${_timerSeconds}s',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Slider(
+                        value: _timerSeconds.toDouble(),
+                        min: 0,
+                        max: 90,
+                        divisions: 18, // 0, 5, 10 … 90
+                        label: _timerSeconds == 0
+                            ? 'Off'
+                            : '${_timerSeconds}s',
+                        onChanged: (v) =>
+                            setState(() => _timerSeconds = v.round()),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Off',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: colorScheme.onSurfaceVariant)),
+                          Text('90s',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
                 // ── Timing ───────────────────────────────────────────────────
                 _SectionHeader(label: 'Timing', theme: theme),
                 const SizedBox(height: 12),
@@ -427,87 +584,6 @@ class _NotificationScheduleScreenState
                     ],
                   ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // ── Challenge Mode ────────────────────────────────────────────
-                _SectionHeader(label: 'Challenge Mode', theme: theme),
-                const SizedBox(height: 12),
-
-                _SettingCard(
-                  colorScheme: colorScheme,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Response timer',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                Text(
-                                  _timerSeconds == 0
-                                      ? 'No time limit — relaxed mode'
-                                      : 'Auto-marks wrong if time runs out',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_timerSeconds > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: colorScheme.errorContainer,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '${_timerSeconds}s',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Slider(
-                        value: _timerSeconds.toDouble(),
-                        min: 0,
-                        max: 90,
-                        divisions: 18, // 0, 5, 10 … 90
-                        label: _timerSeconds == 0
-                            ? 'Off'
-                            : '${_timerSeconds}s',
-                        onChanged: (v) => setState(
-                            () => _timerSeconds = v.round()),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Off',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
-                          Text('90s',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
 
@@ -538,10 +614,51 @@ class _NotificationScheduleScreenState
   }
 }
 
+// ── Challenge fire display ────────────────────────────────────────────────────
+
+/// Shows 1, 2, or 3 fire emojis depending on timer intensity.
+/// - 0 (off): one small dimmed fire
+/// - 21–90s (too relaxed): one normal fire
+/// - 5–20s (challenge zone!): THREE large fires side by side
+class _ChallengeFireDisplay extends StatelessWidget {
+  const _ChallengeFireDisplay({required this.timerSeconds});
+  final int timerSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final isChallenge =
+        timerSeconds > 0 && timerSeconds <= StreakService.challengeThreshold;
+    final isOff = timerSeconds == 0;
+
+    if (isChallenge) {
+      // Full blaze — three big fires
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Text('🔥', style: TextStyle(fontSize: 52)),
+          SizedBox(width: 2),
+          Text('🔥', style: TextStyle(fontSize: 44)),
+          SizedBox(width: 2),
+          Text('🔥', style: TextStyle(fontSize: 36)),
+        ],
+      );
+    }
+
+    // Single fire: big but dimmed when off, normal when relaxed
+    return Opacity(
+      opacity: isOff ? 0.45 : 0.7,
+      child: Text(
+        '🔥',
+        style: TextStyle(fontSize: isOff ? 28 : 36),
+      ),
+    );
+  }
+}
+
 // ── Shared widgets ─────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label, required this.theme});
+  const _SectionHeader({super.key, required this.label, required this.theme});
   final String label;
   final ThemeData theme;
 

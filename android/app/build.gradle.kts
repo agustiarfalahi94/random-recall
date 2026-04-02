@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.random_recall"
+    namespace = "com.inkpebble.randomrecall"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.random_recall"
+        applicationId = "com.inkpebble.randomrecall"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

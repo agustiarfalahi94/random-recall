@@ -133,8 +133,9 @@ class _QuestionScreenState extends State<QuestionScreen>
         answeredAt: DateTime.now(),
       ));
 
-      // Record streak if timer was active for this question
-      if (_timerSeconds > 0) {
+      // Record streak only when timer is ON and ≤ the challenge threshold.
+      // A 90s timer is too easy; true challenge = 20s or less.
+      if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
         final result = await StreakService.recordActivity();
         if (result.milestoneReached && mounted) {
           _showStreakMilestoneDialog(result.streak);
