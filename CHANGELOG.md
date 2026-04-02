@@ -16,6 +16,9 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
   onboarding page when permission is denied, so users are never stuck
 
 ### Fixed
+- Onboarding page state (question, answer, category) is now fully preserved
+  when navigating back from page 2 or 3, even after touching the category
+  dropdown (`AutomaticKeepAliveClientMixin` added to both page widgets)
 - **Critical** — Onboarding resets to page 1 after returning from Android
   notification settings: question/answer/category and current page are now
   saved to SharedPreferences as a draft, so if Android kills the app process

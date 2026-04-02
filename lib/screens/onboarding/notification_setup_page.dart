@@ -12,21 +12,28 @@ typedef OnNotificationSetupComplete = void Function({
 });
 
 class NotificationSetupPage extends StatefulWidget {
-  const NotificationSetupPage({super.key, required this.onComplete});
+  const NotificationSetupPage({
+    super.key,
+    required this.onComplete,
+    required this.onBack,
+  });
 
   final OnNotificationSetupComplete onComplete;
+  final VoidCallback onBack;
 
   @override
   State<NotificationSetupPage> createState() => _NotificationSetupPageState();
 }
 
 class _NotificationSetupPageState extends State<NotificationSetupPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   bool _randomAnytime = true;
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 20, minute: 0);
   int _frequency = 3;
-  Set<int> _activeDays = {1, 2, 3, 4, 5};
+  Set<int> _activeDays = {1, 2, 3, 4, 5, 6, 7};
   bool _showPermissionError = false;
   bool _checkingPermission = false;
   bool _permPermanentlyDenied = false;
@@ -171,6 +178,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -180,7 +188,20 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 48),
+            const SizedBox(height: 16),
+
+            // ── Back button ───────────────────────────────────────────────────
+            TextButton.icon(
+              onPressed: widget.onBack,
+              icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
+              label: const Text('Back'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+
+            const SizedBox(height: 16),
             _buildStepIndicator(colorScheme),
             const SizedBox(height: 28),
             Text(
