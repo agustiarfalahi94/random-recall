@@ -5,64 +5,54 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
-## [Unreleased] — feature/onboarding-improvements
+## [1.2.0] — 2026-04-03
 
 ### Added
-- **WorkManager periodic task** (`workmanager` package) — rebuilds the 7-day
-  notification window every 6 hours in the background, even when the app is
-  not open. Fixes the root cause of notifications stopping after 7 days without
-  an app launch, and survives device reboots.
+- **WorkManager background rescheduler** — rebuilds the 7-day notification
+  window every 6 hours even when the app is not open; survives Doze mode,
+  process death, and device reboots (`workmanager` package)
+- **MIUI / HyperOS notification guide** — Xiaomi devices show a step-by-step
+  tutorial (Autostart + No Restrictions battery setting) immediately after
+  onboarding and via a persistent card in Notification Settings
 - `NotificationScheduler` — pure scheduling logic extracted from
-  `NotificationService` into a fully unit-testable class with no platform
-  channels or DB dependencies.
-- 18 new unit tests for `NotificationScheduler` covering: slot generation,
-  time range enforcement, active-day filtering, past-slot exclusion,
-  no-duplicate-per-day rule, sort order, and edge cases (single question,
-  frequency = 0, empty question list).
-
-### Fixed
-- Notifications were silently not delivered after 7 days of not opening the app
-  — `scheduleNotifications()` now runs automatically in the background via
-  WorkManager, not only at app launch or settings save.
-- Default active days in `scheduleNotifications()` corrected from
-  `1,2,3,4,5` (weekdays) to `1,2,3,4,5,6,7` (daily) to match the onboarding
-  default.
-
-### Changed
-- `scheduleNotifications()` now fetches all questions once (single DB query)
-  instead of querying per-slot in a loop — cleaner and faster.
-
----
-
-## [Unreleased] — feature/onboarding-ui-polish
-
-### Added
+  `NotificationService`; fully unit-testable with no platform channels or DB
+- 18 new unit tests for `NotificationScheduler` (43 total suite tests pass)
 - Onboarding notification page now matches the settings screen exactly:
   Daily / Weekdays / Weekends preset chips, individual square day chips,
   and time picker rows with sun/moon icon containers
-- Active days section visible regardless of Anytime vs Set time range selection
-- "Skip for now — enable notifications later" button on the notification
-  onboarding page when permission is denied, so users are never stuck
+- Active days section visible regardless of "Anytime" vs "Set time range"
+- "Skip for now" button on the notification onboarding page when permission
+  is denied, so users are never stuck
+- Back buttons on onboarding sub-pages (Your First Question and Notifications)
+- Default active days set to Daily in onboarding
+- General category pre-selected by default in the Your First Question page
 
 ### Fixed
-- Onboarding page state (question, answer, category) is now fully preserved
-  when navigating back from page 2 or 3, even after touching the category
-  dropdown (`AutomaticKeepAliveClientMixin` added to both page widgets)
-- **Critical** — Onboarding resets to page 1 after returning from Android
-  notification settings: question/answer/category and current page are now
-  saved to SharedPreferences as a draft, so if Android kills the app process
-  while the user is in Settings the app restores to page 3 on restart
-- Practice Now sessions no longer affect score history or streak
-- Test notification (Send test notification in settings) no longer records
-  a score entry or counts toward streak
-- End time validation bug: start 1:12 PM + end 1:15 PM (same hour) now
-  correctly shows "End time must be at least 1 hour after start time"
+- **Critical** — Notifications stop after 7 days if the app isn't opened:
+  WorkManager now reschedules automatically in the background
+- **Critical** — Notifications never delivered on Xiaomi 15 / Xiaomi 12T:
+  `tz.local` defaulted to UTC; fixed by calling `setLocalLocation()` with the
+  device's real IANA timezone at startup
+- **Critical** — `AndroidScheduleMode.exactAllowWhileIdle` silently failed
+  on Android 12+ without the "Alarms & Reminders" grant; switched to
+  `inexactAllowWhileIdle`
+- Onboarding resets to page 1 after returning from Android notification
+  settings: draft now persisted to SharedPreferences and restored on cold start
+- Onboarding page state (question, answer, category) lost when navigating back
+  after touching the category dropdown: fixed with `AutomaticKeepAliveClientMixin`
+- Practice Now sessions no longer add to score history or streak
+- Test notification no longer records a score entry or counts toward streak
+- End time validation false positive: start 1:12 PM + end 1:15 PM (same hour)
+  incorrectly showed "End time must be after start time"
+- Default active days fallback in scheduler corrected from weekdays to daily
 - Category dropdown in Add Question no longer shows locked/dimmed items
 
 ### Changed
-- Free plan category use limit removed — questions can be added to any
-  category freely (only the 1 custom category creation limit remains)
-- Free plan note in Manage Categories updated to reflect accurate limits
+- `scheduleNotifications()` now fetches all questions in one DB call instead of
+  N per-slot queries — cleaner and faster
+- Free plan category use limit removed — questions can be added to any category
+  freely (1 custom category creation limit remains)
+- `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` removed from AndroidManifest
 
 ### Removed
 - `freeCategoryLimit`, `getCategoryLimit()`, `canUseCategory()` from PlanService
