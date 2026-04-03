@@ -1,3 +1,5 @@
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 
@@ -7,6 +9,23 @@ import 'package:flutter/material.dart';
 ///   1. Autostart — prevents MIUI/HyperOS from killing the background worker.
 ///   2. Power → No Restrictions — lets the app run without battery throttling.
 ///
+/// Launches Settings → Apps → Background Start directly on MIUI/HyperOS.
+/// Falls back to the generic app-info page if the intent isn't available.
+Future<void> _openBackgroundStart() async {
+  try {
+    const intent = AndroidIntent(
+      action: 'android.intent.action.MAIN',
+      package: 'com.miui.securitycenter',
+      componentName:
+          'com.miui.permcenter.autostart.AutoStartManagementActivity',
+      flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+    );
+    await intent.launch();
+  } catch (_) {
+    await AppSettings.openAppSettings();
+  }
+}
+
 /// Call [MiuiBatteryDialog.show] from any screen.
 class MiuiBatteryDialog extends StatelessWidget {
   const MiuiBatteryDialog({super.key});
@@ -85,9 +104,9 @@ class MiuiBatteryDialog extends StatelessWidget {
 
           // Step 1 action button
           FilledButton.tonalIcon(
-            onPressed: () => AppSettings.openAppSettings(),
+            onPressed: _openBackgroundStart,
             icon: const Icon(Icons.open_in_new_rounded, size: 18),
-            label: const Text('Open App Settings — Enable Autostart'),
+            label: const Text('Open Background Start Settings'),
             style: FilledButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
             ),
