@@ -5,6 +5,22 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Critical** — Scheduled notifications never delivered on any device:
+  `inexactAllowWhileIdle` (AlarmManager.setAndAllowWhileIdle) is batched and
+  delayed by hours by MIUI/HyperOS and Android Doze, regardless of battery
+  settings. Switched back to `exactAllowWhileIdle`
+  (AlarmManager.setExactAndAllowWhileIdle) which fires at the precise scheduled
+  time even in Doze mode.
+- `SCHEDULE_EXACT_ALARM` re-added to AndroidManifest — without this declaration
+  Android silently drops all exact alarms. On Android 13+ the permission is
+  pre-granted at install. On Android 12, `requestPermission()` now also calls
+  `requestExactAlarmsPermission()` to prompt the user if needed.
+
+---
+
 ## [1.2.0] — 2026-04-03
 
 ### Added

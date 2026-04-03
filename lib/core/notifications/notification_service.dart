@@ -49,7 +49,21 @@ class NotificationService {
   Future<bool> requestPermission() async {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    return await android?.requestNotificationsPermission() ?? false;
+
+    // Request POST_NOTIFICATIONS (Android 13+).
+    final notifGranted =
+        await android?.requestNotificationsPermission() ?? false;
+
+    // Request SCHEDULE_EXACT_ALARM if not already granted.
+    // On Android 13+ this is pre-granted at install — the call is a no-op.
+    // On Android 12 it opens the "Alarms & Reminders" system settings page.
+    final canExact =
+        await android?.canScheduleExactNotifications() ?? true;
+    if (!canExact) {
+      await android?.requestExactAlarmsPermission();
+    }
+
+    return notifGranted;
   }
 
   /// Returns true if the app currently has notification permission granted.
@@ -157,7 +171,11 @@ class NotificationService {
       const NotificationDetails(android: androidDetails),
       // inexact: no special "Alarms & Reminders" permission needed on Android 12+.
       // Can be delayed by up to a few minutes by the OS — perfectly fine for reminders.
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      // exactAllowWhileIdle fires at precisely the scheduled time even in
+      // Doze mode (uses AlarmManager.setExactAndAllowWhileIdle).
+      // Requires SCHEDULE_EXACT_ALARM in AndroidManifest — pre-granted on
+      // Android 13+; requested explicitly in requestPermission() for Android 12.
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       // No matchDateTimeComponents → fires once, never repeats
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,

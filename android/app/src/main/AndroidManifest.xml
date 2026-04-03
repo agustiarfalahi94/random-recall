@@ -3,7 +3,14 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <!-- Exact alarm removed: we use inexactAllowWhileIdle which needs no special user grant -->
+    <!--
+        SCHEDULE_EXACT_ALARM is required by zonedSchedule with exactAllowWhileIdle.
+        On Android 13+ it is PRE-GRANTED at install — no user action needed.
+        On Android 12 it requires the user to enable "Alarms & Reminders" in
+        special app access settings; we request this in requestPermission().
+        Without this declaration Android silently drops all scheduled alarms.
+    -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
         android:label="Random Recall"
