@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 /// A bottom sheet that walks Xiaomi/HyperOS users through the two settings
 /// they need to change so Random Recall can deliver notifications reliably:
 ///
-///   1. Autostart — prevents MIUI/HyperOS from blocking the app from starting
-///      in the background (required for WorkManager to run).
-///   2. Battery saver — set to "No Restrictions" so the OS doesn't throttle
-///      or kill background processes for this app.
+///   1. Autostart — prevents MIUI/HyperOS from killing the background worker.
+///   2. Power → No Restrictions — lets the app run without battery throttling.
 ///
 /// Call [MiuiBatteryDialog.show] from any screen.
 class MiuiBatteryDialog extends StatelessWidget {
@@ -66,9 +64,8 @@ class MiuiBatteryDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Xiaomi phones aggressively restrict background apps by default. '
-            'Two quick settings changes will make sure your quiz notifications '
-            'arrive reliably.',
+            'Xiaomi phones restrict background apps by default. '
+            'Two quick changes will ensure your quiz notifications arrive reliably.',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
@@ -84,40 +81,41 @@ class MiuiBatteryDialog extends StatelessWidget {
             colorScheme: colorScheme,
             theme: theme,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // Step 2 — Battery saver
+          // Step 1 action button
+          FilledButton.tonalIcon(
+            onPressed: () => AppSettings.openAppSettings(),
+            icon: const Icon(Icons.open_in_new_rounded, size: 18),
+            label: const Text('Open App Settings — Enable Autostart'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Step 2 — Power / No Restrictions
           _Step(
             number: '2',
-            title: 'Set battery to No Restrictions',
+            title: 'Set Power to No Restrictions',
             description:
-                'Settings → Battery → App Battery Saver → Random Recall → No Restrictions',
+                'Settings → Apps → Random Recall → Power → No Restrictions',
             icon: Icons.battery_charging_full_rounded,
             colorScheme: colorScheme,
             theme: theme,
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 48),
-            child: Text(
-              'On newer HyperOS: Settings → Battery → Battery Usage → '
-              'Random Recall → No Restrictions.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // Open battery settings button
-          FilledButton.icon(
-            onPressed: () => AppSettings.openAppSettings(),
-            icon: const Icon(Icons.settings_rounded),
-            label: const Text('Open App Settings'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(double.infinity, 52),
-            ),
-          ),
           const SizedBox(height: 12),
+
+          // Step 2 action button
+          FilledButton.tonalIcon(
+            onPressed: () => AppSettings.openAppSettings(),
+            icon: const Icon(Icons.open_in_new_rounded, size: 18),
+            label: const Text('Open App Settings — Set Power'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Done / dismiss
           TextButton(
