@@ -12,8 +12,9 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
   window every 6 hours even when the app is not open; survives Doze mode,
   process death, and device reboots (`workmanager` package)
 - **MIUI / HyperOS notification guide** — Xiaomi devices show a step-by-step
-  tutorial (Autostart + No Restrictions battery setting) immediately after
-  onboarding and via a persistent card in Notification Settings
+  tutorial immediately after onboarding and via a persistent card in
+  Notification Settings; step 1 button launches Background Start settings
+  directly via `android_intent_plus`, step 2 opens app info for Power setting
 - `NotificationScheduler` — pure scheduling logic extracted from
   `NotificationService`; fully unit-testable with no platform channels or DB
 - 18 new unit tests for `NotificationScheduler` (43 total suite tests pass)

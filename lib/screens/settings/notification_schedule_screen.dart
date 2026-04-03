@@ -667,7 +667,7 @@ class _ChallengeFireDisplay extends StatelessWidget {
 // ── Shared widgets ─────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({super.key, required this.label, required this.theme});
+  const _SectionHeader({required this.label, required this.theme});
   final String label;
   final ThemeData theme;
 
