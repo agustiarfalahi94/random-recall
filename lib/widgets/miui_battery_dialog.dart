@@ -71,12 +71,12 @@ class MiuiBatteryDialog extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Step 1 — Autostart
+          // Step 1 — Autostart / Background start
           _Step(
             number: '1',
-            title: 'Enable Autostart',
+            title: 'Enable Background Start',
             description:
-                'Settings → Apps → Manage Apps → Random Recall → Autostart → turn ON',
+                'Settings → Apps → Background Start → find Random Recall → turn ON',
             icon: Icons.play_circle_outline_rounded,
             colorScheme: colorScheme,
             theme: theme,
