@@ -12,25 +12,31 @@ typedef OnNotificationSetupComplete = void Function({
 });
 
 class NotificationSetupPage extends StatefulWidget {
-  const NotificationSetupPage({super.key, required this.onComplete});
+  const NotificationSetupPage({
+    super.key,
+    required this.onComplete,
+    required this.onBack,
+  });
 
   final OnNotificationSetupComplete onComplete;
+  final VoidCallback onBack;
 
   @override
   State<NotificationSetupPage> createState() => _NotificationSetupPageState();
 }
 
 class _NotificationSetupPageState extends State<NotificationSetupPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   bool _randomAnytime = true;
-  int _startHour = 8;
-  int _endHour = 20;
+  TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _endTime = const TimeOfDay(hour: 20, minute: 0);
   int _frequency = 3;
-  final Set<int> _activeDays = {1, 2, 3, 4, 5};
+  Set<int> _activeDays = {1, 2, 3, 4, 5, 6, 7};
   bool _showPermissionError = false;
   bool _checkingPermission = false;
-  bool _permPermanentlyDenied = false; // true after first denial
-  // True while we wait for the user to return from Android notification settings
+  bool _permPermanentlyDenied = false;
   bool _waitingForSettingsReturn = false;
 
   static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -47,9 +53,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
     super.dispose();
   }
 
-  /// Called by Android when the app comes back to foreground.
-  /// If we were waiting for the user to return from notification settings,
-  /// check permission now — this is when the change actually takes effect.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _waitingForSettingsReturn) {
@@ -70,56 +73,71 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
       });
       widget.onComplete(
         randomAnytime: _randomAnytime,
-        startHour: _startHour,
-        endHour: _endHour,
+        startHour: _startTime.hour,
+        endHour: _endTime.hour,
         frequency: _frequency,
         activeDays: _activeDays.toList()..sort(),
       );
     } else {
-      // User came back but still hasn't granted — keep error visible
       setState(() => _showPermissionError = true);
     }
   }
 
-  String _formatHour(int hour) {
-    if (hour == 0) return '12 AM';
-    if (hour == 12) return '12 PM';
-    if (hour < 12) return '$hour AM';
-    return '${hour - 12} PM';
+  String _formatTime(TimeOfDay t) {
+    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+    final minute = t.minute.toString().padLeft(2, '0');
+    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
   }
 
   Future<void> _pickTime({required bool isStart}) async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay(hour: isStart ? _startHour : _endHour, minute: 0),
+      initialTime: isStart ? _startTime : _endTime,
       helpText: isStart ? 'Select start time' : 'Select end time',
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+        child: child!,
+      ),
     );
     if (picked == null || !mounted) return;
     setState(() {
       if (isStart) {
-        _startHour = picked.hour;
-        // Auto-advance end hour if it's no longer at least 1 hour ahead
-        if (_endHour <= _startHour) _endHour = (_startHour + 1).clamp(0, 23);
-      } else {
-        if (picked.hour > _startHour) {
-          _endHour = picked.hour;
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('End time must be at least 1 hour after start time'),
-            ),
-          );
+        _startTime = picked;
+        // Auto-advance end if end is no longer at least 1 hour ahead
+        if (_endTime.hour <= _startTime.hour) {
+          _endTime = TimeOfDay(hour: (_startTime.hour + 1).clamp(0, 23), minute: 0);
         }
+      } else {
+        _endTime = picked;
       }
     });
   }
 
+  String get _activeDaysLabel {
+    if (_activeDays.isEmpty) return 'You must choose at least 1!';
+    final sorted = _activeDays.toList()..sort();
+    final isWeekdays = sorted.length == 5 && sorted.every((d) => d >= 1 && d <= 5);
+    final isWeekends = sorted.length == 2 && sorted.contains(6) && sorted.contains(7);
+    final isDaily = sorted.length == 7;
+    if (isDaily) return 'Every day';
+    if (isWeekdays) return 'Weekdays only';
+    if (isWeekends) return 'Weekends only';
+    return sorted.map((d) => _dayLabels[d - 1]).join(', ');
+  }
+
   Future<void> _onComplete() async {
-    // If we already know permission is permanently denied, open the system
-    // settings page. We DON'T await it — it resolves immediately on Android
-    // (the moment the Settings app opens, not when user returns).
-    // Instead, WidgetsBindingObserver.didChangeAppLifecycleState will fire
-    // when the user comes back and we check permission there.
+    // Validate time range before checking permission
+    if (!_randomAnytime && _endTime.hour <= _startTime.hour) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('End time must be at least 1 hour after start time.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     if (_permPermanentlyDenied) {
       _waitingForSettingsReturn = true;
       AppSettings.openAppSettings(type: AppSettingsType.notification);
@@ -131,10 +149,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
       _showPermissionError = false;
     });
 
-    // First check if already granted (maybe they enabled it in Settings)
     bool granted = await NotificationService.instance.hasPermission();
     if (!granted) {
-      // Show the system dialog (only works once — OS ignores subsequent calls)
       granted = await NotificationService.instance.requestPermission();
     }
 
@@ -144,7 +160,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
       setState(() {
         _checkingPermission = false;
         _showPermissionError = true;
-        _permPermanentlyDenied = true; // next tap → open Settings
+        _permPermanentlyDenied = true;
       });
       return;
     }
@@ -153,8 +169,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
     widget.onComplete(
       randomAnytime: _randomAnytime,
-      startHour: _startHour,
-      endHour: _endHour,
+      startHour: _startTime.hour,
+      endHour: _endTime.hour,
       frequency: _frequency,
       activeDays: _activeDays.toList()..sort(),
     );
@@ -162,16 +178,30 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 48),
+            const SizedBox(height: 16),
+
+            // ── Back button ───────────────────────────────────────────────────
+            TextButton.icon(
+              onPressed: widget.onBack,
+              icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
+              label: const Text('Back'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+
+            const SizedBox(height: 16),
             _buildStepIndicator(colorScheme),
             const SizedBox(height: 28),
             Text(
@@ -189,9 +219,11 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // Timing toggle
+            // ── Timing toggle ────────────────────────────────────────────────
+            _SectionLabel(label: 'Timing', colorScheme: colorScheme),
+            const SizedBox(height: 10),
             _SectionCard(
               colorScheme: colorScheme,
               child: Column(
@@ -217,6 +249,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
               ),
             ),
 
+            // ── Time window — matches settings screen exactly ─────────────────
             if (!_randomAnytime) ...[
               const SizedBox(height: 20),
               _SectionLabel(label: 'Time window', colorScheme: colorScheme),
@@ -225,64 +258,137 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                 colorScheme: colorScheme,
                 child: Column(
                   children: [
-                    _TimePickerRow(
-                      label: 'From',
-                      timeText: _formatHour(_startHour),
-                      colorScheme: colorScheme,
-                      onTap: () => _pickTime(isStart: true),
+                    // Start time row
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.wb_sunny_outlined, size: 20),
+                      ),
+                      title: const Text(
+                        'Start time',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing: _TimeChip(
+                        label: _formatTime(_startTime),
+                        colorScheme: colorScheme,
+                        onTap: () => _pickTime(isStart: true),
+                      ),
                     ),
                     Divider(height: 1, color: colorScheme.outlineVariant.withOpacity(0.4)),
-                    _TimePickerRow(
-                      label: 'Until',
-                      timeText: _formatHour(_endHour),
-                      colorScheme: colorScheme,
-                      onTap: () => _pickTime(isStart: false),
+                    // End time row
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.nights_stay_outlined, size: 20),
+                      ),
+                      title: const Text(
+                        'End time',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing: _TimeChip(
+                        label: _formatTime(_endTime),
+                        colorScheme: colorScheme,
+                        onTap: () => _pickTime(isStart: false),
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              _SectionLabel(label: 'Active days', colorScheme: colorScheme),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(7, (index) {
-                  final day = index + 1;
-                  final isSelected = _activeDays.contains(day);
-                  return FilterChip(
-                    label: Text(_dayLabels[index]),
-                    selected: isSelected,
-                    showCheckmark: false,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _activeDays.add(day);
-                        } else if (_activeDays.length > 1) {
-                          _activeDays.remove(day);
-                        }
-                      });
-                    },
-                    selectedColor: colorScheme.primaryContainer,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurfaceVariant,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? colorScheme.primary.withOpacity(0.5)
-                          : colorScheme.outlineVariant,
-                    ),
-                    backgroundColor: colorScheme.surface,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  );
-                }),
-              ),
             ],
 
-            const SizedBox(height: 24),
+            // ── Active days — always visible, matches settings screen ─────────
+            const SizedBox(height: 20),
+            _SectionLabel(label: 'Active days', colorScheme: colorScheme),
+            const SizedBox(height: 10),
+            _SectionCard(
+              colorScheme: colorScheme,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Preset chips
+                    Row(
+                      children: [
+                        _PresetChip(
+                          label: 'Daily',
+                          isSelected: _activeDays.length == 7,
+                          colorScheme: colorScheme,
+                          onTap: () => setState(() => _activeDays = {1, 2, 3, 4, 5, 6, 7}),
+                        ),
+                        const SizedBox(width: 8),
+                        _PresetChip(
+                          label: 'Weekdays',
+                          isSelected: _activeDays.length == 5 &&
+                              _activeDays.every((d) => d <= 5),
+                          colorScheme: colorScheme,
+                          onTap: () => setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                        ),
+                        const SizedBox(width: 8),
+                        _PresetChip(
+                          label: 'Weekends',
+                          isSelected: _activeDays.length == 2 &&
+                              _activeDays.contains(6) &&
+                              _activeDays.contains(7),
+                          colorScheme: colorScheme,
+                          onTap: () => setState(() => _activeDays = {6, 7}),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Individual day chips
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(7, (index) {
+                        final day = index + 1;
+                        final isSelected = _activeDays.contains(day);
+                        return _DayChip(
+                          label: _dayLabels[index],
+                          isSelected: isSelected,
+                          colorScheme: colorScheme,
+                          onTap: () {
+                            setState(() {
+                              if (isSelected && _activeDays.length > 1) {
+                                _activeDays.remove(day);
+                              } else if (!isSelected) {
+                                _activeDays.add(day);
+                              }
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    // Dynamic label
+                    Text(
+                      _activeDaysLabel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _activeDays.isEmpty
+                            ? colorScheme.error
+                            : colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Frequency ────────────────────────────────────────────────────
+            const SizedBox(height: 20),
             _SectionLabel(label: 'How many times per day?', colorScheme: colorScheme),
             const SizedBox(height: 10),
             _SectionCard(
@@ -339,7 +445,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
             const SizedBox(height: 40),
 
-            // ── Permission error banner ────────────────────────────────────
+            // ── Permission error banner ───────────────────────────────────────
             if (_showPermissionError) ...[
               Container(
                 width: double.infinity,
@@ -372,8 +478,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                                 ? 'Tap the button below to open Notification Settings. '
                                     'Enable "Random Recall" there, then come back here.'
                                 : 'Random Recall needs notifications to remind you. '
-                                    'Please go to Settings → Apps → Random Recall → '
-                                    'Notifications and enable them, then come back.',
+                                    'Please allow notifications when prompted.',
                             style: TextStyle(
                               color: colorScheme.onErrorContainer,
                               fontSize: 13,
@@ -389,7 +494,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
               const SizedBox(height: 16),
             ],
 
-            // ── "Checking…" hint — shown while verifying on return ──────────
+            // ── Checking spinner ──────────────────────────────────────────────
             if (_checkingPermission) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -421,8 +526,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : Text(_permPermanentlyDenied
                       ? 'Open Notification Settings ↗'
@@ -430,6 +534,30 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                           ? 'Try again'
                           : 'Start Recalling! 🚀'),
             ),
+
+            // Skip option — only shown when permission is denied.
+            // Lets the user proceed without notifications and enable them
+            // later from the app's settings screen.
+            if (_showPermissionError && !_checkingPermission) ...[
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => widget.onComplete(
+                  randomAnytime: _randomAnytime,
+                  startHour: _startTime.hour,
+                  endHour: _endTime.hour,
+                  frequency: _frequency,
+                  activeDays: _activeDays.toList()..sort(),
+                ),
+                child: Text(
+                  'Skip for now — enable notifications later',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 32),
           ],
         ),
@@ -455,6 +583,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
   }
 }
 
+// ── Shared small widgets ───────────────────────────────────────────────────────
+
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label, required this.colorScheme});
   final String label;
@@ -463,12 +593,12 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      label,
+      label.toUpperCase(),
       style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: colorScheme.onSurfaceVariant,
-        letterSpacing: 0.4,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: colorScheme.primary,
+        letterSpacing: 1.2,
       ),
     );
   }
@@ -562,56 +692,110 @@ class _TimingOptionTile extends StatelessWidget {
   }
 }
 
-class _TimePickerRow extends StatelessWidget {
-  const _TimePickerRow({
-    required this.label,
-    required this.timeText,
-    required this.colorScheme,
-    required this.onTap,
-  });
+/// Tappable pill chip showing a formatted time — identical style to settings screen.
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({required this.label, required this.colorScheme, required this.onTap});
   final String label;
-  final String timeText;
   final ColorScheme colorScheme;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Icon(Icons.access_time_rounded, size: 20, color: colorScheme.onSurfaceVariant),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
-                  fontSize: 14,
-                ),
-              ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onPrimaryContainer,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Daily / Weekdays / Weekends quick-select chip — identical style to settings screen.
+class _PresetChip extends StatelessWidget {
+  const _PresetChip({
+    required this.label,
+    required this.isSelected,
+    required this.colorScheme,
+    required this.onTap,
+  });
+  final String label;
+  final bool isSelected;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Individual day square chip — identical style to settings screen.
+class _DayChip extends StatelessWidget {
+  const _DayChip({
+    required this.label,
+    required this.isSelected,
+    required this.colorScheme,
+    required this.onTap,
+  });
+  final String label;
+  final bool isSelected;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            label[0],
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                timeText,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onPrimaryContainer,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right_rounded, color: colorScheme.onSurfaceVariant, size: 20),
-          ],
+          ),
         ),
       ),
     );

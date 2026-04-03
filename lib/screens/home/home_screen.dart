@@ -317,7 +317,9 @@ class _HomeTabState extends State<_HomeTab> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const QuestionScreen()))
+                  .push(MaterialPageRoute(
+                    builder: (_) => const QuestionScreen(isPractice: true),
+                  ))
                   .then((_) => _loadStreakData()); // refresh on return
             },
             icon: const Icon(Icons.play_arrow_rounded),
@@ -501,52 +503,3 @@ class _TimerChallengeCard extends StatelessWidget {
   }
 }
 
-// ── Placeholder tabs ──────────────────────────────────────────────────────────
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final String emoji;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 34)),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-}

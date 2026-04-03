@@ -496,9 +496,8 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         child: Text(
                           isPremium
                               ? 'Premium — create as many categories as you like!'
-                              : 'Free plan: ${PlanService.freeMaxCustomCategories} custom category allowed. '
-                                  'Questions can be added to ${PlanService.freeCategoryLimit} categories '
-                                  '(any mix of default and custom). '
+                              : 'Free plan: ${PlanService.freeMaxCustomCategories} custom '
+                                  'category allowed (General & Work are built-in). '
                                   'Upgrade to Premium for unlimited.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isPremium
@@ -530,7 +529,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : Text('${_selectedIcon}  Create Category'),
+                    : Text('$_selectedIcon  Create Category'),
               ),
             ),
           ],
