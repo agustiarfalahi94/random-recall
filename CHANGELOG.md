@@ -5,6 +5,35 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
+## [Unreleased] — feature/onboarding-improvements
+
+### Added
+- **WorkManager periodic task** (`workmanager` package) — rebuilds the 7-day
+  notification window every 6 hours in the background, even when the app is
+  not open. Fixes the root cause of notifications stopping after 7 days without
+  an app launch, and survives device reboots.
+- `NotificationScheduler` — pure scheduling logic extracted from
+  `NotificationService` into a fully unit-testable class with no platform
+  channels or DB dependencies.
+- 18 new unit tests for `NotificationScheduler` covering: slot generation,
+  time range enforcement, active-day filtering, past-slot exclusion,
+  no-duplicate-per-day rule, sort order, and edge cases (single question,
+  frequency = 0, empty question list).
+
+### Fixed
+- Notifications were silently not delivered after 7 days of not opening the app
+  — `scheduleNotifications()` now runs automatically in the background via
+  WorkManager, not only at app launch or settings save.
+- Default active days in `scheduleNotifications()` corrected from
+  `1,2,3,4,5` (weekdays) to `1,2,3,4,5,6,7` (daily) to match the onboarding
+  default.
+
+### Changed
+- `scheduleNotifications()` now fetches all questions once (single DB query)
+  instead of querying per-slot in a loop — cleaner and faster.
+
+---
+
 ## [Unreleased] — feature/onboarding-ui-polish
 
 ### Added

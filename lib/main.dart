@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/notifications/background_worker.dart';
 import 'core/notifications/notification_service.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
@@ -18,6 +19,11 @@ Future<void> main() async {
 
   await NotificationService.instance.init();
   await NotificationService.instance.requestPermission();
+
+  // Register a WorkManager periodic task that rebuilds the 7-day notification
+  // window every 6 hours. This keeps notifications firing even when the user
+  // hasn't opened the app in days, and survives device reboots.
+  await registerNotificationWorker();
 
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
