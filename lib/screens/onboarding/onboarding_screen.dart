@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
+import '../../core/utils/device_info.dart';
 import '../../models/question.dart';
+import '../../widgets/miui_battery_dialog.dart';
 import '../home/home_screen.dart';
 import 'first_question_page.dart';
 import 'notification_setup_page.dart';
@@ -131,6 +133,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       // Schedule notifications (silently skipped if permission not granted)
       await NotificationService.instance.scheduleNotifications();
+
+      if (!mounted) return;
+
+      // On Xiaomi/HyperOS devices, show a one-time tutorial explaining how to
+      // enable Autostart and disable battery optimization so notifications
+      // are delivered reliably even when the app is not running.
+      // Show BEFORE navigating away so the context is still valid.
+      final miui = await isMiuiDevice();
+      if (!mounted) return;
+      if (miui) await MiuiBatteryDialog.show(context);
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(

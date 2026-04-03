@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/streak/streak_service.dart';
+import '../../core/utils/device_info.dart';
+import '../../widgets/miui_battery_dialog.dart';
 
 class NotificationScheduleScreen extends StatefulWidget {
   const NotificationScheduleScreen({super.key, this.scrollToTimer = false});
@@ -19,6 +21,7 @@ class _NotificationScheduleScreenState
     extends State<NotificationScheduleScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isMiui = false;
 
   final _scrollController = ScrollController();
   final _timerSectionKey = GlobalKey();
@@ -38,6 +41,7 @@ class _NotificationScheduleScreenState
   void initState() {
     super.initState();
     _loadPrefs();
+    isMiuiDevice().then((v) { if (mounted) setState(() => _isMiui = v); });
   }
 
   @override
@@ -584,6 +588,11 @@ class _NotificationScheduleScreenState
                     ],
                   ),
                 ),
+                // ── MIUI / HyperOS battery tip ───────────────────────────────
+                if (_isMiui) ...[
+                  const SizedBox(height: 12),
+                  _MiuiHelpCard(onTap: () => MiuiBatteryDialog.show(context)),
+                ],
               ],
             ),
 
@@ -658,7 +667,7 @@ class _ChallengeFireDisplay extends StatelessWidget {
 // ── Shared widgets ─────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({super.key, required this.label, required this.theme});
+  const _SectionHeader({required this.label, required this.theme});
   final String label;
   final ThemeData theme;
 
@@ -773,6 +782,62 @@ class _PresetChip extends StatelessWidget {
   }
 }
 
+// ── MIUI help card ─────────────────────────────────────────────────────────────
+
+class _MiuiHelpCard extends StatelessWidget {
+  const _MiuiHelpCard({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: colorScheme.tertiaryContainer.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.tertiary.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.battery_saver_rounded,
+                color: colorScheme.tertiary, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'MIUI / HyperOS: fix notification delivery',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: colorScheme.onTertiaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tap to see Autostart & battery settings guide',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onTertiaryContainer.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: colorScheme.tertiary, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DayChip extends StatelessWidget {
   const _DayChip({
     required this.label,
@@ -815,3 +880,4 @@ class _DayChip extends StatelessWidget {
     );
   }
 }
+

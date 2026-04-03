@@ -529,7 +529,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : Text('${_selectedIcon}  Create Category'),
+                    : Text('$_selectedIcon  Create Category'),
               ),
             ),
           ],

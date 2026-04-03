@@ -1,7 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:random_recall/core/notifications/notification_scheduler.dart';
 
 // Pure logic tests — no plugins, no DB, no Flutter context needed.
-// Tests the scheduling logic that lives in NotificationService.
 
 void main() {
   // ── Active days label logic ─────────────────────────────────────────────────
@@ -141,5 +143,287 @@ void main() {
         expect(calcPercentage(0, 0), 0.0));
     test('1/2 → 50%', () => expect(calcPercentage(1, 2), 50.0));
     test('7/10 → 70%', () => expect(calcPercentage(7, 10), 70.0));
+  });
+
+  // ── NotificationScheduler ───────────────────────────────────────────────────
+
+  group('NotificationScheduler.generateSlotHours', () {
+    // Use a fixed seed so tests are deterministic.
+    final rng = Random(42);
+
+    test('returns correct count', () {
+      final hours = NotificationScheduler.generateSlotHours(8, 20, 3, rng);
+      expect(hours.length, 3);
+    });
+
+    test('all hours within [start, end - 1]', () {
+      for (int trial = 0; trial < 20; trial++) {
+        final hours =
+            NotificationScheduler.generateSlotHours(8, 20, 5, Random(trial));
+        for (final h in hours) {
+          expect(h, greaterThanOrEqualTo(8));
+          expect(h, lessThanOrEqualTo(19)); // end - 1
+        }
+      }
+    });
+
+    test('returns empty for count = 0', () {
+      expect(
+          NotificationScheduler.generateSlotHours(8, 20, 0, rng), isEmpty);
+    });
+
+    test('single slot lands in window', () {
+      final hours =
+          NotificationScheduler.generateSlotHours(10, 18, 1, Random(0));
+      expect(hours.length, 1);
+      expect(hours.first, greaterThanOrEqualTo(10));
+      expect(hours.first, lessThanOrEqualTo(17));
+    });
+
+    test('randomAnytime window 0–22', () {
+      for (int trial = 0; trial < 20; trial++) {
+        final hours =
+            NotificationScheduler.generateSlotHours(0, 23, 4, Random(trial));
+        for (final h in hours) {
+          expect(h, greaterThanOrEqualTo(0));
+          expect(h, lessThanOrEqualTo(22));
+        }
+      }
+    });
+  });
+
+  group('NotificationScheduler.computeSlots', () {
+    // Monday 2026-04-06 08:00:00 local
+    final monday8am = DateTime(2026, 4, 6, 8, 0, 0);
+    const allDays = {1, 2, 3, 4, 5, 6, 7};
+    const weekdays = {1, 2, 3, 4, 5};
+    const weekends = {6, 7};
+
+    test('returns empty when questionIds is empty', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 8,
+        endHour: 20,
+        frequency: 3,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [],
+        random: Random(0),
+      );
+      expect(slots, isEmpty);
+    });
+
+    test('returns empty when frequency is 0', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 8,
+        endHour: 20,
+        frequency: 0,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1, 2, 3],
+        random: Random(0),
+      );
+      expect(slots, isEmpty);
+    });
+
+    test('schedules on all 7 days when all days active', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 8,
+        endHour: 20,
+        frequency: 1,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1, 2, 3, 4, 5, 6, 7],
+        random: Random(0),
+      );
+      // 7 days × 1 slot = 7, but day 0 (today at 8am) may have some slots
+      // already passed — at 08:00 most slots at 8:xx could just make it.
+      // We expect at least 6 slots (some may be filtered for being in the past).
+      expect(slots.length, greaterThanOrEqualTo(6));
+    });
+
+    test('no slots on weekends when only weekdays active', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 0,
+        endHour: 23,
+        frequency: 2,
+        activeDays: weekdays,
+        now: monday8am,
+        questionIds: [1, 2, 3],
+        random: Random(0),
+      );
+      for (final slot in slots) {
+        final weekday = slot.scheduledAt.weekday;
+        expect(weekdays.contains(weekday), true,
+            reason: 'Found weekend slot: ${slot.scheduledAt}');
+      }
+    });
+
+    test('no slots on weekdays when only weekends active', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 0,
+        endHour: 23,
+        frequency: 2,
+        activeDays: weekends,
+        now: monday8am,
+        questionIds: [1, 2, 3],
+        random: Random(0),
+      );
+      for (final slot in slots) {
+        final weekday = slot.scheduledAt.weekday;
+        expect(weekends.contains(weekday), true,
+            reason: 'Found weekday slot: ${slot.scheduledAt}');
+      }
+    });
+
+    test('all slot times are in the future relative to now', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 0,
+        endHour: 23,
+        frequency: 3,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1, 2, 3, 4, 5],
+        random: Random(0),
+      );
+      for (final slot in slots) {
+        expect(slot.scheduledAt.isAfter(monday8am) ||
+               slot.scheduledAt.isAtSameMomentAs(monday8am), true,
+            reason: 'Slot in the past: ${slot.scheduledAt}');
+      }
+    });
+
+    test('all past slots excluded when now is late evening', () {
+      // Saturday 23:50 — nearly all of today's slots should be in the past.
+      final lateNight = DateTime(2026, 4, 11, 23, 50, 0); // Saturday
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 8,
+        endHour: 20,
+        frequency: 3,
+        activeDays: allDays,
+        now: lateNight,
+        questionIds: [1, 2, 3],
+        random: Random(0),
+      );
+      for (final slot in slots) {
+        expect(slot.scheduledAt.isAfter(lateNight), true,
+            reason: 'Past slot not filtered: ${slot.scheduledAt}');
+      }
+    });
+
+    test('no duplicate question IDs within the same day', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 8,
+        endHour: 20,
+        frequency: 5,
+        activeDays: {1}, // Monday only
+        now: monday8am,
+        questionIds: [1, 2, 3, 4, 5, 6, 7],
+        random: Random(0),
+      );
+      // Group slots by date and check uniqueness within each day
+      final byDay = <String, List<int>>{};
+      for (final slot in slots) {
+        final key =
+            '${slot.scheduledAt.year}-${slot.scheduledAt.month}-${slot.scheduledAt.day}';
+        byDay.putIfAbsent(key, () => []).add(slot.questionId);
+      }
+      for (final entry in byDay.entries) {
+        final ids = entry.value;
+        expect(ids.toSet().length, ids.length,
+            reason: 'Duplicate question on ${entry.key}: $ids');
+      }
+    });
+
+    test('slots are returned sorted by time ascending', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 0,
+        endHour: 23,
+        frequency: 3,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1, 2, 3, 4, 5],
+        random: Random(7),
+      );
+      for (int i = 1; i < slots.length; i++) {
+        expect(
+          slots[i].scheduledAt
+              .isAfter(slots[i - 1].scheduledAt) ||
+          slots[i].scheduledAt
+              .isAtSameMomentAs(slots[i - 1].scheduledAt),
+          true,
+          reason: 'Slots not sorted at index $i',
+        );
+      }
+    });
+
+    test('slot hours respect time range [startHour, endHour)', () {
+      for (int seed = 0; seed < 10; seed++) {
+        final slots = NotificationScheduler.computeSlots(
+          randomAnytime: false,
+          startHour: 10,
+          endHour: 18,
+          frequency: 4,
+          activeDays: allDays,
+          now: monday8am,
+          questionIds: [1, 2, 3, 4, 5],
+          random: Random(seed),
+        );
+        for (final slot in slots) {
+          expect(slot.scheduledAt.hour, greaterThanOrEqualTo(10));
+          expect(slot.scheduledAt.hour, lessThan(18));
+        }
+      }
+    });
+
+    test('single question in DB — all slots use that question', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: true,
+        startHour: 0,
+        endHour: 23,
+        frequency: 3,
+        activeDays: {1}, // Monday only
+        now: monday8am,
+        questionIds: [42],
+        random: Random(0),
+      );
+      expect(slots, isNotEmpty);
+      for (final slot in slots) {
+        expect(slot.questionId, 42);
+      }
+    });
+
+    test('frequency controls max slots per active day', () {
+      const freq = 2;
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 8,
+        endHour: 20,
+        frequency: freq,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        random: Random(0),
+      );
+      // Group by date and assert ≤ freq slots per day
+      final byDay = <String, int>{};
+      for (final slot in slots) {
+        final key =
+            '${slot.scheduledAt.year}-${slot.scheduledAt.month}-${slot.scheduledAt.day}';
+        byDay[key] = (byDay[key] ?? 0) + 1;
+      }
+      for (final entry in byDay.entries) {
+        expect(entry.value, lessThanOrEqualTo(freq),
+            reason: '${entry.key} has ${entry.value} slots, max is $freq');
+      }
+    });
   });
 }
