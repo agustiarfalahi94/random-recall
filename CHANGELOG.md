@@ -5,6 +5,15 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [1.3.1] — 2026-04-05
+
+### Added
+- **Developer Debug Mode** — Access a hidden notification debugger by tapping the 
+  "Notification Schedule" title 7 times.
+- Added logic to mirror notification schedules to local storage for inspection.
+
+---
+
 ## [1.3.0] — 2026-04-05
 
 ### Added

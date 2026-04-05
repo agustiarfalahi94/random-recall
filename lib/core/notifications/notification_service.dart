@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -146,6 +147,14 @@ class NotificationService {
     if (slots.isEmpty) return;
 
     await cancelAll();
+    
+    // DEBUG: Mirror the schedule to SharedPreferences so we can inspect 
+    // the exact scheduled times in a Debug Menu later.
+    final debugList = slots.map((s) => {
+      'time': s.scheduledAt.toIso8601String(),
+      'id': s.questionId,
+    }).toList();
+    await prefs.setString('notif_schedule_mirror', jsonEncode(debugList));
 
     // Build a lookup so we don't do N linear scans
     final questionMap = {for (final q in questions) q.id!: q};
@@ -156,15 +165,7 @@ class NotificationService {
       if (question == null) continue;
       if (question.id == null) continue;
 
-      final scheduledDate = tz.TZDateTime(
-        tz.local,
-        slot.scheduledAt.year,
-        slot.scheduledAt.month,
-        slot.scheduledAt.day,
-        slot.scheduledAt.hour,
-        slot.scheduledAt.minute,
-        0,
-      );
+      final scheduledDate = tz.TZDateTime.from(slot.scheduledAt, tz.local);
 
       // Add a tiny delay every 10 items to let the UI thread breathe
       // and avoid saturating the platform channel.
@@ -172,11 +173,10 @@ class NotificationService {
         await Future.delayed(const Duration(milliseconds: 16));
       }
 
-      // Use question.id as the notification ID. This ensures that if multiple 
-      // notifications for the same question are scheduled, Android updates 
-      // the existing card in the tray instead of showing duplicates.
+      // Use a unique notifId for scheduling. Using question.id here would
+      // overwrite future alarms for the same question in the 7-day window.
       await _scheduleOneTimeNotification(
-        id: question.id!,
+        id: notifId,
         scheduledDate: scheduledDate,
         question: question,
       );
@@ -194,6 +194,19 @@ class NotificationService {
   Future<int> pendingCount() async {
     final list = await _plugin.pendingNotificationRequests();
     return list.length;
+  }
+
+  /// Returns the actual list of pending notification requests from the OS.
+  Future<List<PendingNotificationRequest>> getPendingRequests() async {
+    return await _plugin.pendingNotificationRequests();
+  }
+
+  /// Returns our locally mirrored schedule log.
+  Future<List<Map<String, dynamic>>> getMirrorLog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('notif_schedule_mirror');
+    if (data == null) return [];
+    return List<Map<String, dynamic>>.from(jsonDecode(data));
   }
 
   // ── Fire a single one-time notification (no matchDateTimeComponents) ──────
