@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -19,6 +20,7 @@ class NotificationService {
   GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
+  Completer<void>? _initCompleter;
 
   static const _groupKey = 'com.randomrecall.questions';
 
@@ -26,22 +28,42 @@ class NotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
-    tz.initializeTimeZones();
-    // Set the local timezone so notifications fire at the correct local time.
-    // Without this, tz.local defaults to UTC and all scheduled times are wrong.
+
+    if (_initCompleter != null) return _initCompleter!.future;
+    final completer = Completer<void>();
+    _initCompleter = completer;
+
     try {
-      final tzInfo = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
-    } catch (_) {
-      // Fallback: keep UTC if timezone detection fails (shouldn't happen in practice)
+      // Wrap in a defensive timeout. If the native side hangs (common on MIUI/HyperOS),
+      // we complete the future anyway so the app can continue.
+      await _actualInit().timeout(const Duration(seconds: 4));
+      _initialized = true;
+    } catch (e) {
+      debugPrint('NotificationService: Initialization warning: $e');
+      // We still mark as initialized if it was a timeout to avoid infinite waiting,
+      // but the plugin might not be fully ready.
+      _initialized = (e is TimeoutException);
+    } finally {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+  }
+
+  Future<void> _actualInit() async {
+    tz.initializeTimeZones();
+    try {
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+    } catch (e) {
+      debugPrint('NotificationService: Timezone detection failed: $e');
+      tz.setLocalLocation(tz.UTC);
+    }
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(
       const InitializationSettings(android: androidSettings),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
-    _initialized = true;
   }
 
   // ── Permission ────────────────────────────────────────────────────────────
@@ -49,7 +71,22 @@ class NotificationService {
   Future<bool> requestPermission() async {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    return await android?.requestNotificationsPermission() ?? false;
+
+    // Request POST_NOTIFICATIONS (Android 13+).
+    final notifGranted =
+        await android?.requestNotificationsPermission() ?? false;
+
+    // Request SCHEDULE_EXACT_ALARM if not already granted.
+    // On Android 13+ this is pre-granted at install — the call is a no-op.
+    // On Android 12 it opens the "Alarms & Reminders" system settings page.
+    final canExact =
+        await android?.canScheduleExactNotifications() ?? true;
+    debugPrint('NotificationService: Exact alarm permission granted: $canExact');
+    if (!canExact) {
+      await android?.requestExactAlarmsPermission();
+    }
+
+    return notifGranted;
   }
 
   /// Returns true if the app currently has notification permission granted.
@@ -67,8 +104,13 @@ class NotificationService {
   //      week-over-week repeats for small question pools).
   //   3. Slots within a day are evenly spaced across the active window
   //      with a small random jitter so they don't feel mechanical.
+  ///   4. Uses tz-aware 'now' to prevent scheduling in the past.
 
   Future<void> scheduleNotifications() async {
+    if (!_initialized) {
+      await init();
+    }
+
     final prefs = await SharedPreferences.getInstance();
 
     final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
@@ -80,7 +122,10 @@ class NotificationService {
 
     // Fetch all questions once; the scheduler picks from them.
     final questions = await DatabaseHelper.instance.getAllQuestions();
-    if (questions.isEmpty) return;
+    if (questions.isEmpty) {
+      debugPrint('NotificationService: No questions in DB. Aborting schedule.');
+      return;
+    }
 
     final questionIds = questions
         .where((q) => q.id != null)
@@ -93,19 +138,23 @@ class NotificationService {
       endHour: endHour,
       frequency: frequency,
       activeDays: activeDays,
-      now: DateTime.now(),
+      now: tz.TZDateTime.now(tz.local),
       questionIds: questionIds,
     );
+    debugPrint('NotificationService: Calculated ${slots.length} notification slots for the next 7 days.');
+
+    if (slots.isEmpty) return;
 
     await cancelAll();
 
     // Build a lookup so we don't do N linear scans
     final questionMap = {for (final q in questions) q.id!: q};
 
-    int notifId = 1; // ID 0 reserved for group summary
+    int notifId = 0;
     for (final slot in slots) {
       final question = questionMap[slot.questionId];
       if (question == null) continue;
+      if (question.id == null) continue;
 
       final scheduledDate = tz.TZDateTime(
         tz.local,
@@ -117,12 +166,28 @@ class NotificationService {
         0,
       );
 
+      // Add a tiny delay every 10 items to let the UI thread breathe
+      // and avoid saturating the platform channel.
+      if (notifId % 5 == 0) {
+        await Future.delayed(const Duration(milliseconds: 16));
+      }
+
+      // Use question.id as the notification ID. This ensures that if multiple 
+      // notifications for the same question are scheduled, Android updates 
+      // the existing card in the tray instead of showing duplicates.
       await _scheduleOneTimeNotification(
-        id: notifId++,
+        id: question.id!,
         scheduledDate: scheduledDate,
         question: question,
       );
+
+      notifId++;
+      if (notifId == 1) { // log only the first one
+        debugPrint('NotificationService: First upcoming notification at: $scheduledDate');
+      }
     }
+
+    debugPrint('NotificationService: Successfully batched $notifId alarms to Android.');
   }
 
   /// Returns the number of currently pending (not-yet-fired) notifications.
@@ -142,8 +207,8 @@ class NotificationService {
       'random_recall_channel',
       'Random Recall',
       channelDescription: 'Random quiz reminders',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
       groupKey: _groupKey,
@@ -155,9 +220,14 @@ class NotificationService {
       'Tap to reveal the answer ✨',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
-      // inexact: no special "Alarms & Reminders" permission needed on Android 12+.
-      // Can be delayed by up to a few minutes by the OS — perfectly fine for reminders.
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      // alarmClock maps to AlarmManager.setAlarmClock() — the same API used
+      // by Android's built-in clock app. It is the highest-priority alarm type:
+      // it cannot be deferred by Doze, cannot be killed by MIUI/HyperOS battery
+      // management, and fires even when the device is in deep sleep.
+      // Requires SCHEDULE_EXACT_ALARM (declared in manifest, pre-granted on
+      // Android 13+). Shows a small clock icon in the status bar — expected
+      // behaviour for alarm-clock level scheduling.
+      androidScheduleMode: AndroidScheduleMode.alarmClock,
       // No matchDateTimeComponents → fires once, never repeats
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -216,10 +286,21 @@ class NotificationService {
   // We must check getNotificationAppLaunchDetails() after the first frame.
 
   Future<void> handleNotificationLaunch() async {
+    if (!_initialized) await init();
+
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return;
+
     final payload = details?.notificationResponse?.payload;
-    final questionId = int.tryParse(payload ?? '');
-    navigatorKey?.currentState?.pushNamed('/question', arguments: questionId);
+    if (payload == null) return;
+
+    // Match the logic in _onNotificationTapped to handle test vs real notifications
+    final isTest = payload.startsWith('test:');
+    final questionId = int.tryParse(isTest ? payload.substring(5) : payload);
+
+    navigatorKey?.currentState?.pushNamed(
+      isTest ? '/question_practice' : '/question',
+      arguments: questionId,
+    );
   }
 }

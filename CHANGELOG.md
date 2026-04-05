@@ -1,7 +1,35 @@
 # Changelog
 
 All notable changes to Random Recall are documented here.
-Format: **Added** · **Fixed** · **Changed** · **Removed**
+Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
+
+---
+
+## [1.3.0] — 2026-04-05
+
+### Added
+- **Battery optimisation whitelist** (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) —
+  the app now shows a one-time Android system dialog ("Allow app to always run
+  in background?") immediately after notification permission is granted during
+  onboarding. This ensures notifications are never blocked by Xiaomi's battery saver.
+- Existing users (app update) are prompted automatically on next launch via a
+  post-frame callback in `main.dart`.
+- Battery optimisation fix card in Notification Settings — shown only when the
+  whitelist was denied; lets users re-request at any time.
+
+### Fixed
+- **Critical** — App showing blank screen on launch: Fixed a deadlock where the 
+  app got stuck waiting for the notification system. The app now opens immediately.
+- **Critical** — Notifications clumping: Notifications are now spaced out properly 
+  throughout the day instead of appearing all at once.
+- **Critical** — Duplicate questions: If a question is already waiting in your 
+  notification tray, the app will now update the existing card instead of creating a duplicate.
+- **Critical** — Background Scheduler: Fixed a "WorkManager" crash that prevented 
+  the app from automatically refreshing the next 7 days of notifications.
+
+### Improved
+- Added support for Android 13+ "Predictive Back" gestures.
+- Optimized scheduling speed to prevent the app from lagging when saving settings.
 
 ---
 
@@ -54,7 +82,6 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 - Free plan category use limit removed — questions can be added to any category
   freely (1 custom category creation limit remains)
 - `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` removed from AndroidManifest
-
 ### Removed
 - `freeCategoryLimit`, `getCategoryLimit()`, `canUseCategory()` from PlanService
 - Locked dropdown item logic in Add Question screen

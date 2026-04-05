@@ -2,6 +2,7 @@ import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../../core/utils/battery_optimization.dart';
 
 typedef OnNotificationSetupComplete = void Function({
   required bool randomAnytime,
@@ -71,6 +72,10 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
         _showPermissionError = false;
         _permPermanentlyDenied = false;
       });
+      final isIgnoring = await isIgnoringBatteryOptimizations();
+      if (!mounted) return;
+      if (!isIgnoring) await requestIgnoreBatteryOptimizations();
+      if (!mounted) return;
       widget.onComplete(
         randomAnytime: _randomAnytime,
         startHour: _startTime.hour,
@@ -166,6 +171,13 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
     }
 
     setState(() => _checkingPermission = false);
+
+    // Request battery-optimization whitelist so Android/MIUI never blocks
+    // our exact alarms — shows a one-time system dialog if not yet granted.
+    final isIgnoring = await isIgnoringBatteryOptimizations();
+    if (!mounted) return;
+    if (!isIgnoring) await requestIgnoreBatteryOptimizations();
+    if (!mounted) return;
 
     widget.onComplete(
       randomAnytime: _randomAnytime,
