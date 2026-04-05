@@ -6,6 +6,7 @@ import '../../core/streak/streak_service.dart';
 import '../../core/utils/battery_optimization.dart';
 import '../../core/utils/device_info.dart';
 import '../../widgets/miui_battery_dialog.dart';
+import '../debug/debug_notification_screen.dart';
 
 class NotificationScheduleScreen extends StatefulWidget {
   const NotificationScheduleScreen({super.key, this.scrollToTimer = false});
@@ -33,8 +34,19 @@ class _NotificationScheduleScreenState
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 20, minute: 0);
   int _frequency = 3; // 1–10
-  Set<int> _activeDays = {1, 2, 3, 4, 5}; // 1=Mon … 7=Sun
+  Set<int> _activeDays = {1, 2, 3, 4, 5, 6, 7}; // 1=Mon … 7=Sun
   int _timerSeconds = 0; // 0 = off
+
+  int _debugTaps = 0;
+
+  void _handleDebugTap() {
+    _debugTaps++;
+    if (_debugTaps >= 7) {
+      _debugTaps = 0;
+      Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const DebugNotificationScreen()));
+    }
+  }
 
   static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   // Timer slider: 0 = off, then 5–90 in steps of 5 (18 divisions)
@@ -55,7 +67,7 @@ class _NotificationScheduleScreenState
 
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5';
+    final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
     setState(() {
       _randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
       _startTime = TimeOfDay(
@@ -206,9 +218,12 @@ class _NotificationScheduleScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Notification Schedule',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: GestureDetector(
+          onTap: _handleDebugTap,
+          child: const Text(
+            'Notification Schedule',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
         ),
       ),
       body: _isLoading
@@ -952,4 +967,3 @@ class _DayChip extends StatelessWidget {
     );
   }
 }
-
