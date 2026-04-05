@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/streak/streak_service.dart';
+import '../../core/utils/battery_optimization.dart';
 import '../../core/utils/device_info.dart';
 import '../../widgets/miui_battery_dialog.dart';
 
@@ -22,6 +23,7 @@ class _NotificationScheduleScreenState
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isMiui = false;
+  bool _isIgnoringBattery = true; // assume OK until checked
 
   final _scrollController = ScrollController();
   final _timerSectionKey = GlobalKey();
@@ -42,6 +44,7 @@ class _NotificationScheduleScreenState
     super.initState();
     _loadPrefs();
     isMiuiDevice().then((v) { if (mounted) setState(() => _isMiui = v); });
+    isIgnoringBatteryOptimizations().then((v) { if (mounted) setState(() => _isIgnoringBattery = v); });
   }
 
   @override
@@ -588,6 +591,19 @@ class _NotificationScheduleScreenState
                     ],
                   ),
                 ),
+                // ── Battery optimisation whitelist ───────────────────────────
+                if (!_isIgnoringBattery) ...[
+                  const SizedBox(height: 12),
+                  _BatteryOptimizationCard(
+                    onTap: () async {
+                      await requestIgnoreBatteryOptimizations();
+                      // Re-check after user returns from the system dialog
+                      final v = await isIgnoringBatteryOptimizations();
+                      if (mounted) setState(() => _isIgnoringBattery = v);
+                    },
+                  ),
+                ],
+
                 // ── MIUI / HyperOS battery tip ───────────────────────────────
                 if (_isMiui) ...[
                   const SizedBox(height: 12),
@@ -831,6 +847,62 @@ class _MiuiHelpCard extends StatelessWidget {
             ),
             Icon(Icons.chevron_right_rounded,
                 color: colorScheme.tertiary, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Battery optimisation fix card ──────────────────────────────────────────────
+
+class _BatteryOptimizationCard extends StatelessWidget {
+  const _BatteryOptimizationCard({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.battery_alert_rounded,
+                color: colorScheme.error, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Battery optimisation is ON',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: colorScheme.onErrorContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tap to allow Random Recall to always run — fixes missed notifications',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: colorScheme.error, size: 20),
           ],
         ),
       ),

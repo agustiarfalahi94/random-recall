@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/notifications/background_worker.dart';
 import 'core/notifications/notification_service.dart';
+import 'core/utils/battery_optimization.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -17,26 +18,36 @@ Future<void> main() async {
   // Wire up navigator key so notification taps can navigate
   NotificationService.instance.navigatorKey = navigatorKey;
 
-  await NotificationService.instance.init();
-  await NotificationService.instance.requestPermission();
-
-  // Register a WorkManager periodic task that rebuilds the 7-day notification
-  // window every 6 hours. This keeps notifications firing even when the user
-  // hasn't opened the app in days, and survives device reboots.
-  await registerNotificationWorker();
-
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
-
-  if (onboardingComplete) {
-    await NotificationService.instance.scheduleNotifications();
-  }
 
   runApp(RandomRecallApp(onboardingComplete: onboardingComplete));
 
   // Handle cold-start from notification tap (navigator not ready during init)
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    NotificationService.instance.handleNotificationLaunch();
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    try {
+      // Initialize service and check launch details
+      await NotificationService.instance.init();
+      await NotificationService.instance.handleNotificationLaunch();
+      
+      // Setup background worker and initial scheduling
+      if (onboardingComplete) {
+        await NotificationService.instance.requestPermission();
+        await registerNotificationWorker().catchError((e) => debugPrint('WorkManager failed: $e'));
+        await NotificationService.instance.scheduleNotifications();
+      }
+    } catch (e) {
+      debugPrint('Startup background tasks failed: $e');
+    }
+
+    // For existing users who updated the app: silently request battery
+    // optimisation whitelist if not already granted. The system dialog only
+    // appears once and is non-blocking — no UX disruption.
+    if (onboardingComplete) {
+      isIgnoringBatteryOptimizations().then((isIgnoring) {
+        if (!isIgnoring) requestIgnoreBatteryOptimizations();
+      });
+    }
   });
 }
 
