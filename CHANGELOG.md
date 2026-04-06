@@ -5,6 +5,31 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [1.4.1] — 2026-04-05
+
+### Fixed
+- **Analytics Layout** — Anchored the subscription CTA directly below the "By Category" header to prevent layout shifting as categories are added.
+- **Toast Logic** — Harmonized feedback messages between notification-tap flow and in-app practice flow.
+
+---
+## [1.4.0] — 2026-04-05
+
+### Added
+- **Cheat Prevention** — Notification alerts now hide the question text until the 
+  app is opened, ensuring the timer challenge cannot be bypassed.
+- **Question Repeating** — If the requested daily frequency exceeds the number of 
+  available questions, the app will now repeat questions to fulfill the schedule.
+
+### Fixed
+- **Sunday Scheduling Bug** — Fixed an issue where Sunday slots were not being 
+  registered correctly in some timezones.
+- **Notification Persistence** — Removed notification grouping that caused all 
+  alerts to disappear when only one was opened.
+- **Toast Logic** — Corrected feedback messages for Practice vs. Scored modes.
+- **Analytics Layout** — Pinned the subscription lock section directly below the 
+  category header to prevent it from shifting with list growth.
+
+---
 ## [1.3.1] — 2026-04-05
 
 ### Added

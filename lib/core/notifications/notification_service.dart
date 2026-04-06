@@ -23,8 +23,6 @@ class NotificationService {
   bool _initialized = false;
   Completer<void>? _initCompleter;
 
-  static const _groupKey = 'com.randomrecall.questions';
-
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
@@ -224,12 +222,12 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
-      groupKey: _groupKey,
+      // Removed groupKey to prevent Android auto-dismissing multiple notifications.
     );
 
     await _plugin.zonedSchedule(
       id,
-      question.question,
+      'Time for a quick recall! 🧠',
       'Tap to reveal the answer ✨',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
@@ -260,14 +258,13 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
-      groupKey: _groupKey,
     );
     // Prefix payload with "test:" so the tap handler can route it to the
     // practice (no-score) flow instead of the normal scored flow.
     await _plugin.show(
       9999,
-      question?.question ?? 'Time for a quick recall! 🧠',
-      'Tap to reveal the answer ✨',
+      'Test Notification 🧪',
+      'Tap to reveal the test question ✨',
       const NotificationDetails(android: androidDetails),
       payload: 'test:${question?.id}',
     );

@@ -16,7 +16,8 @@ class ScheduledSlot {
 class NotificationScheduler {
   NotificationScheduler._();
 
-  static const int daysToSchedule = 7;
+  // Schedule 8 days ahead to ensure a full week coverage even if running late Sunday.
+  static const int daysToSchedule = 8;
 
   /// Computes notification slots for the next [daysToSchedule] days.
   ///
@@ -45,11 +46,10 @@ class NotificationScheduler {
     final weekUsedIds = <int>{};
 
     final effectiveStart = randomAnytime ? 0 : startHour;
-    final effectiveEnd = randomAnytime ? 24 : endHour;
+    final effectiveEnd = randomAnytime ? 23 : endHour;
 
-    // Rule: Don't schedule more notifications than we have unique questions per day.
-    // This prevents the "same question spam" issue the user reported.
-    final dailyFrequency = frequency.clamp(1, questionIds.length);
+    // Allow frequency to exceed question count by repeating questions if necessary.
+    final dailyFrequency = frequency;
 
     for (int dayOffset = 0; dayOffset < daysToSchedule; dayOffset++) {
       final targetDate = now.add(Duration(days: dayOffset));
@@ -85,12 +85,17 @@ class NotificationScheduler {
         
         final totalOffset = baseOffsetMinutes + jitter;
         
-        final slotTime = DateTime(
+        var slotTime = DateTime(
           targetDate.year,
           targetDate.month,
           targetDate.day,
           effectiveStart,
         ).add(Duration(minutes: totalOffset));
+
+        // Ensure the jitter doesn't push the slot into the next calendar day
+        if (slotTime.day != targetDate.day) {
+          slotTime = slotTime.subtract(Duration(minutes: jitter + 1));
+        }
 
         // Skip slots that have already passed today
         if (slotTime.isAfter(now)) {
@@ -103,7 +108,8 @@ class NotificationScheduler {
     }
 
     slots.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-    return slots;
+    // Return only the first 7 days worth of slots (up to max possible alarms)
+    return slots.take(100).toList();
   }
 
   static int? _pickQuestion(
@@ -122,6 +128,8 @@ class NotificationScheduler {
     final dayFresh = all.where((id) => !dayUsed.contains(id)).toList();
     if (dayFresh.isNotEmpty) return dayFresh[rng.nextInt(dayFresh.length)];
 
-    return null; // No more unique questions available for this day
+    // Final Fallback: Pool exhausted for today. Return any question from the 
+    // total pool to satisfy the requested frequency.
+    return all[rng.nextInt(all.length)];
   }
 }

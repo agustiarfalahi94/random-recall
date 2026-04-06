@@ -404,7 +404,7 @@ class _NotificationQuestionScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isCorrect ? 'Great job!' : 'Keep practicing!',
+                            _isCorrect ? 'Great job!' : (widget.isPractice ? 'Next question?' : 'Keep practicing!'),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -414,7 +414,9 @@ class _NotificationQuestionScreenState
                             ),
                           ),
                           Text(
-                            'Closing in a moment...',
+                            _isCorrect 
+                                ? (widget.isPractice ? 'Next question?' : 'Score recorded, closing in a moment ✓')
+                                : (widget.isPractice ? '' : 'Score recorded, closing in a moment'),
                             style: TextStyle(
                               fontSize: 13,
                               color: _isCorrect
