@@ -77,39 +77,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 24),
 
           // ── Per-category breakdown ─────────────────────────────────────
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'By Category',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'By Category',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (!_isPremium) _LockBadge(colorScheme: colorScheme),
+                ],
               ),
-              const Spacer(),
+              const SizedBox(height: 12),
               if (!_isPremium)
-                _LockBadge(colorScheme: colorScheme),
+                _LockedCategorySection(stats: _stats, colorScheme: colorScheme, theme: theme)
+              else
+                ..._stats.map((s) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _CategoryScoreCard(stat: s, colorScheme: colorScheme, theme: theme),
+                    )),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          // Locked overlay for free users
-          if (!_isPremium)
-            _LockedCategorySection(
-              stats: _stats,
-              colorScheme: colorScheme,
-              theme: theme,
-            )
-          else
-            ..._stats.map((s) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _CategoryScoreCard(
-                    stat: s,
-                    colorScheme: colorScheme,
-                    theme: theme,
-                  ),
-                )),
         ],
       ),
     );
@@ -516,38 +509,7 @@ class _LockedCategorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Blurred preview cards
-        ClipRect(
-          child: Stack(
-          children: [
-            // Cards underneath
-            Column(
-              children: stats
-                  .take(2)
-                  .map((s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _CategoryScoreCard(
-                          stat: s,
-                          colorScheme: colorScheme,
-                          theme: theme,
-                        ),
-                      ))
-                  .toList(),
-            ),
-            // Blur + tint overlay
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                child: Container(
-                  color: colorScheme.surface.withOpacity(0.5),
-                ),
-              ),
-            ),
-          ],
-        ),
-        ),
-
-        // Lock CTA — in normal flow, no overflow possible
+        // Lock CTA — Pinned at the top of the section
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -591,6 +553,39 @@ class _LockedCategorySection extends StatelessWidget {
                     );
                   },
                   child: const Text('Subscribe to Unlock'),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Blurred preview cards below the CTA
+        ClipRect(
+          child: Stack(
+            children: [
+              // Cards underneath
+              Column(
+                children: stats
+                    .take(2)
+                    .map((s) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _CategoryScoreCard(
+                            stat: s,
+                            colorScheme: colorScheme,
+                            theme: theme,
+                          ),
+                        ))
+                    .toList(),
+              ),
+              // Blur + tint overlay
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                  child: Container(
+                    color: colorScheme.surface.withOpacity(0.5),
+                  ),
                 ),
               ),
             ],
