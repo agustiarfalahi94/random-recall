@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
-import '../../widgets/upgrade_bottom_sheet.dart';
+import '../settings/subscription_screen.dart';
 
 // ── Available icons for category picker ──────────────────────────────────────
 // Curated list covering the most common personal knowledge areas.
@@ -48,7 +48,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     final canAdd = await PlanService.canAddCategory(_customCategories.length);
     if (!mounted) return;
     if (!canAdd) {
-      UpgradeBottomSheet.show(context, trigger: UpgradeTrigger.categoryLimit);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionScreen(),
+        ),
+      );
       return;
     }
 
@@ -342,6 +346,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
           name: _nameController.text.trim(),
           icon: _selectedIcon,
           createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
       if (!mounted) return;

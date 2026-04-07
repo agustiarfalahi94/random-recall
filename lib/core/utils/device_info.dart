@@ -9,7 +9,14 @@ Future<bool> isMiuiDevice() async {
   if (!Platform.isAndroid) return false;
   try {
     final info = await DeviceInfoPlugin().androidInfo;
-    return info.manufacturer.toLowerCase() == 'xiaomi';
+    final manufacturer = info.manufacturer.toLowerCase();
+    final isXiaomi = manufacturer == 'xiaomi' || manufacturer == 'poco' || manufacturer == 'redmi';
+    
+    // HyperOS (Android 14+) has better background management. 
+    // We only show legacy MIUI battery tips for Android 13 and below.
+    final isLegacyAndroid = info.version.sdkInt < 34;
+    
+    return isXiaomi && isLegacyAndroid;
   } catch (_) {
     return false;
   }

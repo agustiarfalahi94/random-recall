@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/streak/streak_service.dart';
+import '../../core/sync/sync_service.dart';
 import '../../core/utils/battery_optimization.dart';
 import '../../core/utils/device_info.dart';
 import '../../widgets/miui_battery_dialog.dart';
@@ -135,6 +136,9 @@ class _NotificationScheduleScreenState
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
 
       await NotificationService.instance.scheduleNotifications();
+      
+      // Manually trigger a backup since settings live in SharedPreferences, not the DB
+      await SyncService.instance.performBackup();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -907,7 +911,7 @@ class _BatteryOptimizationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Tap to allow Random Recall to always run — fixes missed notifications',
+                    'Tap to allow Random Recall to always run (standard Android setting) — fixes missed notifications',
                     style: TextStyle(
                       fontSize: 12,
                       color: colorScheme.onErrorContainer.withValues(alpha: 0.8),

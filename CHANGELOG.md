@@ -5,14 +5,46 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.4.1] — 2026-04-05
+## [0.6.0] — 2026-04-08
+
+### Added (Phase 5 — Subscriptions)
+- **Subscription Foundation** — Integrated `in_app_purchase` and synced premium status from Firestore.
+
+## [0.5.2] — 2026-04-07
+
+### Added (Phase 4 — Cloud Sync & Multi-Device)
+- **Bidirectional Real-time Sync** — Integrated Firestore Snapshots; changes made on one device reflect instantly on others logged into the same account.
+- **Streak Synchronization** — Timer challenge streaks and bonus question slots are now backed up and synced across devices.
+- **Manual Refresh** — Added a "Sync Data Now" button in settings for on-demand cloud retrieval.
+- **Seamless Device Switching** — New installs automatically detect cloud data during login and bypass the onboarding flow.
+
+### Fixed
+- **Sync Robustness** — Hardened data models to handle legacy cloud data and prevent "Null" cast errors during restoration.
+- **Logout UI Flow** — Fixed a bug where the UI didn't reset to the login screen after signing out.
+- **Privacy & Cleanup** — Ensured cloud listeners stop and all local data is purged upon logout to prevent account leakage.
+
+## [0.5.1] — 2026-04-07
+
+### Changed
+- **Email Templates** — Customized sender name, from address, and domain for a professional feel.
+- **Authentication UX** — Resolved layout overflow in the settings bottom sheet, fixed the forgot password flow, and professionalized system email templates.
+- **Email Authentication** — Added dedicated Login and Sign-up screens for email-based accounts.
+- **Sync Preparation** — Migrated database to include `updated_at` timestamps for conflict resolution.
+- **Auth Refinement** — Focused on Google and Email login; removed Facebook integration.
+
+## [0.5.0] — 2026-04-07
+
+### Added
+- **Authentication Foundation** — Integrated Firebase Core and Auth dependencies.
+
+## [0.4.3] — 2026-04-06
 
 ### Fixed
 - **Analytics Layout** — Anchored the subscription CTA directly below the "By Category" header to prevent layout shifting as categories are added.
 - **Toast Logic** — Harmonized feedback messages between notification-tap flow and in-app practice flow.
 
 ---
-## [1.4.0] — 2026-04-05
+## [0.4.0] — 2026-04-05
 
 ### Added
 - **Cheat Prevention** — Notification alerts now hide the question text until the 
@@ -30,7 +62,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
   category header to prevent it from shifting with list growth.
 
 ---
-## [1.3.1] — 2026-04-05
+## [0.3.1] — 2026-04-05
 
 ### Added
 - **Developer Debug Mode** — Access a hidden notification debugger by tapping the 
@@ -39,7 +71,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.3.0] — 2026-04-05
+## [0.3.0] — 2026-04-05
 
 ### Added
 - **Battery optimisation whitelist** (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) —
@@ -67,7 +99,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.2.0] — 2026-04-03
+## [0.2.0] — 2026-04-03
 
 ### Added
 - **WorkManager background rescheduler** — rebuilds the 7-day notification
@@ -122,7 +154,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.1.0] — 2026-04-02 · feature/free-limits → develop → main
+## [0.0.0] — 2026-04-02 · feature/free-limits → develop → main
 
 ### Added
 - **Category management screen** — create custom categories with an emoji
@@ -169,7 +201,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.0.3] — feature/notification-schedule
+## [0.0.3] — feature/notification-schedule
 
 ### Added
 - Notification schedule settings screen with time window, frequency slider,
@@ -186,7 +218,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.0.2] — feature/analytics
+## [0.0.2] — feature/analytics
 
 ### Added
 - Analytics screen with correct/wrong breakdown per category
@@ -194,7 +226,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.0.1] — feature/practice-improvements · feature/question-mgmt
+## [0.0.1] — feature/practice-improvements · feature/question-mgmt
 
 ### Added
 - Practice Now button on home screen
@@ -208,7 +240,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.0.0] — Initial release
+## [0.0.0] — Initial release
 
 ### Added
 - SQLite database with questions and categories models

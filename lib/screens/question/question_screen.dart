@@ -132,11 +132,13 @@ class _QuestionScreenState extends State<QuestionScreen>
     try {
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
+        final now = DateTime.now();
         await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
           questionId: _question!.id!,
           categoryId: _question!.categoryId,
           isCorrect: isCorrect,
-          answeredAt: DateTime.now(),
+          answeredAt: now,
+          updatedAt: now,
         ));
 
         // Record streak only when timer is ON and ≤ the challenge threshold.

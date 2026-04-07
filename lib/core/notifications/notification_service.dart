@@ -27,8 +27,18 @@ class NotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
+    debugPrint('NotificationService: Initializing...');
+
+    // Listen for database changes to immediately refresh the 7-day alarm window
+    DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
+      scheduleNotifications();
+    });
 
     if (_initCompleter != null) return _initCompleter!.future;
+    // If init is already in progress, return its future to avoid re-entering.
+    // This is crucial to prevent multiple initializations if called concurrently.
+    if (_initCompleter != null && !_initCompleter!.isCompleted) return _initCompleter!.future;
+
     final completer = Completer<void>();
     _initCompleter = completer;
 
@@ -36,7 +46,7 @@ class NotificationService {
       // Wrap in a defensive timeout. If the native side hangs (common on MIUI/HyperOS),
       // we complete the future anyway so the app can continue.
       await _actualInit().timeout(const Duration(seconds: 4));
-      _initialized = true;
+      _initialized = true; // Mark as initialized only if _actualInit completes successfully
     } catch (e) {
       debugPrint('NotificationService: Initialization warning: $e');
       // We still mark as initialized if it was a timeout to avoid infinite waiting,
@@ -44,6 +54,7 @@ class NotificationService {
       _initialized = (e is TimeoutException);
     } finally {
       if (!completer.isCompleted) {
+        debugPrint('NotificationService: Init completer completed.');
         completer.complete();
       }
     }
@@ -52,6 +63,7 @@ class NotificationService {
   Future<void> _actualInit() async {
     tz.initializeTimeZones();
     try {
+      debugPrint('NotificationService: Setting local timezone...');
       final timezoneInfo = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
     } catch (e) {
@@ -59,6 +71,7 @@ class NotificationService {
       tz.setLocalLocation(tz.UTC);
     }
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    debugPrint('NotificationService: Initializing plugin...');
     await _plugin.initialize(
       const InitializationSettings(android: androidSettings),
       onDidReceiveNotificationResponse: _onNotificationTapped,
@@ -68,16 +81,20 @@ class NotificationService {
   // ── Permission ────────────────────────────────────────────────────────────
 
   Future<bool> requestPermission() async {
+    debugPrint('NotificationService: Requesting notification permissions...');
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
 
     // Request POST_NOTIFICATIONS (Android 13+).
     final notifGranted =
         await android?.requestNotificationsPermission() ?? false;
+    debugPrint('NotificationService: Notifications permission granted: $notifGranted');
 
     // Request SCHEDULE_EXACT_ALARM if not already granted.
     // On Android 13+ this is pre-granted at install — the call is a no-op.
     // On Android 12 it opens the "Alarms & Reminders" system settings page.
+    // Note: We use inexactAllowWhileIdle by default, but still check for exact
+    // permission for alarmClock mode, which is more reliable.
     final canExact =
         await android?.canScheduleExactNotifications() ?? true;
     debugPrint('NotificationService: Exact alarm permission granted: $canExact');
@@ -106,6 +123,7 @@ class NotificationService {
   ///   4. Uses tz-aware 'now' to prevent scheduling in the past.
 
   Future<void> scheduleNotifications() async {
+    debugPrint('NotificationService: Scheduling notifications...');
     if (!_initialized) {
       await init();
     }
@@ -121,6 +139,7 @@ class NotificationService {
 
     // Fetch all questions once; the scheduler picks from them.
     final questions = await DatabaseHelper.instance.getAllQuestions();
+    debugPrint('NotificationService: Found ${questions.length} questions.');
     if (questions.isEmpty) {
       debugPrint('NotificationService: No questions in DB. Aborting schedule.');
       return;
@@ -142,6 +161,7 @@ class NotificationService {
     );
     debugPrint('NotificationService: Calculated ${slots.length} notification slots for the next 7 days.');
 
+    // If no slots are calculated (e.g., no active days, or all in past), cancel existing.
     if (slots.isEmpty) return;
 
     await cancelAll();

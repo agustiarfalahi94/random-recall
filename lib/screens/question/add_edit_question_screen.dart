@@ -75,6 +75,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
             answer: _answerController.text.trim(),
             categoryId: _selectedCategoryId!,
             createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
           ),
         );
       }
