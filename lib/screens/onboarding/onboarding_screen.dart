@@ -109,11 +109,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     try {
       // Save first question to DB
       final db = DatabaseHelper.instance;
+      final now = DateTime.now();
       await db.insertQuestion(Question(
         question: _questionText!,
         answer: _answerText!,
         categoryId: _categoryId!,
-        createdAt: DateTime.now(),
+        createdAt: now,
+        updatedAt: now,
       ));
 
       // Save notification prefs + mark onboarding complete

@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
-import '../../widgets/upgrade_bottom_sheet.dart';
 import '../categories/manage_categories_screen.dart';
+import '../settings/subscription_screen.dart';
 import 'add_edit_question_screen.dart';
 
 class QuestionsListScreen extends StatefulWidget {
@@ -26,10 +28,27 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   int _questionLimit = PlanService.freeQuestionBase;
   bool _isPremium = false;
 
+  StreamSubscription? _dbSubscription;
+  Timer? _refreshDebounce;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    // Listen for database changes (local or synced) to refresh the list automatically
+    _dbSubscription = DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
+      if (_refreshDebounce?.isActive ?? false) _refreshDebounce!.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) _loadData();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _dbSubscription?.cancel();
+    _refreshDebounce?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -88,9 +107,10 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
       final canAdd = await PlanService.canAddQuestion(_totalQuestionCount);
       if (!canAdd) {
         if (!mounted) return;
-        UpgradeBottomSheet.show(
-          context,
-          trigger: UpgradeTrigger.questionLimit,
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const SubscriptionScreen(),
+          ),
         );
         return;
       }
@@ -238,9 +258,10 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                   if (atLimit) ...[
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () => UpgradeBottomSheet.show(
-                        context,
-                        trigger: UpgradeTrigger.questionLimit,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SubscriptionScreen(),
+                        ),
                       ),
                       child: Text(
                         'Upgrade ›',
