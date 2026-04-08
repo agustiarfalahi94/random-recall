@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -7,7 +9,7 @@ import '../../models/score_record.dart';
 
 class DatabaseHelper {
   static const String _dbName = 'recall_quiz.db';
-  static const int _dbVersion = 3;
+  static const int _dbVersion = 4;
 
   static const String _tableCategories = 'categories';
   static const String _tableQuestions = 'questions';
@@ -15,6 +17,15 @@ class DatabaseHelper {
 
   DatabaseHelper._internal();
   static final DatabaseHelper instance = DatabaseHelper._internal();
+
+  // Stream to notify listeners (like SyncService) when data changes locally
+  final _updateController = StreamController<void>.broadcast();
+  Stream<void> get onDatabaseUpdated => _updateController.stream;
+
+  /// Manually triggers a database update event to refresh the UI.
+  void notifyUpdate() {
+    _updateController.add(null);
+  }
 
   Database? _db;
 
@@ -42,7 +53,8 @@ class DatabaseHelper {
         name       TEXT    NOT NULL,
         icon       TEXT    NOT NULL,
         created_at TEXT    NOT NULL,
-        is_default INTEGER NOT NULL DEFAULT 0
+        is_default INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT    NOT NULL
       )
     ''');
 
@@ -53,6 +65,7 @@ class DatabaseHelper {
         answer      TEXT    NOT NULL,
         category_id INTEGER NOT NULL,
         created_at  TEXT    NOT NULL,
+        updated_at  TEXT    NOT NULL,
         FOREIGN KEY (category_id)
           REFERENCES $_tableCategories (id) ON DELETE CASCADE
       )
@@ -65,6 +78,7 @@ class DatabaseHelper {
         category_id INTEGER NOT NULL,
         is_correct  INTEGER NOT NULL CHECK (is_correct IN (0, 1)),
         answered_at TEXT    NOT NULL,
+        updated_at  TEXT    NOT NULL,
         FOREIGN KEY (question_id)
           REFERENCES $_tableQuestions (id) ON DELETE CASCADE,
         FOREIGN KEY (category_id)
@@ -93,6 +107,19 @@ class DatabaseHelper {
         "UPDATE $_tableCategories SET is_default = 1 WHERE name IN ('General', 'Work')",
       );
     }
+    if (oldVersion < 4) {
+      // v3 → v4: add updated_at for cloud sync conflict resolution
+      final now = DateTime.now().toIso8601String();
+      await db.execute(
+        'ALTER TABLE $_tableCategories ADD COLUMN updated_at TEXT NOT NULL DEFAULT "$now"',
+      );
+      await db.execute(
+        'ALTER TABLE $_tableQuestions ADD COLUMN updated_at TEXT NOT NULL DEFAULT "$now"',
+      );
+      await db.execute(
+        'ALTER TABLE $_tableScoreRecords ADD COLUMN updated_at TEXT NOT NULL DEFAULT "$now"',
+      );
+    }
   }
 
   Future<void> _seedDefaultCategories(Database db) async {
@@ -105,6 +132,7 @@ class DatabaseHelper {
       batch.insert(_tableCategories, {
         ...entry,
         'created_at': now,
+        'updated_at': now,
         'is_default': 1,
       });
     }
@@ -113,9 +141,14 @@ class DatabaseHelper {
 
   // ── Categories ──────────────────────────────────────────────────────────────
 
-  Future<int> insertCategory(Category c) async =>
-      (await database).insert(_tableCategories, c.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
+  Future<int> insertCategory(Category c) async {
+    final map = c.toMap();
+    map['updated_at'] = DateTime.now().toIso8601String();
+    final id = await (await database).insert(_tableCategories, map,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    _updateController.add(null);
+    return id;
+  }
 
   Future<List<Category>> getAllCategories() async {
     final rows = await (await database).query(_tableCategories, orderBy: 'name ASC');
@@ -128,18 +161,32 @@ class DatabaseHelper {
     return rows.isEmpty ? null : Category.fromMap(rows.first);
   }
 
-  Future<int> updateCategory(Category c) async =>
-      (await database).update(_tableCategories, c.toMap(),
-          where: 'id = ?', whereArgs: [c.id]);
+  Future<int> updateCategory(Category c) async {
+    final map = c.toMap();
+    map['updated_at'] = DateTime.now().toIso8601String();
+    final count = await (await database).update(_tableCategories, map,
+        where: 'id = ?', whereArgs: [c.id]);
+    _updateController.add(null);
+    return count;
+  }
 
-  Future<int> deleteCategory(int id) async =>
-      (await database).delete(_tableCategories, where: 'id = ?', whereArgs: [id]);
+  Future<int> deleteCategory(int id) async {
+    final count = await (await database).delete(_tableCategories, 
+        where: 'id = ?', whereArgs: [id]);
+    _updateController.add(null);
+    return count;
+  }
 
   // ── Questions ───────────────────────────────────────────────────────────────
 
-  Future<int> insertQuestion(Question q) async =>
-      (await database).insert(_tableQuestions, q.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
+  Future<int> insertQuestion(Question q) async {
+    final map = q.toMap();
+    map['updated_at'] = DateTime.now().toIso8601String();
+    final id = await (await database).insert(_tableQuestions, map,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    _updateController.add(null);
+    return id;
+  }
 
   Future<List<Question>> getAllQuestions({int? categoryId}) async {
     final db = await database;
@@ -212,18 +259,32 @@ class DatabaseHelper {
     return rows.map((r) => r['category_id'] as int).toSet();
   }
 
-  Future<int> updateQuestion(Question q) async =>
-      (await database).update(_tableQuestions, q.toMap(),
-          where: 'id = ?', whereArgs: [q.id]);
+  Future<int> updateQuestion(Question q) async {
+    final map = q.toMap();
+    map['updated_at'] = DateTime.now().toIso8601String();
+    final count = await (await database).update(_tableQuestions, map,
+        where: 'id = ?', whereArgs: [q.id]);
+    _updateController.add(null);
+    return count;
+  }
 
-  Future<int> deleteQuestion(int id) async =>
-      (await database).delete(_tableQuestions, where: 'id = ?', whereArgs: [id]);
+  Future<int> deleteQuestion(int id) async {
+    final count = await (await database).delete(_tableQuestions, 
+        where: 'id = ?', whereArgs: [id]);
+    _updateController.add(null);
+    return count;
+  }
 
   // ── Score Records ────────────────────────────────────────────────────────────
 
-  Future<int> insertScoreRecord(ScoreRecord r) async =>
-      (await database).insert(_tableScoreRecords, r.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace);
+  Future<int> insertScoreRecord(ScoreRecord r) async {
+    final map = r.toMap();
+    map['updated_at'] = DateTime.now().toIso8601String();
+    final id = await (await database).insert(_tableScoreRecords, map,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+    _updateController.add(null);
+    return id;
+  }
 
   Future<List<ScoreRecord>> getAllScoreRecords({int? categoryId}) async {
     final db = await database;
@@ -234,9 +295,12 @@ class DatabaseHelper {
     return rows.map(ScoreRecord.fromMap).toList();
   }
 
-  Future<int> deleteScoreRecord(int id) async =>
-      (await database).delete(_tableScoreRecords,
+  Future<int> deleteScoreRecord(int id) async {
+    final count = await (await database).delete(_tableScoreRecords,
           where: 'id = ?', whereArgs: [id]);
+    _updateController.add(null);
+    return count;
+  }
 
   // ── Stats ────────────────────────────────────────────────────────────────────
 
@@ -248,6 +312,7 @@ class DatabaseHelper {
         c.name        AS cat_name,
         c.icon        AS cat_icon,
         c.created_at  AS cat_created_at,
+        c.updated_at  AS cat_updated_at,
         COUNT(sr.id)  AS total,
         SUM(CASE WHEN sr.is_correct = 1 THEN 1 ELSE 0 END) AS correct
       FROM $_tableCategories c
@@ -265,12 +330,24 @@ class DatabaseHelper {
           name: row['cat_name'] as String,
           icon: row['cat_icon'] as String,
           createdAt: DateTime.parse(row['cat_created_at'] as String),
+          updatedAt: DateTime.parse(row['cat_updated_at'] as String),
         ),
         'total':      total,
         'correct':    correct,
         'percentage': total > 0 ? (correct / total) * 100.0 : 0.0,
       };
     }).toList();
+  }
+
+  /// Completely clears all user data from the local database.
+  /// Used during sign-out to ensure privacy between different accounts.
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_tableScoreRecords);
+      await txn.delete(_tableQuestions);
+      await txn.delete(_tableCategories, where: 'is_default = 0');
+    });
   }
 
   Future<void> close() async {

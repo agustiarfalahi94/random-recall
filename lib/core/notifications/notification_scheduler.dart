@@ -16,7 +16,8 @@ class ScheduledSlot {
 class NotificationScheduler {
   NotificationScheduler._();
 
-  static const int daysToSchedule = 7;
+  // Schedule 8 days ahead to ensure a full week coverage even if running late Sunday.
+  static const int daysToSchedule = 8;
 
   /// Computes notification slots for the next [daysToSchedule] days.
   ///
@@ -47,6 +48,9 @@ class NotificationScheduler {
     final effectiveStart = randomAnytime ? 0 : startHour;
     final effectiveEnd = randomAnytime ? 23 : endHour;
 
+    // Allow frequency to exceed question count by repeating questions if necessary.
+    final dailyFrequency = frequency;
+
     for (int dayOffset = 0; dayOffset < daysToSchedule; dayOffset++) {
       final targetDate = now.add(Duration(days: dayOffset));
       final weekday = targetDate.weekday; // 1=Mon … 7=Sun
@@ -57,7 +61,7 @@ class NotificationScheduler {
       final dayUsedIds = <int>{};
       final dayQuestionIds = <int>[];
 
-      for (int slot = 0; slot < frequency; slot++) {
+      for (int slot = 0; slot < dailyFrequency; slot++) {
         final picked = _pickQuestion(questionIds, weekUsedIds, dayUsedIds, rng);
         if (picked != null) {
           dayQuestionIds.add(picked);
@@ -67,32 +71,45 @@ class NotificationScheduler {
 
       weekUsedIds.addAll(dayUsedIds);
 
-      final slotHours = generateSlotHours(
-        effectiveStart, effectiveEnd, dayQuestionIds.length, rng,
-      );
+      // Spread the notifications evenly across the minute-window
+      // e.g. 8:00 AM to 8:00 PM = 720 minutes. Frequency 3 = one every 240 mins.
+      final totalMinutes = (effectiveEnd - effectiveStart) * 60;
+      final spacing = totalMinutes / dayQuestionIds.length;
 
       for (int i = 0; i < dayQuestionIds.length; i++) {
-        final minute = rng.nextInt(60);
-        final scheduledAt = DateTime(
+        // Calculate base minute for this slot, then add a small jitter (up to 30% of spacing)
+        // to keep it feeling random but guaranteed to be separated.
+        final baseOffsetMinutes = (spacing * i).toInt();
+        final maxJitter = (spacing * 0.3).toInt().clamp(1, 59);
+        final jitter = rng.nextInt(maxJitter);
+        
+        final totalOffset = baseOffsetMinutes + jitter;
+        
+        var slotTime = DateTime(
           targetDate.year,
           targetDate.month,
           targetDate.day,
-          slotHours[i],
-          minute,
-        );
+          effectiveStart,
+        ).add(Duration(minutes: totalOffset));
 
-        // Skip slots that have already passed
-        if (scheduledAt.isBefore(now)) continue;
+        // Ensure the jitter doesn't push the slot into the next calendar day
+        if (slotTime.day != targetDate.day) {
+          slotTime = slotTime.subtract(Duration(minutes: jitter + 1));
+        }
 
-        slots.add(ScheduledSlot(
-          scheduledAt: scheduledAt,
-          questionId: dayQuestionIds[i],
-        ));
+        // Skip slots that have already passed today
+        if (slotTime.isAfter(now)) {
+          slots.add(ScheduledSlot(
+            scheduledAt: slotTime,
+            questionId: dayQuestionIds[i],
+          ));
+        }
       }
     }
 
     slots.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-    return slots;
+    // Return only the first 7 days worth of slots (up to max possible alarms)
+    return slots.take(100).toList();
   }
 
   static int? _pickQuestion(
@@ -111,24 +128,8 @@ class NotificationScheduler {
     final dayFresh = all.where((id) => !dayUsed.contains(id)).toList();
     if (dayFresh.isNotEmpty) return dayFresh[rng.nextInt(dayFresh.length)];
 
-    // Last resort: any question (single-question DB edge case)
+    // Final Fallback: Pool exhausted for today. Return any question from the 
+    // total pool to satisfy the requested frequency.
     return all[rng.nextInt(all.length)];
-  }
-
-  /// Generates [count] evenly-spaced hours in [[start], [end]),
-  /// with a small random jitter so notifications don't feel mechanical.
-  ///
-  /// Result is always clamped to [[start], [end] - 1].
-  static List<int> generateSlotHours(
-      int start, int end, int count, Random rng) {
-    if (count <= 0) return [];
-    final window = (end - start).clamp(1, 23);
-    final spacing = window / count;
-    return List.generate(count, (i) {
-      final base = start + (spacing * i).round();
-      final maxJitter = (spacing / 2).floor().clamp(0, 2);
-      final jitter = maxJitter > 0 ? rng.nextInt(maxJitter + 1) : 0;
-      return (base + jitter).clamp(start, end - 1);
-    });
   }
 }

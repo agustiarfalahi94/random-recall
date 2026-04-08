@@ -4,6 +4,7 @@ class ScoreRecord {
   final int categoryId;
   final bool isCorrect;
   final DateTime answeredAt;
+  final DateTime updatedAt;
 
   const ScoreRecord({
     this.id,
@@ -11,6 +12,7 @@ class ScoreRecord {
     required this.categoryId,
     required this.isCorrect,
     required this.answeredAt,
+    required this.updatedAt,
   });
 
   factory ScoreRecord.fromMap(Map<String, dynamic> map) {
@@ -19,7 +21,8 @@ class ScoreRecord {
       questionId: map['question_id'] as int,
       categoryId: map['category_id'] as int,
       isCorrect: (map['is_correct'] as int) == 1,
-      answeredAt: DateTime.parse(map['answered_at'] as String),
+      answeredAt: DateTime.parse(map['answered_at']?.toString() ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updated_at']?.toString() ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -30,12 +33,13 @@ class ScoreRecord {
       'category_id': categoryId,
       'is_correct': isCorrect ? 1 : 0,
       'answered_at': answeredAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
   ScoreRecord copyWith({
     int? id, int? questionId, int? categoryId,
-    bool? isCorrect, DateTime? answeredAt,
+    bool? isCorrect, DateTime? answeredAt, DateTime? updatedAt,
   }) {
     return ScoreRecord(
       id: id ?? this.id,
@@ -43,6 +47,7 @@ class ScoreRecord {
       categoryId: categoryId ?? this.categoryId,
       isCorrect: isCorrect ?? this.isCorrect,
       answeredAt: answeredAt ?? this.answeredAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 

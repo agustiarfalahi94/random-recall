@@ -3,6 +3,7 @@ class Category {
   final String name;
   final String icon;
   final DateTime createdAt;
+  final DateTime updatedAt;
   /// True for the two seeded categories (General, Work).
   /// Default categories are hidden from category management and cannot be deleted.
   final bool isDefault;
@@ -12,6 +13,7 @@ class Category {
     required this.name,
     required this.icon,
     required this.createdAt,
+    required this.updatedAt,
     this.isDefault = false,
   });
 
@@ -20,7 +22,8 @@ class Category {
       id: map['id'] as int?,
       name: map['name'] as String,
       icon: map['icon'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdAt: DateTime.parse(map['created_at']?.toString() ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updated_at']?.toString() ?? DateTime.now().toIso8601String()),
       isDefault: (map['is_default'] as int? ?? 0) == 1,
     );
   }
@@ -31,6 +34,7 @@ class Category {
       'name': name,
       'icon': icon,
       'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
       'is_default': isDefault ? 1 : 0,
     };
   }
@@ -40,6 +44,7 @@ class Category {
     String? name,
     String? icon,
     DateTime? createdAt,
+    DateTime? updatedAt,
     bool? isDefault,
   }) {
     return Category(
@@ -47,6 +52,7 @@ class Category {
       name: name ?? this.name,
       icon: icon ?? this.icon,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       isDefault: isDefault ?? this.isDefault,
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/plan/plan_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
@@ -33,10 +34,13 @@ class _QuestionScreenState extends State<QuestionScreen>
   bool _graded = false;
   bool _isCorrect = false;
   int? _lastQuestionId; // prevents same question back-to-back
+  int? _lastScoreId;    // stored to allow "Undo" for premium users
 
   // Timer
   int _timerSeconds = 0;   // 0 = off, loaded from prefs
   int _remaining = 0;
+  bool _isPremium = false;
+  bool _undoUsedToday = false;
   Timer? _countdownTimer;
 
   late final AnimationController _revealController;
@@ -53,7 +57,7 @@ class _QuestionScreenState extends State<QuestionScreen>
       parent: _revealController,
       curve: Curves.easeOutCubic,
     );
-    _loadTimerSetting();
+    _loadInitialSettings();
     _loadQuestion();
   }
 
@@ -64,9 +68,17 @@ class _QuestionScreenState extends State<QuestionScreen>
     super.dispose();
   }
 
-  Future<void> _loadTimerSetting() async {
+  Future<void> _loadInitialSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0);
+    final isPremium = await PlanService.isPremium();
+    final undoUsed = await PlanService.hasUsedUndoToday();
+    if (mounted) {
+      setState(() {
+        _isPremium = isPremium;
+        _undoUsedToday = undoUsed;
+        _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+      });
+    }
   }
 
   void _startTimer() {
@@ -132,11 +144,13 @@ class _QuestionScreenState extends State<QuestionScreen>
     try {
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
-        await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
+        final now = DateTime.now();
+        _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
           questionId: _question!.id!,
           categoryId: _question!.categoryId,
           isCorrect: isCorrect,
-          answeredAt: DateTime.now(),
+          answeredAt: now,
+          updatedAt: now,
         ));
 
         // Record streak only when timer is ON and ≤ the challenge threshold.
@@ -151,6 +165,46 @@ class _QuestionScreenState extends State<QuestionScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save score: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _undoGrade() async {
+    // Manual practice allows unlimited undo.
+    if (!_graded || (!widget.isPractice && _undoUsedToday)) return;
+    
+    // Only Premium users can undo
+    if (!_isPremium) return;
+
+    try {
+      // If it was a recorded score (not practice), delete it from local DB
+      if (!widget.isPractice && _lastScoreId != null) {
+        await DatabaseHelper.instance.deleteScoreRecord(_lastScoreId!);
+      }
+
+      if (!widget.isPractice) {
+        await PlanService.consumeUndo();
+      }
+
+      setState(() {
+        _graded = false;
+        _isCorrect = false;
+        _lastScoreId = null;
+        if (!widget.isPractice) {
+          _undoUsedToday = true;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Result undone. You can try again! ↩️')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Undo failed: $e')),
         );
       }
     }
@@ -425,21 +479,10 @@ class _QuestionScreenState extends State<QuestionScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isCorrect ? 'Great job!' : 'Keep practicing!',
+                            _isCorrect ? 'Next question?' : 'Keep practicing!',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
-                              color: _isCorrect
-                                  ? const Color(0xFF155724)
-                                  : colorScheme.onErrorContainer,
-                            ),
-                          ),
-                          Text(
-                            _isCorrect
-                                ? 'Score recorded ✓'
-                                : "You'll get it next time",
-                            style: TextStyle(
-                              fontSize: 13,
                               color: _isCorrect
                                   ? const Color(0xFF155724)
                                   : colorScheme.onErrorContainer,
@@ -454,11 +497,27 @@ class _QuestionScreenState extends State<QuestionScreen>
 
               const SizedBox(height: 24),
 
-              // Next question button
-              ElevatedButton.icon(
-                onPressed: _nextQuestion,
-                icon: const Icon(Icons.arrow_forward_rounded),
-                label: const Text('Next Question'),
+              Row(
+                children: [
+                  if (!_isCorrect && _isPremium && (widget.isPractice || !_undoUsedToday)) ...[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _undoGrade,
+                        icon: const Icon(Icons.undo_rounded, size: 18),
+                        label: Text(widget.isPractice ? 'Undo' : 'Undo (only 1 use per day)'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: _nextQuestion,
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      label: const Text('Next Question'),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 12),

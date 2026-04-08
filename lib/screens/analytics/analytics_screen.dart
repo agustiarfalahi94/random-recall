@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
+import '../settings/subscription_screen.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -17,19 +20,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   int _totalAnswered = 0;
   int _totalCorrect = 0;
   bool _isLoading = true;
+  bool _isPremium = false;
 
-  // TODO Phase 4: set this from subscription status
-  final bool _isPremium = false;
+  StreamSubscription? _dbSubscription;
+  Timer? _refreshDebounce;
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+    // Listen for database updates (local or cloud-synced) to refresh the UI automatically
+    _dbSubscription = DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
+      if (_refreshDebounce?.isActive ?? false) _refreshDebounce!.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) _loadStats();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _dbSubscription?.cancel();
+    _refreshDebounce?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
     final stats = await DatabaseHelper.instance.getCategoryScoreStats();
+    final premium = await PlanService.isPremium();
     int totalAnswered = 0;
     int totalCorrect = 0;
     for (final s in stats) {
@@ -40,6 +59,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       _stats = stats;
       _totalAnswered = totalAnswered;
       _totalCorrect = totalCorrect;
+      _isPremium = premium;
       _isLoading = false;
     });
   }
@@ -77,39 +97,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 24),
 
           // ── Per-category breakdown ─────────────────────────────────────
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'By Category',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'By Category',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (!_isPremium) _LockBadge(colorScheme: colorScheme),
+                ],
               ),
-              const Spacer(),
+              const SizedBox(height: 12),
               if (!_isPremium)
-                _LockBadge(colorScheme: colorScheme),
+                _LockedCategorySection(stats: _stats, colorScheme: colorScheme, theme: theme)
+              else
+                ..._stats.map((s) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _CategoryScoreCard(stat: s, colorScheme: colorScheme, theme: theme),
+                    )),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          // Locked overlay for free users
-          if (!_isPremium)
-            _LockedCategorySection(
-              stats: _stats,
-              colorScheme: colorScheme,
-              theme: theme,
-            )
-          else
-            ..._stats.map((s) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _CategoryScoreCard(
-                    stat: s,
-                    colorScheme: colorScheme,
-                    theme: theme,
-                  ),
-                )),
         ],
       ),
     );
@@ -516,38 +529,7 @@ class _LockedCategorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Blurred preview cards
-        ClipRect(
-          child: Stack(
-          children: [
-            // Cards underneath
-            Column(
-              children: stats
-                  .take(2)
-                  .map((s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _CategoryScoreCard(
-                          stat: s,
-                          colorScheme: colorScheme,
-                          theme: theme,
-                        ),
-                      ))
-                  .toList(),
-            ),
-            // Blur + tint overlay
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                child: Container(
-                  color: colorScheme.surface.withOpacity(0.5),
-                ),
-              ),
-            ),
-          ],
-        ),
-        ),
-
-        // Lock CTA — in normal flow, no overflow possible
+        // Lock CTA — Pinned at the top of the section
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -583,14 +565,46 @@ class _LockedCategorySection extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () {
-                    // TODO Phase 4: open subscription screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Subscription coming soon! 🚀'),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SubscriptionScreen(),
                       ),
                     );
                   },
                   child: const Text('Subscribe to Unlock'),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Blurred preview cards below the CTA
+        ClipRect(
+          child: Stack(
+            children: [
+              // Cards underneath
+              Column(
+                children: stats
+                    .take(2)
+                    .map((s) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _CategoryScoreCard(
+                            stat: s,
+                            colorScheme: colorScheme,
+                            theme: theme,
+                          ),
+                        ))
+                    .toList(),
+              ),
+              // Blur + tint overlay
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
+                  child: Container(
+                    color: colorScheme.surface.withOpacity(0.5),
+                  ),
                 ),
               ),
             ],

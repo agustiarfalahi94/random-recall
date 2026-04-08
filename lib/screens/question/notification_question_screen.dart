@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/plan/plan_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
@@ -35,10 +36,13 @@ class _NotificationQuestionScreenState
   bool _answerRevealed = false;
   bool _graded = false;
   bool _isCorrect = false;
+  int? _lastScoreId;
 
   // Timer
   int _timerSeconds = 0;
   int _remaining = 0;
+  bool _isPremium = false;
+  bool _undoUsedToday = false;
   Timer? _countdownTimer;
 
   late final AnimationController _revealController;
@@ -55,7 +59,7 @@ class _NotificationQuestionScreenState
       parent: _revealController,
       curve: Curves.easeOutCubic,
     );
-    _loadTimerSetting();
+    _loadInitialSettings();
     _loadQuestion();
   }
 
@@ -66,9 +70,17 @@ class _NotificationQuestionScreenState
     super.dispose();
   }
 
-  Future<void> _loadTimerSetting() async {
+  Future<void> _loadInitialSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0);
+    final premium = await PlanService.isPremium();
+    final undoUsed = await PlanService.hasUsedUndoToday();
+    if (mounted) {
+      setState(() {
+        _isPremium = premium;
+        _undoUsedToday = undoUsed;
+        _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+      });
+    }
   }
 
   void _startTimer() {
@@ -140,11 +152,13 @@ class _NotificationQuestionScreenState
     try {
       // Test notifications are practice — don't affect score or streak.
       if (!widget.isPractice) {
-        await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
+        final now = DateTime.now();
+        _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
           questionId: _question!.id!,
           categoryId: _question!.categoryId,
           isCorrect: isCorrect,
-          answeredAt: DateTime.now(),
+          answeredAt: now,
+          updatedAt: now,
         ));
 
         // Record streak only when timer is ON and ≤ the challenge threshold.
@@ -160,11 +174,42 @@ class _NotificationQuestionScreenState
       }
     } catch (_) {}
 
-    // Show result for 2 seconds then close
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      _close();
+    // Auto-close logic:
+    // Close if Correct OR if user is Free OR if Premium used their Undo already.
+    // Tests sessions stay open on Wrong answers to allow unlimited Undo.
+    if (_isCorrect || !_isPremium || (!widget.isPractice && _undoUsedToday)) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        _close();
+      }
     }
+  }
+
+  Future<void> _undoGrade() async {
+    if (!_graded || !_isPremium || (!widget.isPractice && _undoUsedToday)) return;
+
+    try {
+      // If it was a recorded score (not practice), delete it from local DB
+      if (!widget.isPractice && _lastScoreId != null) {
+        await DatabaseHelper.instance.deleteScoreRecord(_lastScoreId!);
+      }
+      
+      if (!widget.isPractice) {
+        await PlanService.consumeUndo();
+      }
+      
+      setState(() {
+        _graded = false;
+        _isCorrect = false;
+        _lastScoreId = null;
+        if (!widget.isPractice) {
+          _undoUsedToday = true;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Result undone. You can try again! ↩️')),
+      );
+    } catch (_) {}
   }
 
   @override
@@ -181,14 +226,14 @@ class _NotificationQuestionScreenState
                 children: [
                   Text(_category!.icon, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
-                  Text(_category!.name),
+          Expanded(child: Text(_category!.name, overflow: TextOverflow.ellipsis)),
                 ],
               )
-            : const Text('Random Recall'),
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
-          onPressed: () => SystemNavigator.pop(),
-        ),
+      : const Text('Random Recall'),
+    leading: IconButton(
+      icon: const Icon(Icons.close_rounded),
+      onPressed: _close, // Use helper to handle pop vs system pop
+    ),
         actions: [
           if (_timerSeconds > 0 && !_graded && !_isLoading)
             _TimerBadge(remaining: _remaining, total: _timerSeconds),
@@ -404,19 +449,12 @@ class _NotificationQuestionScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isCorrect ? 'Great job!' : 'Keep practicing!',
+                            _isCorrect 
+                                ? (widget.isPractice ? 'Closing in a moment...' : 'Score recorded! Closing in a moment...')
+                                : (widget.isPractice ? 'Keep practicing!' : 'Score recorded! Keep practicing'),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
-                              color: _isCorrect
-                                  ? const Color(0xFF155724)
-                                  : colorScheme.onErrorContainer,
-                            ),
-                          ),
-                          Text(
-                            'Closing in a moment...',
-                            style: TextStyle(
-                              fontSize: 13,
                               color: _isCorrect
                                   ? const Color(0xFF155724)
                                   : colorScheme.onErrorContainer,
@@ -428,6 +466,21 @@ class _NotificationQuestionScreenState
                   ],
                 ),
               ),
+
+              const SizedBox(height: 24),
+
+              if (!_isCorrect && _isPremium && (widget.isPractice || !_undoUsedToday))
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _undoGrade,
+                        icon: const Icon(Icons.undo_rounded, size: 18),
+                        label: Text(widget.isPractice ? 'Undo' : 'Undo (only 1 use per day)'),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ],
 

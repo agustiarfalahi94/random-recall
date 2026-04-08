@@ -4,6 +4,7 @@ class Question {
   final String answer;
   final int categoryId;
   final DateTime createdAt;
+  final DateTime updatedAt;
 
   const Question({
     this.id,
@@ -11,6 +12,7 @@ class Question {
     required this.answer,
     required this.categoryId,
     required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Question.fromMap(Map<String, dynamic> map) {
@@ -19,7 +21,8 @@ class Question {
       question: map['question'] as String,
       answer: map['answer'] as String,
       categoryId: map['category_id'] as int,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdAt: DateTime.parse(map['created_at']?.toString() ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(map['updated_at']?.toString() ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -30,12 +33,13 @@ class Question {
       'answer': answer,
       'category_id': categoryId,
       'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
   Question copyWith({
     int? id, String? question, String? answer,
-    int? categoryId, DateTime? createdAt,
+    int? categoryId, DateTime? createdAt, DateTime? updatedAt,
   }) {
     return Question(
       id: id ?? this.id,
@@ -43,6 +47,7 @@ class Question {
       answer: answer ?? this.answer,
       categoryId: categoryId ?? this.categoryId,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 

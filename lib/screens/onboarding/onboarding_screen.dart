@@ -108,11 +108,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       // Save first question to DB
-      await DatabaseHelper.instance.insertQuestion(Question(
+      final db = DatabaseHelper.instance;
+      final now = DateTime.now();
+      await db.insertQuestion(Question(
         question: _questionText!,
         answer: _answerText!,
         categoryId: _categoryId!,
-        createdAt: DateTime.now(),
+        createdAt: now,
+        updatedAt: now,
       ));
 
       // Save notification prefs + mark onboarding complete
@@ -131,28 +134,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         prefs.remove(_kOnboardingCategoryId),
       ]);
 
-      // Schedule notifications (silently skipped if permission not granted)
-      await NotificationService.instance.scheduleNotifications();
+      if (!mounted) return;
+      
+      // 1. Clear the saving state and wait for the widget tree to rebuild.
+      setState(() => _isSaving = false);
+      
+      // Give MIUI/HyperOS a moment to settle the UI and remove the loader overlay.
+      await Future.delayed(const Duration(milliseconds: 100));
 
       if (!mounted) return;
 
-      // On Xiaomi/HyperOS devices, show a one-time tutorial explaining how to
-      // enable Autostart and disable battery optimization so notifications
-      // are delivered reliably even when the app is not running.
-      // Show BEFORE navigating away so the context is still valid.
-      final miui = await isMiuiDevice();
-      if (!mounted) return;
-      if (miui) await MiuiBatteryDialog.show(context);
-
-      if (!mounted) return;
+      // 2. Use pushReplacement - it is often more stable than pushAndRemoveUntil 
+      // during heavy lifecycle events like returning from permission settings.
       Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (_, animation, __) => const HomeScreen(),
-          transitionsBuilder: (_, animation, __, child) =>
-              FadeTransition(opacity: animation, child: child),
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
+
+      // 3. Trigger background tasks after the transition is complete.
+      // We wait 3 seconds to ensure the Home screen is fully interactive first.
+      Future.delayed(const Duration(milliseconds: 3000), () async {
+        try {
+          final ns = NotificationService.instance;
+          // Ensure init is called even if it failed/timed out during main()
+          await ns.init();
+          await ns.scheduleNotifications();
+
+          final miui = await isMiuiDevice();
+          if (miui) {
+            // Ensure the Home screen is fully settled before showing MIUI dialog
+            await Future.delayed(const Duration(milliseconds: 500));
+            final homeContext = NotificationService.instance.navigatorKey?.currentContext;
+            if (homeContext != null) await MiuiBatteryDialog.show(homeContext);
+          }
+        } catch (e) {
+          debugPrint('Onboarding: Background tasks failed: $e');
+        }
+      });
+
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSaving = false);

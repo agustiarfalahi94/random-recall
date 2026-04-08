@@ -1,11 +1,128 @@
 # Changelog
 
 All notable changes to Random Recall are documented here.
-Format: **Added** · **Fixed** · **Changed** · **Removed**
+Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [1.2.0] — 2026-04-03
+## [0.7.0] — 2026-04-08
+
+### Added
+- **Mandatory Permission Guard** — Enforces notification access at the app root; the app is now locked behind a requirement screen until permission is granted, ensuring core functionality is never skipped.
+- **Differentiated Undo** — The Undo feature now behaves differently based on context:
+    - **Organic Notifications**: Limited to exactly 1 use per day to preserve the challenge.
+    - **Practice & Tests**: Unlimited uses allowed for learning.
+
+### Fixed
+- **Xiaomi Notification Reliability** — Implemented a proactive permission request on app startup (`main.dart`) and bumped test notifications to Max priority to bypass MIUI/HyperOS background restrictions.
+- **Backup-on-Logout Race Condition** — Hardened the sign-out flow to force a final cloud backup completion before clearing local data.
+- **Auth Restoration Logic** — Fixed a bug where `is_premium` status wasn't pulled from Firestore during the initial device login/restore.
+
+### Improved
+- **Contextual UI Feedback** — Unified and refined the wording after answering questions:
+    - Organic: "Score recorded! Closing in a moment..."
+    - Practice: "Next question?" / "Keep practicing!"
+    - Test: "Closing in a moment..."
+- **Settings UX** — Settings sheet now automatically closes when firing a test notification.
+- **Debugger Cleanup** — Removed redundant OS-level alarm lists to focus on application logic mirror logs.
+
+---
+
+## [0.6.0] — 2026-04-08
+
+### Added (Phase 5 — Subscriptions)
+- **Subscription Foundation** — Integrated `in_app_purchase` and synced premium status from Firestore.
+
+## [0.5.2] — 2026-04-07
+
+### Added (Phase 4 — Cloud Sync & Multi-Device)
+- **Bidirectional Real-time Sync** — Integrated Firestore Snapshots; changes made on one device reflect instantly on others logged into the same account.
+- **Streak Synchronization** — Timer challenge streaks and bonus question slots are now backed up and synced across devices.
+- **Manual Refresh** — Added a "Sync Data Now" button in settings for on-demand cloud retrieval.
+- **Seamless Device Switching** — New installs automatically detect cloud data during login and bypass the onboarding flow.
+
+### Fixed
+- **Sync Robustness** — Hardened data models to handle legacy cloud data and prevent "Null" cast errors during restoration.
+- **Logout UI Flow** — Fixed a bug where the UI didn't reset to the login screen after signing out.
+- **Privacy & Cleanup** — Ensured cloud listeners stop and all local data is purged upon logout to prevent account leakage.
+
+## [0.5.1] — 2026-04-07
+
+### Changed
+- **Email Templates** — Customized sender name, from address, and domain for a professional feel.
+- **Authentication UX** — Resolved layout overflow in the settings bottom sheet, fixed the forgot password flow, and professionalized system email templates.
+- **Email Authentication** — Added dedicated Login and Sign-up screens for email-based accounts.
+- **Sync Preparation** — Migrated database to include `updated_at` timestamps for conflict resolution.
+- **Auth Refinement** — Focused on Google and Email login; removed Facebook integration.
+
+## [0.5.0] — 2026-04-07
+
+### Added
+- **Authentication Foundation** — Integrated Firebase Core and Auth dependencies.
+
+## [0.4.3] — 2026-04-06
+
+### Fixed
+- **Analytics Layout** — Anchored the subscription CTA directly below the "By Category" header to prevent layout shifting as categories are added.
+- **Toast Logic** — Harmonized feedback messages between notification-tap flow and in-app practice flow.
+
+---
+## [0.4.0] — 2026-04-05
+
+### Added
+- **Cheat Prevention** — Notification alerts now hide the question text until the 
+  app is opened, ensuring the timer challenge cannot be bypassed.
+- **Question Repeating** — If the requested daily frequency exceeds the number of 
+  available questions, the app will now repeat questions to fulfill the schedule.
+
+### Fixed
+- **Sunday Scheduling Bug** — Fixed an issue where Sunday slots were not being 
+  registered correctly in some timezones.
+- **Notification Persistence** — Removed notification grouping that caused all 
+  alerts to disappear when only one was opened.
+- **Toast Logic** — Corrected feedback messages for Practice vs. Scored modes.
+- **Analytics Layout** — Pinned the subscription lock section directly below the 
+  category header to prevent it from shifting with list growth.
+
+---
+## [0.3.1] — 2026-04-05
+
+### Added
+- **Developer Debug Mode** — Access a hidden notification debugger by tapping the 
+  "Notification Schedule" title 7 times.
+- Added logic to mirror notification schedules to local storage for inspection.
+
+---
+
+## [0.3.0] — 2026-04-05
+
+### Added
+- **Battery optimisation whitelist** (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) —
+  the app now shows a one-time Android system dialog ("Allow app to always run
+  in background?") immediately after notification permission is granted during
+  onboarding. This ensures notifications are never blocked by Xiaomi's battery saver.
+- Existing users (app update) are prompted automatically on next launch via a
+  post-frame callback in `main.dart`.
+- Battery optimisation fix card in Notification Settings — shown only when the
+  whitelist was denied; lets users re-request at any time.
+
+### Fixed
+- **Critical** — App showing blank screen on launch: Fixed a deadlock where the 
+  app got stuck waiting for the notification system. The app now opens immediately.
+- **Critical** — Notifications clumping: Notifications are now spaced out properly 
+  throughout the day instead of appearing all at once.
+- **Critical** — Duplicate questions: If a question is already waiting in your 
+  notification tray, the app will now update the existing card instead of creating a duplicate.
+- **Critical** — Background Scheduler: Fixed a "WorkManager" crash that prevented 
+  the app from automatically refreshing the next 7 days of notifications.
+
+### Improved
+- Added support for Android 13+ "Predictive Back" gestures.
+- Optimized scheduling speed to prevent the app from lagging when saving settings.
+
+---
+
+## [0.2.0] — 2026-04-03
 
 ### Added
 - **WorkManager background rescheduler** — rebuilds the 7-day notification
@@ -54,14 +171,13 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 - Free plan category use limit removed — questions can be added to any category
   freely (1 custom category creation limit remains)
 - `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` removed from AndroidManifest
-
 ### Removed
 - `freeCategoryLimit`, `getCategoryLimit()`, `canUseCategory()` from PlanService
 - Locked dropdown item logic in Add Question screen
 
 ---
 
-## [1.1.0] — 2026-04-02 · feature/free-limits → develop → main
+## [0.0.0] — 2026-04-02 · feature/free-limits → develop → main
 
 ### Added
 - **Category management screen** — create custom categories with an emoji
@@ -108,7 +224,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
-## [1.0.3] — feature/notification-schedule
+## [0.0.3] — feature/notification-schedule
 
 ### Added
 - Notification schedule settings screen with time window, frequency slider,
@@ -125,7 +241,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
-## [1.0.2] — feature/analytics
+## [0.0.2] — feature/analytics
 
 ### Added
 - Analytics screen with correct/wrong breakdown per category
@@ -133,7 +249,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
-## [1.0.1] — feature/practice-improvements · feature/question-mgmt
+## [0.0.1] — feature/practice-improvements · feature/question-mgmt
 
 ### Added
 - Practice Now button on home screen
@@ -147,7 +263,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed**
 
 ---
 
-## [1.0.0] — Initial release
+## [0.0.0] — Initial release
 
 ### Added
 - SQLite database with questions and categories models

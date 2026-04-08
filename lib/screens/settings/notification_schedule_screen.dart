@@ -3,8 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/streak/streak_service.dart';
+import '../../core/sync/sync_service.dart';
+import '../../core/utils/battery_optimization.dart';
 import '../../core/utils/device_info.dart';
 import '../../widgets/miui_battery_dialog.dart';
+import '../debug/debug_notification_screen.dart';
 
 class NotificationScheduleScreen extends StatefulWidget {
   const NotificationScheduleScreen({super.key, this.scrollToTimer = false});
@@ -22,6 +25,7 @@ class _NotificationScheduleScreenState
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isMiui = false;
+  bool _isIgnoringBattery = true; // assume OK until checked
 
   final _scrollController = ScrollController();
   final _timerSectionKey = GlobalKey();
@@ -31,8 +35,19 @@ class _NotificationScheduleScreenState
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 20, minute: 0);
   int _frequency = 3; // 1–10
-  Set<int> _activeDays = {1, 2, 3, 4, 5}; // 1=Mon … 7=Sun
+  Set<int> _activeDays = {1, 2, 3, 4, 5, 6, 7}; // 1=Mon … 7=Sun
   int _timerSeconds = 0; // 0 = off
+
+  int _debugTaps = 0;
+
+  void _handleDebugTap() {
+    _debugTaps++;
+    if (_debugTaps >= 7) {
+      _debugTaps = 0;
+      Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const DebugNotificationScreen()));
+    }
+  }
 
   static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   // Timer slider: 0 = off, then 5–90 in steps of 5 (18 divisions)
@@ -42,6 +57,7 @@ class _NotificationScheduleScreenState
     super.initState();
     _loadPrefs();
     isMiuiDevice().then((v) { if (mounted) setState(() => _isMiui = v); });
+    isIgnoringBatteryOptimizations().then((v) { if (mounted) setState(() => _isIgnoringBattery = v); });
   }
 
   @override
@@ -52,7 +68,7 @@ class _NotificationScheduleScreenState
 
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5';
+    final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
     setState(() {
       _randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
       _startTime = TimeOfDay(
@@ -120,6 +136,9 @@ class _NotificationScheduleScreenState
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
 
       await NotificationService.instance.scheduleNotifications();
+      
+      // Manually trigger a backup since settings live in SharedPreferences, not the DB
+      await SyncService.instance.performBackup();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -203,9 +222,12 @@ class _NotificationScheduleScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Notification Schedule',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: GestureDetector(
+          onTap: _handleDebugTap,
+          child: const Text(
+            'Notification Schedule',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
         ),
       ),
       body: _isLoading
@@ -588,6 +610,19 @@ class _NotificationScheduleScreenState
                     ],
                   ),
                 ),
+                // ── Battery optimisation whitelist ───────────────────────────
+                if (!_isIgnoringBattery) ...[
+                  const SizedBox(height: 12),
+                  _BatteryOptimizationCard(
+                    onTap: () async {
+                      await requestIgnoreBatteryOptimizations();
+                      // Re-check after user returns from the system dialog
+                      final v = await isIgnoringBatteryOptimizations();
+                      if (mounted) setState(() => _isIgnoringBattery = v);
+                    },
+                  ),
+                ],
+
                 // ── MIUI / HyperOS battery tip ───────────────────────────────
                 if (_isMiui) ...[
                   const SizedBox(height: 12),
@@ -838,6 +873,62 @@ class _MiuiHelpCard extends StatelessWidget {
   }
 }
 
+// ── Battery optimisation fix card ──────────────────────────────────────────────
+
+class _BatteryOptimizationCard extends StatelessWidget {
+  const _BatteryOptimizationCard({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.battery_alert_rounded,
+                color: colorScheme.error, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Battery optimisation is ON',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: colorScheme.onErrorContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tap to allow Random Recall to always run (standard Android setting) — fixes missed notifications',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: colorScheme.error, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DayChip extends StatelessWidget {
   const _DayChip({
     required this.label,
@@ -880,4 +971,3 @@ class _DayChip extends StatelessWidget {
     );
   }
 }
-

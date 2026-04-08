@@ -147,51 +147,6 @@ void main() {
 
   // ── NotificationScheduler ───────────────────────────────────────────────────
 
-  group('NotificationScheduler.generateSlotHours', () {
-    // Use a fixed seed so tests are deterministic.
-    final rng = Random(42);
-
-    test('returns correct count', () {
-      final hours = NotificationScheduler.generateSlotHours(8, 20, 3, rng);
-      expect(hours.length, 3);
-    });
-
-    test('all hours within [start, end - 1]', () {
-      for (int trial = 0; trial < 20; trial++) {
-        final hours =
-            NotificationScheduler.generateSlotHours(8, 20, 5, Random(trial));
-        for (final h in hours) {
-          expect(h, greaterThanOrEqualTo(8));
-          expect(h, lessThanOrEqualTo(19)); // end - 1
-        }
-      }
-    });
-
-    test('returns empty for count = 0', () {
-      expect(
-          NotificationScheduler.generateSlotHours(8, 20, 0, rng), isEmpty);
-    });
-
-    test('single slot lands in window', () {
-      final hours =
-          NotificationScheduler.generateSlotHours(10, 18, 1, Random(0));
-      expect(hours.length, 1);
-      expect(hours.first, greaterThanOrEqualTo(10));
-      expect(hours.first, lessThanOrEqualTo(17));
-    });
-
-    test('randomAnytime window 0–22', () {
-      for (int trial = 0; trial < 20; trial++) {
-        final hours =
-            NotificationScheduler.generateSlotHours(0, 23, 4, Random(trial));
-        for (final h in hours) {
-          expect(h, greaterThanOrEqualTo(0));
-          expect(h, lessThanOrEqualTo(22));
-        }
-      }
-    });
-  });
-
   group('NotificationScheduler.computeSlots', () {
     // Monday 2026-04-06 08:00:00 local
     final monday8am = DateTime(2026, 4, 6, 8, 0, 0);

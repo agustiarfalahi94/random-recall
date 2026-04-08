@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -21,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.inkpebble.randomrecall"
-        minSdk = flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion // Firebase Auth requires minSdk 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

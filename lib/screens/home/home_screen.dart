@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/auth/auth_service.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/streak/streak_service.dart';
+import '../../core/sync/sync_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
 import '../question/question_screen.dart';
@@ -72,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSettingsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Allows the sheet to expand to fit its content
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -91,21 +93,43 @@ class _SettingsSheet extends StatefulWidget {
 
 class _SettingsSheetState extends State<_SettingsSheet> {
   bool _isSendingTest = false;
+  bool _isSyncingManual = false;
+
+  Future<void> _syncNow() async {
+    setState(() => _isSyncingManual = true);
+    try {
+      await SyncService.instance.performRestore();
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close settings sheet on success
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sync complete! Data is up to date. 🔄')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sync failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSyncingManual = false);
+    }
+  }
 
   Future<void> _sendTestNotification() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+
     setState(() => _isSendingTest = true);
     try {
       await NotificationService.instance.sendTestNotification();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (nav.canPop()) nav.pop(); // Close settings sheet
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Test notification sent! Check your notification bar 🔔'),
           duration: Duration(seconds: 3),
         ),
       );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('Failed to send: $e')),
       );
     } finally {
@@ -118,10 +142,20 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
+    final user = AuthService.instance.currentUser;
+    // More robust check: is the primary sign-in provider Google?
+    final isGoogle = user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
+    
+    final providerLabel = isGoogle ? 'Google' : 'Email';
+    final providerIcon = isGoogle 
+        ? Icons.g_mobiledata_rounded 
+        : Icons.alternate_email_rounded;
+
+    return SingleChildScrollView(
+      child: Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min, // Still min to keep it compact on large screens
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Handle bar
@@ -144,6 +178,31 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             ),
           ),
           const SizedBox(height: 24),
+
+          // Sync Now button
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.sync_rounded, color: colorScheme.primary),
+            ),
+            title: const Text(
+              'Sync Data Now',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('Pull latest changes from the cloud'),
+            trailing: _isSyncingManual
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.refresh_rounded, size: 20),
+            onTap: _isSyncingManual ? null : _syncNow,
+          ),
+
+          const Divider(),
 
           // Test notification button
           ListTile(
@@ -229,7 +288,84 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               );
             },
           ),
+
+          const Divider(),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Icon(Icons.logout_rounded, color: colorScheme.onErrorContainer),
+              ),
+            ),
+            title: const Text(
+              'Sign Out',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: Row(
+              children: [
+                Icon(providerIcon, size: 14, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '$providerLabel • ${user?.email ?? "User"}',
+                    style: const TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            onTap: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
+              // 1. Close settings sheet
+              if (navigator.canPop()) navigator.pop();
+
+              // 2. Show a non-dismissible loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: Card(
+                    margin: EdgeInsets.all(32),
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Signing out safely...', style: TextStyle(fontWeight: FontWeight.w600)),
+                          SizedBox(height: 4),
+                          Text('Backing up your data', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              
+              try {
+                await AuthService.instance.signOut(
+                  onBeforeFinalSignOut: () async {
+                    if (navigator.canPop()) navigator.pop();
+                  },
+                );
+              } catch (e) {
+                if (navigator.canPop()) navigator.pop();
+                messenger.showSnackBar(SnackBar(content: Text('Sign out failed: $e')));
+              }
+            },
+          ),
         ],
+      ),
       ),
     );
   }
@@ -502,4 +638,3 @@ class _TimerChallengeCard extends StatelessWidget {
     )); // GestureDetector + Container
   }
 }
-
