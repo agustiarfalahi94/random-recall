@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
 import '../sync/sync_service.dart';
+import '../plan/subscription_service.dart';
 
 class AuthService {
   AuthService._internal();
@@ -36,6 +37,8 @@ class AuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       if (userCredential.user != null) {
         await _ensureUserDocument(userCredential.user!);
+        await SubscriptionService.instance.logIn(userCredential.user!.uid);
+        await SyncService.instance.performRestore(force: true, isInitialLogin: true);
       }
       return userCredential;
     } catch (e) {
@@ -49,6 +52,8 @@ class AuthService {
     final userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
     if (userCredential.user != null) {
       await _ensureUserDocument(userCredential.user!);
+      await SubscriptionService.instance.logIn(userCredential.user!.uid);
+      await SyncService.instance.performRestore(force: true, isInitialLogin: true);
     }
     return userCredential;
   }
@@ -58,6 +63,8 @@ class AuthService {
     final userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
     if (userCredential.user != null) {
       await _ensureUserDocument(userCredential.user!);
+      await SubscriptionService.instance.logIn(userCredential.user!.uid);
+      await SyncService.instance.performRestore(force: true, isInitialLogin: true);
     }
     return userCredential;
   }
@@ -71,17 +78,23 @@ class AuthService {
   Future<void> signOut() async {
     try {
       final user = currentUser;
+      
+      // 1. Attempt final backup (swallow errors so we don't block signout)
       if (user != null) {
-        // 1. Perform a final backup so data is safe in the cloud
-        await SyncService.instance.performBackup();
+        await SyncService.instance.performBackup(force: true).catchError((e) => debugPrint('Signout backup failed: $e'));
       }
 
-      // Stop cloud sync listeners first
+      // 2. Stop listeners
       SyncService.instance.stopRealtimeSync();
-      await _googleSignIn.signOut();
+      
+      // 3. Subscription logout (safe now due to _isConfigured check)
+      SubscriptionService.instance.logOut().catchError((e) => debugPrint('RevenueCat logout failed: $e'));
+      
+      // 4. Core Auth signout
+      await _googleSignIn.signOut().catchError((_) => null);
       await _auth.signOut();
       
-      // Clear local data so the next user starts fresh
+      // 5. CRITICAL: Clear local data so the next user starts fresh
       await DatabaseHelper.instance.clearAllData();
       // Also clear local flags so the next user sees onboarding
       final prefs = await SharedPreferences.getInstance();

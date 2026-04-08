@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/settings/subscription_screen.dart';
 
 enum UpgradeTrigger { questionLimit, categoryLimit }
 
@@ -143,11 +144,9 @@ class UpgradeBottomSheet extends StatelessWidget {
             child: FilledButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // TODO Phase 4: open subscription screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Subscription coming soon! 🚀'),
-                    behavior: SnackBarBehavior.floating,
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SubscriptionScreen(),
                   ),
                 );
               },

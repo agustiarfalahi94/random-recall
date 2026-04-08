@@ -5,6 +5,29 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.7.0] — 2026-04-08
+
+### Added
+- **Mandatory Permission Guard** — Enforces notification access at the app root; the app is now locked behind a requirement screen until permission is granted, ensuring core functionality is never skipped.
+- **Differentiated Undo** — The Undo feature now behaves differently based on context:
+    - **Organic Notifications**: Limited to exactly 1 use per day to preserve the challenge.
+    - **Practice & Tests**: Unlimited uses allowed for learning.
+
+### Fixed
+- **Xiaomi Notification Reliability** — Implemented a proactive permission request on app startup (`main.dart`) and bumped test notifications to Max priority to bypass MIUI/HyperOS background restrictions.
+- **Backup-on-Logout Race Condition** — Hardened the sign-out flow to force a final cloud backup completion before clearing local data.
+- **Auth Restoration Logic** — Fixed a bug where `is_premium` status wasn't pulled from Firestore during the initial device login/restore.
+
+### Improved
+- **Contextual UI Feedback** — Unified and refined the wording after answering questions:
+    - Organic: "Score recorded! Closing in a moment..."
+    - Practice: "Next question?" / "Keep practicing!"
+    - Test: "Closing in a moment..."
+- **Settings UX** — Settings sheet now automatically closes when firing a test notification.
+- **Debugger Cleanup** — Removed redundant OS-level alarm lists to focus on application logic mirror logs.
+
+---
+
 ## [0.6.0] — 2026-04-08
 
 ### Added (Phase 5 — Subscriptions)

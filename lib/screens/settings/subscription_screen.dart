@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../core/plan/subscription_service.dart';
 import '../../core/plan/plan_service.dart';
 
@@ -12,7 +12,7 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _isLoading = true;
-  ProductDetails? _monthlyProduct;
+  Offering? _offering;
   bool _isPremium = false;
 
   @override
@@ -23,22 +23,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Future<void> _init() async {
     final premium = await PlanService.isPremium();
-    final product = await SubscriptionService.instance.getMonthlyProduct();
+    final offering = await SubscriptionService.instance.getOffering();
     if (mounted) {
       setState(() {
         _isPremium = premium;
-        _monthlyProduct = product;
+        _offering = offering;
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _handleSubscribe() async {
-    if (_monthlyProduct == null) return;
+  Future<void> _handleSubscribe(Package package) async {
     setState(() => _isLoading = true);
     try {
-      await SubscriptionService.instance.subscribe(_monthlyProduct!);
-      // Note: UI will update via the purchase stream in SubscriptionService
+      await SubscriptionService.instance.purchasePackage(package);
+      if (mounted && await PlanService.isPremium()) {
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -118,23 +119,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
-            ),
             child: Column(
               children: [
-                Text(
-                  _monthlyProduct?.price ?? '\$2.99',
-                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
-                ),
-                Text('per month', style: theme.textTheme.bodySmall),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _handleSubscribe,
-                  child: const Text('Subscribe Now'),
-                ),
+                if (_offering != null) ...[
+                  for (var package in _offering!.availablePackages)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: ElevatedButton(
+                        onPressed: () => _handleSubscribe(package),
+                        child: Text('Get Premium — ${package.storeProduct.priceString}'),
+                      ),
+                    ),
+                ] else
+                  const Text('Loading available plans...'),
+                const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => SubscriptionService.instance.restorePurchases(),
                   child: const Text('Restore Purchase'),

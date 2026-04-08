@@ -100,6 +100,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     try {
       await SyncService.instance.performRestore();
       if (!mounted) return;
+      Navigator.of(context).pop(); // Close settings sheet on success
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sync complete! Data is up to date. 🔄')),
       );
@@ -114,19 +115,21 @@ class _SettingsSheetState extends State<_SettingsSheet> {
   }
 
   Future<void> _sendTestNotification() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+
     setState(() => _isSendingTest = true);
     try {
       await NotificationService.instance.sendTestNotification();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (nav.canPop()) nav.pop(); // Close settings sheet
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Test notification sent! Check your notification bar 🔔'),
           duration: Duration(seconds: 3),
         ),
       );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(content: Text('Failed to send: $e')),
       );
     } finally {
@@ -309,9 +312,12 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               children: [
                 Icon(providerIcon, size: 14, color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: 4),
-                Text(
-                  '$providerLabel • ${user?.email ?? "User"}',
-                  style: TextStyle(fontSize: 12),
+                Expanded(
+                  child: Text(
+                    '$providerLabel • ${user?.email ?? "User"}',
+                    style: const TextStyle(fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

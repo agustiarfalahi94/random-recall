@@ -15,6 +15,7 @@ import 'screens/auth/login_screen.dart';
 import 'core/auth/auth_service.dart';
 import 'core/plan/subscription_service.dart';
 import 'screens/question/notification_question_screen.dart';
+import 'screens/question/permission_required_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -35,6 +36,12 @@ Future<void> main() async {
     try {
       // Initialize service and check launch details
       await NotificationService.instance.init();
+      
+      // Proactively prompt for permission on startup if missing
+      if (!await NotificationService.instance.hasPermission()) {
+        await NotificationService.instance.requestPermission();
+      }
+      
       await NotificationService.instance.handleNotificationLaunch();
       
       // Setup background worker and initial scheduling
@@ -64,8 +71,47 @@ Future<void> main() async {
   });
 }
 
-class RandomRecallApp extends StatelessWidget {
+class RandomRecallApp extends StatefulWidget {
   const RandomRecallApp({super.key});
+
+  @override
+  State<RandomRecallApp> createState() => _RandomRecallAppState();
+}
+
+class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingObserver {
+  bool _hasPermission = true;
+  bool _isChecking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPermission();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-check permission when user returns from system settings
+    if (state == AppLifecycleState.resumed) {
+      _checkPermission();
+    }
+  }
+
+  Future<void> _checkPermission() async {
+    final has = await NotificationService.instance.hasPermission();
+    if (mounted) {
+      setState(() {
+        _hasPermission = has;
+        _isChecking = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,21 +126,25 @@ class RandomRecallApp extends StatelessWidget {
         theme: _buildTheme(Brightness.light),
         darkTheme: _buildTheme(Brightness.dark),
         themeMode: ThemeMode.system,
-        home: StreamBuilder<User?>(
-          stream: AuthService.instance.authStateChanges,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            final user = snapshot.data;
-            if (user == null) {
-              return const LoginScreen();
-            }
-            return const _HomeGate();
-          },
-        ),
+        home: _isChecking
+            ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+            : !_hasPermission
+                ? const PermissionRequiredScreen()
+                : StreamBuilder<User?>(
+                    stream: AuthService.instance.authStateChanges,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final user = snapshot.data;
+                      if (user == null) {
+                        return const LoginScreen();
+                      }
+                      return const _HomeGate();
+                    },
+                  ),
         // Named routes for notification tap navigation
         onGenerateRoute: (settings) {
           if (settings.name == '/question') {
@@ -190,6 +240,12 @@ class _HomeGateState extends State<_HomeGate> {
 
   Future<void> _initFlow() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // If a sync is already in progress (started by AuthService), wait for it
+    while (SyncService.instance.isSyncing) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
     bool complete = prefs.getBool('onboarding_complete') ?? false;
 
     if (!complete) {

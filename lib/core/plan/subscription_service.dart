@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:flutter/services.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import '../auth/auth_service.dart';
 import 'plan_service.dart';
 
@@ -9,99 +11,110 @@ class SubscriptionService {
   SubscriptionService._internal();
   static final SubscriptionService instance = SubscriptionService._internal();
 
-  final InAppPurchase _iap = InAppPurchase.instance;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
-
-  // Monthly product ID defined in Google Play Console later
-  static const String monthlyProductId = 'premium_monthly';
-
+  static const String _apiKeyAndroid = 'goog_abc123...'; // Use your real key from the dashboard
+  static const String _entitlementId = 'premium'; // The ID defined in RevenueCat Dashboard
+  
   final _db = FirebaseFirestore.instance;
+  bool _isConfigured = false;
 
-  void init() {
-    final purchaseUpdated = _iap.purchaseStream;
-    _subscription = purchaseUpdated.listen(
-      _onPurchaseUpdate,
-      onDone: () => _subscription.cancel(),
-      onError: (error) => debugPrint('SubscriptionService: Error $error'),
-    );
+  Future<void> init() async {
+    if (kDebugMode) await Purchases.setLogLevel(LogLevel.debug);
+
+    // 1. Configure the SDK
+    if (Platform.isAndroid) {
+      if (_apiKeyAndroid.contains('your_actual_api_key')) {
+        debugPrint('SubscriptionService: API Key placeholder detected. Skipping configuration.');
+        return;
+      }
+      await Purchases.configure(PurchasesConfiguration(_apiKeyAndroid));
+      _isConfigured = true;
+    }
+
+    // 2. Set up listener for subscription status changes
+    Purchases.addCustomerInfoUpdateListener((customerInfo) {
+      _updatePremiumStatus(customerInfo);
+    });
+
+    // 3. Link current user if already logged in
+    final user = AuthService.instance.currentUser;
+    if (user != null) {
+      await logIn(user.uid);
+    }
   }
 
-  void dispose() {
-    _subscription.cancel();
+  /// Call this during login to link Firebase UID to RevenueCat
+  Future<void> logIn(String uid) async {
+    if (!_isConfigured) return;
+    try {
+      await Purchases.logIn(uid);
+      final customerInfo = await Purchases.getCustomerInfo();
+      await _updatePremiumStatus(customerInfo);
+    } catch (e) {
+      debugPrint('SubscriptionService: LogIn error: $e');
+    }
   }
 
-  /// Fetches the product details from Google Play/App Store.
-  Future<ProductDetails?> getMonthlyProduct() async {
-    final bool available = await _iap.isAvailable();
-    if (!available) return null;
+  /// Call this during logout
+  Future<void> logOut() async {
+    if (_isConfigured) {
+    await Purchases.logOut();
+    }
+    await PlanService.setPremiumStatus(false);
+  }
 
-    const Set<String> ids = {monthlyProductId};
-    final response = await _iap.queryProductDetails(ids);
-
-    if (response.error != null || response.productDetails.isEmpty) {
-      debugPrint('SubscriptionService: Product not found or error: ${response.error}');
+  /// Fetches current offerings (configured in RevenueCat dashboard)
+  Future<Offering?> getOffering() async {
+    if (!_isConfigured) return null;
+    try {
+      final offerings = await Purchases.getOfferings();
+      return offerings.current;
+    } catch (e) {
+      debugPrint('SubscriptionService: Error fetching offerings: $e');
       return null;
     }
-
-    return response.productDetails.first;
   }
 
-  /// Triggers the purchase flow for the premium subscription.
-  Future<void> subscribe(ProductDetails product) async {
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
-    // We use nonConsumable because it's a subscription
-    await _iap.buyNonConsumable(purchaseParam: purchaseParam);
-  }
-
-  /// Restores previous purchases.
-  Future<void> restorePurchases() async {
-    await _iap.restorePurchases();
-  }
-
-  Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) async {
-    for (final purchase in purchaseDetailsList) {
-      if (purchase.status == PurchaseStatus.pending) {
-        // Handle pending state if needed
-      } else if (purchase.status == PurchaseStatus.error) {
-        debugPrint('SubscriptionService: Purchase Error: ${purchase.error}');
-      } else if (purchase.status == PurchaseStatus.purchased || 
-                 purchase.status == PurchaseStatus.restored) {
-        
-        // 1. Verify and Deliver the content
-        final bool valid = await _verifyPurchase(purchase);
-        if (valid) {
-          await _deliverPremiumStatus();
-        }
-      }
-
-      if (purchase.pendingCompletePurchase) {
-        await _iap.completePurchase(purchase);
-      }
+  /// Initiates a purchase for a package
+  Future<void> purchasePackage(Package package) async {
+    if (!_isConfigured) return;
+    try {
+      final purchaseResult = await Purchases.purchasePackage(package);
+      await _updatePremiumStatus(purchaseResult.customerInfo);
+    } catch (e) {
+      if (e is! PlatformException) rethrow;
+      // Error code 1 is user cancellation
     }
   }
 
-  Future<bool> _verifyPurchase(PurchaseDetails purchase) async {
-    // TODO: For production, implement server-side verification with Cloud Functions.
-    // For now, we trust the device status.
-    return true;
+  Future<void> restorePurchases() async {
+    if (!_isConfigured) return;
+    try {
+      final customerInfo = await Purchases.restorePurchases();
+      await _updatePremiumStatus(customerInfo);
+    } catch (e) {
+      debugPrint('SubscriptionService: Restore error: $e');
+    }
   }
 
-  Future<void> _deliverPremiumStatus() async {
+  Future<void> _updatePremiumStatus(CustomerInfo customerInfo) async {
     final user = AuthService.instance.currentUser;
-    if (user == null) return;
+    // Hardcoded bypass for developer test account
+    final isDeveloper = user?.email == 'agustiarfalahi@gmail.com';
+    final isPremium = customerInfo.entitlements.active.containsKey(_entitlementId) || isDeveloper;
+    
+    // 1. Update local SharedPreferences
+    await PlanService.setPremiumStatus(isPremium);
 
-    // 1. Update local cache immediately
-    await PlanService.setPremiumStatus(true);
-
-    // 2. Update Firestore so all devices sync the status
-    try {
-      await _db.collection('users').doc(user.uid).set({
-        'is_premium': true,
-        'premium_since': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-      debugPrint('SubscriptionService: Firestore updated to Premium.');
-    } catch (e) {
-      debugPrint('SubscriptionService: Failed to update Firestore: $e');
+    // 2. Sync to Firestore
+    if (user != null) {
+      try {
+        await _db.collection('users').doc(user.uid).update({
+          'is_premium': isPremium,
+          if (isPremium) 'premium_since': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        debugPrint('SubscriptionService: Firestore status sync failed: $e');
+      }
     }
   }
 }
