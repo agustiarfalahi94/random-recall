@@ -159,7 +159,7 @@ class SyncService {
   /// pushing them to the user's private collection using a write batch.
   Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
-    if (user == null || (_isSyncing && !force)) return;
+    if (user == null || !user.emailVerified || (_isSyncing && !force)) return;
 
     _isSyncing = true;
     debugPrint('SyncService: Starting backup for user ${user.uid}...');
@@ -232,7 +232,7 @@ class SyncService {
   /// Used when logging into a new device or performing a manual refresh.
   Future<void> performRestore({bool force = false, bool isInitialLogin = false}) async {
     final user = AuthService.instance.currentUser;
-    if (user == null || _isSyncing) return;
+    if (user == null || !user.emailVerified || _isSyncing) return;
     
     _isSyncing = true;
     debugPrint('SyncService: Starting restore for user ${user.uid}...');

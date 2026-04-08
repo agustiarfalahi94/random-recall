@@ -22,8 +22,9 @@ class SubscriptionService {
 
     // 1. Configure the SDK
     if (Platform.isAndroid) {
-      if (_apiKeyAndroid.contains('your_actual_api_key')) {
-        debugPrint('SubscriptionService: API Key placeholder detected. Skipping configuration.');
+      // Guard against placeholder keys to avoid log spam
+      if (_apiKeyAndroid.startsWith('goog_abc') || _apiKeyAndroid.contains('your_actual')) {
+        debugPrint('SubscriptionService: API Key placeholder detected. Skipping RevenueCat init.');
         return;
       }
       await Purchases.configure(PurchasesConfiguration(_apiKeyAndroid));
@@ -37,7 +38,7 @@ class SubscriptionService {
 
     // 3. Link current user if already logged in
     final user = AuthService.instance.currentUser;
-    if (user != null) {
+    if (user != null && user.emailVerified) {
       await logIn(user.uid);
     }
   }
@@ -56,8 +57,8 @@ class SubscriptionService {
 
   /// Call this during logout
   Future<void> logOut() async {
-    if (_isConfigured) {
-    await Purchases.logOut();
+    if (_isConfigured && !await Purchases.isAnonymous) {
+      await Purchases.logOut().catchError((_) => null);
     }
     await PlanService.setPremiumStatus(false);
   }

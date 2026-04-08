@@ -2,17 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import '../../core/auth/auth_service.dart';
-import 'email_signup_screen.dart';
-import 'forgot_password_screen.dart';
 
-class EmailAuthScreen extends StatefulWidget {
-  const EmailAuthScreen({super.key});
+class EmailSignupScreen extends StatefulWidget {
+  const EmailSignupScreen({super.key});
 
   @override
-  State<EmailAuthScreen> createState() => _EmailAuthScreenState();
+  State<EmailSignupScreen> createState() => _EmailSignupScreenState();
 }
 
-class _EmailAuthScreenState extends State<EmailAuthScreen> {
+class _EmailSignupScreenState extends State<EmailSignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -36,34 +34,34 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     });
 
     try {
-      await AuthService.instance.signInWithEmail(
+      await AuthService.instance.signUpWithEmail(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
+
       if (mounted) {
-        // Clear stack to root gate
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account created! Please check your email inbox to verify.')),
+        );
+        // Return to root to allow main.dart's Gate logic to show the VerifyEmailScreen
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
       String message;
-      if (e.code == 'user-not-found') {
-        message = 'No account found for this email.';
-      } else if (e.code == 'wrong-password' ||
-                 e.code == 'invalid-credential' ||
-                 e.code == 'INVALID_LOGIN_CREDENTIALS') {
-        message = 'Incorrect email or password.';
+      if (e.code == 'email-already-in-use') {
+        message = 'This email address is already in use. Please log in or use a different email.';
       } else if (e.code == 'invalid-email') {
         message = 'The email address is not valid.';
-      } else if (e.code == 'user-disabled') {
-        message = 'This account has been disabled.';
+      } else if (e.code == 'weak-password') {
+        message = 'The password is too weak. Please use at least 6 characters.';
       } else if (e.code == 'too-many-requests') {
         message = 'Too many attempts. Please try again later.';
       } else {
-        message = 'Incorrect email or password.';
+        message = e.message ?? 'Authentication error (${e.code}). Please try again.';
       }
       setState(() => _errorMessage = message);
     } on FirebaseException {
-      setState(() => _errorMessage = 'Authentication failed. Please try again.');
+      setState(() => _errorMessage = 'Sign up failed. Please try again.');
     } catch (e) {
       setState(() => _errorMessage = 'An unexpected error occurred. Please try again.');
     } finally {
@@ -78,7 +76,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: const Text('Create Account'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -94,7 +92,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Welcome back!',
+                'Join Random Recall',
                 style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -140,7 +138,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   prefixIcon: Icon(Icons.lock_outline),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your password';
+                  if (value == null || value.isEmpty) return 'Please enter a password';
                   if (value.length < 6) return 'Password must be at least 6 characters';
                   return null;
                 },
@@ -155,31 +153,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
                     )
-                  : const Text('Login'),
+                  : const Text('Sign Up'),
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: _isLoading
-                    ? null
-                    : () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const EmailSignupScreen()),
-                        );
-                      },
+                onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
                 child: Text(
-                  'Need an account? Sign up',
+                  'Already have an account? Login',
                   style: TextStyle(color: colorScheme.primary),
                 ),
-              ),
-              TextButton(
-                onPressed: _isLoading
-                    ? null
-                    : () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                        );
-                      },
-                child: Text('Forgot Password?', style: TextStyle(color: colorScheme.secondary, fontSize: 13)),
               ),
             ],
           ),
