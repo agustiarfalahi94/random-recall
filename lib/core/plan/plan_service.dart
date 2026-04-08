@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../auth/auth_service.dart';
 
 class PlanService {
   // Constants for free tier limits
@@ -7,6 +8,12 @@ class PlanService {
 
   /// Returns true if the user has an active premium subscription.
   static Future<bool> isPremium() async {
+    // Permanent bypass for developer test account
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser?.email == 'agustiarfalahi@gmail.com') {
+      return true;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_premium') ?? false;
   }
@@ -38,4 +45,20 @@ class PlanService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_premium', status);
   }
+
+  /// Returns true if the user has already used their daily Undo today.
+  static Future<bool> hasUsedUndoToday() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _dateKey(DateTime.now());
+    return prefs.getString('last_undo_date') == today;
+  }
+
+  /// Marks the Undo feature as used for today.
+  static Future<void> consumeUndo() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_undo_date', _dateKey(DateTime.now()));
+  }
+
+  static String _dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

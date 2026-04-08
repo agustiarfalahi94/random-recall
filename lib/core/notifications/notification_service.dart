@@ -22,6 +22,7 @@ class NotificationService {
 
   bool _initialized = false;
   Completer<void>? _initCompleter;
+  Timer? _scheduleDebounceTimer;
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,10 @@ class NotificationService {
 
     // Listen for database changes to immediately refresh the 7-day alarm window
     DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
-      scheduleNotifications();
+      if (_scheduleDebounceTimer?.isActive ?? false) _scheduleDebounceTimer!.cancel();
+      _scheduleDebounceTimer = Timer(const Duration(seconds: 1), () {
+        scheduleNotifications();
+      });
     });
 
     if (_initCompleter != null) return _initCompleter!.future;
@@ -233,6 +237,7 @@ class NotificationService {
     required int id,
     required tz.TZDateTime scheduledDate,
     required Question question,
+    bool isTest = false,
   }) async {
     const androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
@@ -247,8 +252,8 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       id,
-      'Time for a quick recall! 🧠',
-      'Tap to reveal the answer ✨',
+      isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠',
+      isTest ? 'Tap to reveal the test question ✨' : 'Tap to reveal the answer ✨',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
       // alarmClock maps to AlarmManager.setAlarmClock() — the same API used
@@ -262,32 +267,43 @@ class NotificationService {
       // No matchDateTimeComponents → fires once, never repeats
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      payload: question.id?.toString(),
+      payload: isTest ? 'test:${question.id}' : question.id?.toString(),
     );
   }
 
   // ── Immediate test notification ───────────────────────────────────────────
 
   Future<void> sendTestNotification() async {
+    // Ensure we have permission before trying to show the notification
+    final permission = await hasPermission();
+    if (!permission) {
+      final granted = await requestPermission();
+      if (!granted) throw Exception('Notification permission is required.');
+    }
+
     final question = await DatabaseHelper.instance.getRandomQuestion();
+    if (question == null) throw Exception('No questions in DB to test with.');
+
     const androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
       'Random Recall',
       channelDescription: 'Random quiz reminders',
       importance: Importance.max,
       priority: Priority.max,
+      ticker: 'test_ticker',
       showWhen: true,
       icon: '@mipmap/ic_launcher',
     );
-    // Prefix payload with "test:" so the tap handler can route it to the
-    // practice (no-score) flow instead of the normal scored flow.
+
+    // Use show() for absolute immediate delivery.
     await _plugin.show(
       9999,
       'Test Notification 🧪',
       'Tap to reveal the test question ✨',
       const NotificationDetails(android: androidDetails),
-      payload: 'test:${question?.id}',
+      payload: 'test:${question.id}',
     );
+    debugPrint('NotificationService: Immediate test notification fired via show().');
   }
 
   // ── Cancel all ────────────────────────────────────────────────────────────

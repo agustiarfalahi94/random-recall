@@ -119,19 +119,31 @@ class SyncService {
       final db = await _dbHelper.database;
       bool localChanged = false;
 
-      // We use a transaction and disable foreign keys temporarily.
+      // Disable foreign keys for the connection during this operation
+      await db.execute('PRAGMA foreign_keys = OFF;');
+
       await db.transaction((txn) async {
-        await txn.execute('PRAGMA foreign_keys = OFF');
         for (var change in snapshot.docChanges) {
           if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
             final remoteData = change.doc.data();
             if (remoteData == null) continue;
-            await txn.insert(tableName, remoteData, conflictAlgorithm: ConflictAlgorithm.replace);
-            localChanged = true;
+
+            // NORMALIZE: Go through model to filter extra fields and convert types (bool -> int)
+            final model = fromMap(remoteData);
+            Map<String, dynamic>? map;
+            if (model is Category) map = model.toMap();
+            else if (model is Question) map = model.toMap();
+            else if (model is ScoreRecord) map = model.toMap();
+
+            if (map != null) {
+              await txn.insert(tableName, map, conflictAlgorithm: ConflictAlgorithm.replace);
+              localChanged = true;
+            }
           }
         }
-        await txn.execute('PRAGMA foreign_keys = ON');
       });
+
+      await db.execute('PRAGMA foreign_keys = ON;');
 
       if (localChanged) {
         _dbHelper.notifyUpdate(); // Refresh UI screens
@@ -145,9 +157,9 @@ class SyncService {
   ///
   /// This iterates through Categories, Questions, and Score Records, 
   /// pushing them to the user's private collection using a write batch.
-  Future<void> performBackup() async {
+  Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
-    if (user == null || _isSyncing) return;
+    if (user == null || (_isSyncing && !force)) return;
 
     _isSyncing = true;
     debugPrint('SyncService: Starting backup for user ${user.uid}...');
@@ -218,7 +230,7 @@ class SyncService {
 
   /// Downloads all user data from Firestore and merges it into the local database.
   /// Used when logging into a new device or performing a manual refresh.
-  Future<void> performRestore() async {
+  Future<void> performRestore({bool force = false, bool isInitialLogin = false}) async {
     final user = AuthService.instance.currentUser;
     if (user == null || _isSyncing) return;
     
@@ -226,65 +238,78 @@ class SyncService {
     debugPrint('SyncService: Starting restore for user ${user.uid}...');
 
     try {
-      // OPTIMIZATION: If we already have questions locally, don't block the UI with a full restore
-      // unless it's a forced manual sync.
+      // OPTIMIZATION: Skip automatic restore if data exists, unless forced (e.g. at login)
       final localCount = await _dbHelper.getQuestionCount();
-      if (localCount > 0) {
+      if (!force && localCount > 0) {
         debugPrint('SyncService: Local data exists, skipping automatic full restore.');
         return;
       }
 
+      final db = await _dbHelper.database;
       final userDoc = _db.collection('users').doc(user.uid);
-      bool dataFound = false;
-
-      // Restore Categories
+      
+      // Fetch everything from cloud first to keep the transaction short
       final catSnap = await userDoc.collection('categories').get();
-      for (var doc in catSnap.docs) {
-        final category = Category.fromMap(doc.data());
-        // We bypass the DatabaseHelper wrapper to avoid triggering an auto-sync loop
-        await (await _dbHelper.database).insert('categories', category.toMap(), 
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        dataFound = true;
-      }
-
-      // Restore Questions
       final qSnap = await userDoc.collection('questions').get();
-      for (var doc in qSnap.docs) {
-        final question = Question.fromMap(doc.data());
-        await (await _dbHelper.database).insert('questions', question.toMap(), 
-            conflictAlgorithm: ConflictAlgorithm.replace);
-        dataFound = true;
-      }
-
-      // Restore Score Records
       final sSnap = await userDoc.collection('score_records').get();
-      for (var doc in sSnap.docs) {
-        final score = ScoreRecord.fromMap(doc.data());
-        await (await _dbHelper.database).insert('score_records', score.toMap(), 
-            conflictAlgorithm: ConflictAlgorithm.replace);
-      }
+      final userSnap = await userDoc.get();
 
-      // Restore Settings
-      final doc = await userDoc.get();
-      if (doc.exists && doc.data()!.containsKey('settings')) {
-        final settings = doc.data()!['settings'] as Map<String, dynamic>;
+      bool dataFound = catSnap.docs.isNotEmpty || qSnap.docs.isNotEmpty;
+
+      // Execute everything in a single transaction with Foreign Keys disabled
+      await db.transaction((txn) async {
+        await txn.execute('PRAGMA foreign_keys = OFF');
+
+        // If it's a forced login restore, clean up local tables first to prevent ID conflicts
+        if (isInitialLogin) {
+          await txn.delete('score_records');
+          await txn.delete('questions');
+          await txn.delete('categories', where: 'is_default = 0');
+        }
+
+        // 1. Restore Categories
+        for (var doc in catSnap.docs) {
+          await txn.insert('categories', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+
+        // 2. Restore Questions
+        for (var doc in qSnap.docs) {
+          await txn.insert('questions', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+
+        // 3. Restore Score Records
+        for (var doc in sSnap.docs) {
+          await txn.insert('score_records', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+
+        await txn.execute('PRAGMA foreign_keys = ON;');
+      });
+
+      // 4. Restore SharedPreferences (Settings & Streak)
+      if (userSnap.exists && userSnap.data() != null) {
+        final data = userSnap.data()!;
         final prefs = await SharedPreferences.getInstance();
         
-        if (settings.containsKey('notif_random_anytime')) await prefs.setBool('notif_random_anytime', settings['notif_random_anytime']);
-        if (settings.containsKey('notif_start_hour')) await prefs.setInt('notif_start_hour', settings['notif_start_hour']);
-        if (settings.containsKey('notif_end_hour')) await prefs.setInt('notif_end_hour', settings['notif_end_hour']);
-        if (settings.containsKey('notif_frequency')) await prefs.setInt('notif_frequency', settings['notif_frequency']);
-        if (settings.containsKey('notif_active_days')) await prefs.setString('notif_active_days', settings['notif_active_days']);
-        if (settings.containsKey('notif_timer_seconds')) await prefs.setInt('notif_timer_seconds', settings['notif_timer_seconds']);
-      }
-      
-      // Restore Streak
-      if (doc.exists && doc.data()!.containsKey('streak')) {
-        final streak = doc.data()!['streak'] as Map<String, dynamic>;
-        final prefs = await SharedPreferences.getInstance();
-        if (streak.containsKey('timer_streak_days')) await prefs.setInt('timer_streak_days', streak['timer_streak_days']);
-        if (streak.containsKey('timer_streak_last_date')) await prefs.setString('timer_streak_last_date', streak['timer_streak_last_date']);
-        if (streak.containsKey('timer_streak_bonus_questions')) await prefs.setInt('timer_streak_bonus_questions', streak['timer_streak_bonus_questions']);
+        // Pull Premium status directly from Firestore document root
+        if (data.containsKey('is_premium')) {
+          await prefs.setBool('is_premium', data['is_premium'] as bool);
+        }
+
+        if (data.containsKey('settings')) {
+          final s = data['settings'] as Map<String, dynamic>;
+          if (s.containsKey('notif_random_anytime')) await prefs.setBool('notif_random_anytime', s['notif_random_anytime'] as bool);
+          if (s.containsKey('notif_start_hour')) await prefs.setInt('notif_start_hour', s['notif_start_hour'] as int);
+          if (s.containsKey('notif_end_hour')) await prefs.setInt('notif_end_hour', s['notif_end_hour'] as int);
+          if (s.containsKey('notif_frequency')) await prefs.setInt('notif_frequency', s['notif_frequency'] as int);
+          if (s.containsKey('notif_active_days')) await prefs.setString('notif_active_days', s['notif_active_days'] as String);
+          if (s.containsKey('notif_timer_seconds')) await prefs.setInt('notif_timer_seconds', s['notif_timer_seconds'] as int);
+        }
+        if (data.containsKey('streak')) {
+          final str = data['streak'] as Map<String, dynamic>;
+          if (str.containsKey('timer_streak_days')) await prefs.setInt('timer_streak_days', str['timer_streak_days'] as int);
+          if (str.containsKey('timer_streak_last_date')) await prefs.setString('timer_streak_last_date', str['timer_streak_last_date'] as String);
+          if (str.containsKey('timer_streak_bonus_questions')) await prefs.setInt('timer_streak_bonus_questions', str['timer_streak_bonus_questions'] as int);
+        }
       }
 
       // If data was restored, ensure we mark onboarding as complete locally
@@ -292,9 +317,6 @@ class SyncService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('onboarding_complete', true);
       }
-
-      // Trigger a re-schedule of notifications using the restored data and settings
-      await NotificationService.instance.scheduleNotifications();
 
       // Refresh the UI so the user sees their restored data immediately
       _dbHelper.notifyUpdate();

@@ -17,7 +17,6 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
   bool _isBatteryIgnored = false;
   bool _canExactAlarm = false;
   List<Map<String, dynamic>> _mirrorLog = [];
-  List<PendingNotificationRequest> _pendingRequests = [];
   Map<int, String> _questionMap = {};
   bool _isLoading = true;
 
@@ -38,7 +37,6 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
     final exact = await android?.canScheduleExactNotifications() ?? false;
 
     final mirror = await NotificationService.instance.getMirrorLog();
-    final pending = await NotificationService.instance.getPendingRequests();
     
     // Load question texts so the IDs in the log make sense
     final allQuestions = await DatabaseHelper.instance.getAllQuestions();
@@ -49,7 +47,6 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
         _isBatteryIgnored = battery;
         _canExactAlarm = exact;
         _mirrorLog = mirror;
-        _pendingRequests = pending;
         _questionMap = qMap;
         _isLoading = false;
       });
@@ -74,14 +71,24 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
               _buildSectionHeader('System Permissions'),
               _buildStatusSection(),
               const SizedBox(height: 24),
-              _buildSectionHeader('System Alarms (Android View)'),
-              _buildPendingList(theme),
-              const SizedBox(height: 24),
               _buildSectionHeader('Mirror Log (App Logic View)'),
               _buildMirrorList(theme),
               const SizedBox(height: 32),
               ElevatedButton.icon(
-                onPressed: () => NotificationService.instance.sendTestNotification(),
+                onPressed: () async {
+                  try {
+                    await NotificationService.instance.sendTestNotification();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Test alarm set for 1 second from now! 🔔')),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                },
                 icon: const Icon(Icons.send_rounded),
                 label: const Text('Fire Immediate Test Notification'),
               ),
@@ -107,25 +114,6 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
           _StatusRow(label: 'Exact Alarm Allowed', value: _canExactAlarm),
         ],
       ),
-    );
-  }
-
-  Widget _buildPendingList(ThemeData theme) {
-    if (_pendingRequests.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text('No active alarms in the OS.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
-      );
-    }
-    return Column(
-      children: _pendingRequests.map((req) => Card(
-        child: ListTile(
-          dense: true,
-          leading: const Icon(Icons.alarm, size: 20),
-          title: Text(req.title ?? 'No Title'),
-          subtitle: Text('Android ID: ${req.id}'),
-        ),
-      )).toList(),
     );
   }
 
