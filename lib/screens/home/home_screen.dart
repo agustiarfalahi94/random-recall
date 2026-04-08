@@ -322,8 +322,46 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               ],
             ),
             onTap: () async {
-              await AuthService.instance.signOut();
-              if (context.mounted) Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
+              // 1. Close settings sheet
+              if (navigator.canPop()) navigator.pop();
+
+              // 2. Show a non-dismissible loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: Card(
+                    margin: EdgeInsets.all(32),
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Signing out safely...', style: TextStyle(fontWeight: FontWeight.w600)),
+                          SizedBox(height: 4),
+                          Text('Backing up your data', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              
+              try {
+                await AuthService.instance.signOut(
+                  onBeforeFinalSignOut: () async {
+                    if (navigator.canPop()) navigator.pop();
+                  },
+                );
+              } catch (e) {
+                if (navigator.canPop()) navigator.pop();
+                messenger.showSnackBar(SnackBar(content: Text('Sign out failed: $e')));
+              }
             },
           ),
         ],

@@ -16,6 +16,7 @@ import 'core/auth/auth_service.dart';
 import 'core/plan/subscription_service.dart';
 import 'screens/question/notification_question_screen.dart';
 import 'screens/question/permission_required_screen.dart';
+import 'screens/auth/verify_email_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -44,13 +45,27 @@ Future<void> main() async {
       
       await NotificationService.instance.handleNotificationLaunch();
       
-      // Setup background worker and initial scheduling
       final prefs = await SharedPreferences.getInstance();
       final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+      
+      // Reload user on startup safely
       final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null) {
+        try {
+          await currentUser.reload();
+        } catch (e) {
+          // If reload fails for any reason (e.g., token expired, user deleted),
+          // treat it as a sign-out event to clear the local session.
+          debugPrint('main.dart: User reload failed: $e. Signing out...');
+          // Explicitly call signOut to ensure all local state is cleared.
+          // The authStateChanges stream will then handle navigation to LoginScreen.
+            await AuthService.instance.signOut();
+        }
+      }
 
-      if (onboardingComplete && currentUser != null) {
-        // Perform an initial sync restore to ensure this device has the latest cloud data
+      final user = AuthService.instance.currentUser;
+
+      if (onboardingComplete && user != null && user.emailVerified) {
         SyncService.instance.performRestore();
         await registerNotificationWorker().catchError((e) => debugPrint('WorkManager failed: $e'));
       }
@@ -139,9 +154,20 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
                         );
                       }
                       final user = snapshot.data;
-                      if (user == null) {
-                        return const LoginScreen();
+                      if (user == null) return const LoginScreen();
+
+                      // ROBUST GATE: Check if user is Google or Anonymous
+                      final isGoogle = user.providerData.any((p) => p.providerId == 'google.com');
+                      final isAnonymous = user.isAnonymous;
+                      
+                      // If NOT Google and NOT Anonymous, it MUST be an Email user.
+                      // They are ONLY verified if emailVerified is strictly true.
+                      final bool isVerified = isGoogle || isAnonymous || user.emailVerified;
+
+                      if (!isVerified) {
+                        return const VerifyEmailScreen();
                       }
+
                       return const _HomeGate();
                     },
                   ),

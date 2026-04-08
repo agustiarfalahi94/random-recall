@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -16,8 +19,11 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  static bool _pendingLocalCleanup = false; // Flag to trigger one-time local data cleanup
+
   /// Stream of user authentication state changes.
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  /// userChanges() notifies the UI whenever the user is reloaded (e.g., email verified).
+  Stream<User?> get authStateChanges => _auth.userChanges();
 
   /// Returns the current user if logged in.
   User? get currentUser => _auth.currentUser;
@@ -37,8 +43,7 @@ class AuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       if (userCredential.user != null) {
         await _ensureUserDocument(userCredential.user!);
-        await SubscriptionService.instance.logIn(userCredential.user!.uid);
-        await SyncService.instance.performRestore(force: true, isInitialLogin: true);
+        await initializeUserSession();
       }
       return userCredential;
     } catch (e) {
@@ -51,9 +56,14 @@ class AuthService {
   Future<UserCredential> signInWithEmail(String email, String password) async {
     final userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
     if (userCredential.user != null) {
+      // CRITICAL: Force a reload from server to catch accounts deleted in Console
+      await userCredential.user!.reload();
       await _ensureUserDocument(userCredential.user!);
-      await SubscriptionService.instance.logIn(userCredential.user!.uid);
-      await SyncService.instance.performRestore(force: true, isInitialLogin: true);
+      
+      // Only initialize data if verified
+      if (_auth.currentUser != null && _auth.currentUser!.emailVerified) {
+        await initializeUserSession();
+      }
     }
     return userCredential;
   }
@@ -62,20 +72,59 @@ class AuthService {
   Future<UserCredential> signUpWithEmail(String email, String password) async {
     final userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
     if (userCredential.user != null) {
+      // Ensure we have the latest state before sending verification
+      await userCredential.user!.reload();
+      await userCredential.user!.sendEmailVerification();
       await _ensureUserDocument(userCredential.user!);
-      await SubscriptionService.instance.logIn(userCredential.user!.uid);
-      await SyncService.instance.performRestore(force: true, isInitialLogin: true);
     }
     return userCredential;
   }
 
-  /// Sends a password reset email.
+  /// Performs RevenueCat login and Cloud Restore only for verified users.
+  Future<void> initializeUserSession() async {
+    final user = currentUser;
+    if (user == null || !user.emailVerified) return;
+    
+    await SubscriptionService.instance.logIn(user.uid);
+    await SyncService.instance.performRestore(force: true, isInitialLogin: true);
+  }
+
+  /// Force-reloads the user from Firebase servers.
+  Future<void> reloadUser() async {
+    await _auth.currentUser?.reload();
+  }
+
+  /// Sends a password reset email after verifying the user exists in Auth and Firestore.
   Future<void> sendPasswordResetEmail(String email) async {
+    // 1. Check if email exists in Firebase Authentication
+    final methods = await _auth.fetchSignInMethodsForEmail(email);
+    if (methods.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'No account found with this email address.',
+      );
+    }
+
+    // 2. Check if user document exists in Firestore database
+    final userQuery = await _db.collection('users').where('email', isEqualTo: email).limit(1).get();
+    if (userQuery.docs.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'User record not found in database.',
+      );
+    }
+
+    // 3. Trigger Firebase reset email
     await _auth.sendPasswordResetEmail(email: email);
   }
 
+  bool _isSigningOut = false;
+
   /// Sign out from all providers.
-  Future<void> signOut() async {
+  Future<void> signOut({FutureOr<void> Function()? onBeforeFinalSignOut}) async {
+    if (_isSigningOut) return;
+    _isSigningOut = true;
+
     try {
       final user = currentUser;
       
@@ -87,20 +136,34 @@ class AuthService {
       // 2. Stop listeners
       SyncService.instance.stopRealtimeSync();
       
-      // 3. Subscription logout (safe now due to _isConfigured check)
+      // 3. Subscription and Google logout
       SubscriptionService.instance.logOut().catchError((e) => debugPrint('RevenueCat logout failed: $e'));
-      
-      // 4. Core Auth signout
       await _googleSignIn.signOut().catchError((_) => null);
-      await _auth.signOut();
       
-      // 5. CRITICAL: Clear local data so the next user starts fresh
+      // 4. CRITICAL: Clear local data so the next user starts fresh
       await DatabaseHelper.instance.clearAllData();
-      // Also clear local flags so the next user sees onboarding
+      
+      // 5. Selective cleanup: Clear app-specific preferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); 
+      await prefs.remove('onboarding_complete');
+      await prefs.remove('timer_streak_days');
+      await prefs.remove('timer_streak_last_date');
+      await prefs.remove('timer_streak_bonus_questions');
+
+      // 6. UI HOOK: Allow the caller to dismiss dialogs/sheets before the 
+      // root widget tree swaps, which prevents crashes on certain Android devices.
+      if (onBeforeFinalSignOut != null) {
+        await onBeforeFinalSignOut();
+      }
+
+      debugPrint('AuthService: Performing Firebase signOut...');
+      // 7. FINAL STEP: Sign out of Firebase to trigger the UI switch in main.dart
+      await _auth.signOut();
+
     } catch (e) {
       debugPrint('AuthService: Sign-out error: $e');
+    } finally {
+      _isSigningOut = false;
     }
   }
 
