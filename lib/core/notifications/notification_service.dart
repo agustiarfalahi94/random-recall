@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -30,11 +31,19 @@ class NotificationService {
     if (_initialized) return;
     debugPrint('NotificationService: Initializing...');
 
-    // Listen for database changes to immediately refresh the 7-day alarm window
+    // Listen for database changes to refresh the schedule.
+    // We debounce this to avoid rapid re-scheduling during sync/practice.
     DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
       if (_scheduleDebounceTimer?.isActive ?? false) _scheduleDebounceTimer!.cancel();
-      _scheduleDebounceTimer = Timer(const Duration(seconds: 1), () {
-        scheduleNotifications();
+      _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
+        final prefs = await SharedPreferences.getInstance();
+        final lastCount = prefs.getInt('last_known_question_count') ?? 0;
+        final currentCount = await DatabaseHelper.instance.getQuestionCount();
+        
+        if (currentCount != lastCount) {
+          await prefs.setInt('last_known_question_count', currentCount);
+          scheduleNotifications();
+        }
       });
     });
 
@@ -52,10 +61,10 @@ class NotificationService {
       await _actualInit().timeout(const Duration(seconds: 4));
       _initialized = true; // Mark as initialized only if _actualInit completes successfully
     } catch (e) {
-      debugPrint('NotificationService: Initialization warning: $e');
+      debugPrint('NotificationService: Initialization error: $e');
       // We still mark as initialized if it was a timeout to avoid infinite waiting,
       // but the plugin might not be fully ready.
-      _initialized = (e is TimeoutException);
+      _initialized = false;
     } finally {
       if (!completer.isCompleted) {
         debugPrint('NotificationService: Init completer completed.');
@@ -69,7 +78,9 @@ class NotificationService {
     try {
       debugPrint('NotificationService: Setting local timezone...');
       final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+      final String timeZoneName = timezoneInfo.identifier;
+      debugPrint('NotificationService: Detected device timezone: $timeZoneName');
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (e) {
       debugPrint('NotificationService: Timezone detection failed: $e');
       tz.setLocalLocation(tz.UTC);
@@ -103,7 +114,11 @@ class NotificationService {
         await android?.canScheduleExactNotifications() ?? true;
     debugPrint('NotificationService: Exact alarm permission granted: $canExact');
     if (!canExact) {
-      await android?.requestExactAlarmsPermission();
+      try {
+        await AppSettings.openAppSettings(type: AppSettingsType.alarm);
+      } catch (_) {
+        await android?.requestExactAlarmsPermission();
+      }
     }
 
     return notifGranted;
@@ -114,6 +129,26 @@ class NotificationService {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     return await android?.areNotificationsEnabled() ?? true;
+  }
+
+  // ── Settings sanitization ─────────────────────────────────────────────────
+
+  /// Detects and resets corrupted notification time-window settings.
+  /// Gemini's timezone bug could save hours in UTC (e.g. 0am–1am for a
+  /// GMT+8 user who configured 8am–9am). Reset to safe defaults when detected.
+  void _sanitizeNotificationPrefs(SharedPreferences prefs) {
+    final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
+    if (!randomAnytime) {
+      final startHour = prefs.getInt('notif_start_hour') ?? 8;
+      final endHour = prefs.getInt('notif_end_hour') ?? 20;
+      // Corrupted if: window is inverted, too narrow (<1h), or suspiciously
+      // in the middle of the night (both hours before 4am).
+      if (endHour - startHour < 1 || (startHour < 4 && endHour < 4)) {
+        debugPrint('NotificationService: Corrupted time window ($startHour–$endHour). Resetting to 8–20.');
+        prefs.setInt('notif_start_hour', 8);
+        prefs.setInt('notif_end_hour', 20);
+      }
+    }
   }
 
   // ── Schedule 7 days of one-time notifications ─────────────────────────────
@@ -128,17 +163,27 @@ class NotificationService {
 
   Future<void> scheduleNotifications() async {
     debugPrint('NotificationService: Scheduling notifications...');
-    if (!_initialized) {
-      await init();
+    // Ensure we are initialized and have a valid non-UTC timezone if possible
+    if (!_initialized) await init();
+    
+    if (tz.local == tz.UTC) {
+      debugPrint('NotificationService: Timezone not ready. Aborting schedule to prevent UTC shift.');
+      return;
     }
 
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // Force refresh to catch recent UI changes
+    _sanitizeNotificationPrefs(prefs);
 
     final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
     final startHour = prefs.getInt('notif_start_hour') ?? 8;
     final endHour = prefs.getInt('notif_end_hour') ?? 20;
     final frequency = prefs.getInt('notif_frequency') ?? 3;
     final activeDaysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
+
+    debugPrint('NotificationService: Settings used: randomAnytime=$randomAnytime, '
+        'startHour=$startHour, endHour=$endHour, frequency=$frequency, '
+        'activeDays=$activeDaysStr');
     final activeDays = activeDaysStr.split(',').map(int.parse).toSet();
 
     // Fetch all questions once; the scheduler picks from them.
@@ -165,51 +210,52 @@ class NotificationService {
     );
     debugPrint('NotificationService: Calculated ${slots.length} notification slots for the next 7 days.');
 
-    // If no slots are calculated (e.g., no active days, or all in past), cancel existing.
     if (slots.isEmpty) return;
 
-    await cancelAll();
-    
-    // DEBUG: Mirror the schedule to SharedPreferences so we can inspect 
-    // the exact scheduled times in a Debug Menu later.
-    final debugList = slots.map((s) => {
-      'time': s.scheduledAt.toIso8601String(),
-      'id': s.questionId,
+    // 1. Generate stable IDs and mirror log for the debug menu & tray matching
+    final debugList = slots.asMap().entries.map((entry) {
+      final i = entry.key;
+      final s = entry.value;
+      // Truly stable ID: Weekday (1-7) * 100 + SlotIndex (0-19).
+      // This ensures reschedules overwrite the same 'slot' even if jitter changes the minute.
+      final notifId = (s.scheduledAt.weekday * 100) + s.slotIndex;
+      
+      return {
+        'time': s.scheduledAt.toIso8601String(),
+        'id': s.questionId, // Renamed back to 'id' for DebugNotificationScreen compatibility
+        'notif_id': notifId,
+      };
     }).toList();
     await prefs.setString('notif_schedule_mirror', jsonEncode(debugList));
 
-    // Build a lookup so we don't do N linear scans
     final questionMap = {for (final q in questions) q.id!: q};
-
-    int notifId = 0;
-    for (final slot in slots) {
+    for (int i = 0; i < slots.length; i++) {
+      final slot = slots[i];
       final question = questionMap[slot.questionId];
       if (question == null) continue;
-      if (question.id == null) continue;
 
-      final scheduledDate = tz.TZDateTime.from(slot.scheduledAt, tz.local);
+      final scheduledDate = slot.scheduledAt;
+      // Truly stable ID: Weekday (1-7) * 100 + SlotIndex (0-19).
+      final notifId = (scheduledDate.weekday * 100) + slot.slotIndex;
 
       // Add a tiny delay every 10 items to let the UI thread breathe
       // and avoid saturating the platform channel.
-      if (notifId % 5 == 0) {
+      if (i % 5 == 0) {
         await Future.delayed(const Duration(milliseconds: 16));
       }
 
-      // Use a unique notifId for scheduling. Using question.id here would
-      // overwrite future alarms for the same question in the 7-day window.
       await _scheduleOneTimeNotification(
         id: notifId,
         scheduledDate: scheduledDate,
         question: question,
       );
 
-      notifId++;
-      if (notifId == 1) { // log only the first one
+      if (i == 0) { // log only the first one
         debugPrint('NotificationService: First upcoming notification at: $scheduledDate');
       }
     }
 
-    debugPrint('NotificationService: Successfully batched $notifId alarms to Android.');
+    debugPrint('NotificationService: Successfully batched ${slots.length} alarms to Android.');
   }
 
   /// Returns the number of currently pending (not-yet-fired) notifications.
@@ -231,6 +277,61 @@ class NotificationService {
     return List<Map<String, dynamic>>.from(jsonDecode(data));
   }
 
+  /// Calculates how many notifications have fired since the user's last answer.
+  Future<int> getUnansweredCount() async {
+    try {
+      final active = await _plugin.getActiveNotifications();
+      // Filter out the test notification (9999) so it doesn't count as a study item
+      return active.where((n) => n.id != 9999).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Finds the oldest question ID that was notified but not yet answered.
+  Future<int?> getOldestUnansweredQuestionId() async {
+    final active = await _plugin.getActiveNotifications();
+    if (active.isEmpty) return null;
+
+    // Get the IDs currently in the tray (excluding test)
+    final activeIds = active.where((n) => n.id != 9999).map((n) => n.id).toSet();
+    if (activeIds.isEmpty) return null;
+
+    final log = await getMirrorLog();
+    
+    // Find the first log entry that matches an ID currently in the tray
+    for (final entry in log) {
+      final logNotifId = entry['notif_id'] as int?;
+      if (activeIds.contains(logNotifId)) {
+        return entry['id'] as int?;
+      }
+    }
+    return null;
+  }
+
+  /// Clears any active notifications in the system tray for a specific question.
+  Future<void> cancelNotificationsForQuestion(int questionId) async {
+    try {
+      final active = await _plugin.getActiveNotifications();
+      if (active.isEmpty) return;
+
+      final log = await getMirrorLog();
+      final activeIds = active.map((n) => n.id).toSet();
+
+      for (final entry in log) {
+        if (entry['id'] == questionId) {
+          final nId = entry['notif_id'] as int?;
+          if (nId != null && activeIds.contains(nId)) {
+            debugPrint('NotificationService: Cancelling active notification $nId for question $questionId');
+            await _plugin.cancel(nId);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('NotificationService: Error cancelling notification: $e');
+    }
+  }
+
   // ── Fire a single one-time notification (no matchDateTimeComponents) ──────
 
   Future<void> _scheduleOneTimeNotification({
@@ -247,24 +348,20 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
-      // Removed groupKey to prevent Android auto-dismissing multiple notifications.
+      category: AndroidNotificationCategory.alarm,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
     );
 
     await _plugin.zonedSchedule(
       id,
       isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠',
       isTest ? 'Tap to reveal the test question ✨' : 'Tap to reveal the answer ✨',
-      scheduledDate,
+      scheduledDate, // Pass the local TZDateTime directly
       const NotificationDetails(android: androidDetails),
-      // alarmClock maps to AlarmManager.setAlarmClock() — the same API used
-      // by Android's built-in clock app. It is the highest-priority alarm type:
-      // it cannot be deferred by Doze, cannot be killed by MIUI/HyperOS battery
-      // management, and fires even when the device is in deep sleep.
-      // Requires SCHEDULE_EXACT_ALARM (declared in manifest, pre-granted on
-      // Android 13+). Shows a small clock icon in the status bar — expected
-      // behaviour for alarm-clock level scheduling.
       androidScheduleMode: AndroidScheduleMode.alarmClock,
-      // No matchDateTimeComponents → fires once, never repeats
+      // absoluteTime interpretation combined with a UTC TZDateTime is the 
+      // most robust method. It tells Android the exact epoch millisecond 
+      // to fire, regardless of how the phone handles local clock objects.
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: isTest ? 'test:${question.id}' : question.id?.toString(),

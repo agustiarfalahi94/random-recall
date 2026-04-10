@@ -2,10 +2,16 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:random_recall/core/notifications/notification_scheduler.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
 
 // Pure logic tests — no plugins, no DB, no Flutter context needed.
 
 void main() {
+  setUpAll(() {
+    tz.initializeTimeZones();
+  });
+
   // ── Active days label logic ─────────────────────────────────────────────────
 
   group('Active days label', () {
@@ -149,7 +155,7 @@ void main() {
 
   group('NotificationScheduler.computeSlots', () {
     // Monday 2026-04-06 08:00:00 local
-    final monday8am = DateTime(2026, 4, 6, 8, 0, 0);
+    final monday8am = tz.TZDateTime(tz.local, 2026, 4, 6, 8, 0, 0);
     const allDays = {1, 2, 3, 4, 5, 6, 7};
     const weekdays = {1, 2, 3, 4, 5};
     const weekends = {6, 7};
@@ -255,7 +261,7 @@ void main() {
 
     test('all past slots excluded when now is late evening', () {
       // Saturday 23:50 — nearly all of today's slots should be in the past.
-      final lateNight = DateTime(2026, 4, 11, 23, 50, 0); // Saturday
+      final lateNight = tz.TZDateTime(tz.local, 2026, 4, 11, 23, 50, 0); // Saturday
       final slots = NotificationScheduler.computeSlots(
         randomAnytime: false,
         startHour: 8,

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/notifications/notification_service.dart';
 import '../../core/plan/plan_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
@@ -160,6 +161,9 @@ class _NotificationQuestionScreenState
           answeredAt: now,
           updatedAt: now,
         ));
+
+        // Clear the persistent tray notification for this question.
+        await NotificationService.instance.cancelNotificationsForQuestion(_question!.id!);
 
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
