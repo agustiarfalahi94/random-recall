@@ -22,6 +22,7 @@ class NotificationService {
   GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
+  bool _isScheduling = false;
   Completer<void>? _initCompleter;
   Timer? _scheduleDebounceTimer;
 
@@ -91,6 +92,27 @@ class NotificationService {
       const InitializationSettings(android: androidSettings),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+
+    // Force-recreate the notification channel so that alarm audio attributes
+    // (audioAttributesUsage = alarm, which bypasses DND) are always applied.
+    // Android ignores channel-setting updates on existing channels, so we
+    // delete the old one and let it be recreated with the correct settings.
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.deleteNotificationChannel('random_recall_channel');
+    await androidPlugin?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'random_recall_channel',
+        'Random Recall',
+        description: 'Random quiz reminders',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        // alarm usage lets this channel bypass DND/silent mode
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+      ),
+    );
+    debugPrint('NotificationService: Notification channel recreated with alarm audio attributes.');
   }
 
   // ── Permission ────────────────────────────────────────────────────────────
@@ -162,6 +184,22 @@ class NotificationService {
   ///   4. Uses tz-aware 'now' to prevent scheduling in the past.
 
   Future<void> scheduleNotifications() async {
+    // Guard against concurrent calls — two simultaneous scheduling runs
+    // will interleave their zonedSchedule() calls and can corrupt the
+    // AlarmManager state. Drop any call that arrives while one is running.
+    if (_isScheduling) {
+      debugPrint('NotificationService: Scheduling already in progress, skipping.');
+      return;
+    }
+    _isScheduling = true;
+    try {
+      await _scheduleNotificationsInternal();
+    } finally {
+      _isScheduling = false;
+    }
+  }
+
+  Future<void> _scheduleNotificationsInternal() async {
     debugPrint('NotificationService: Scheduling notifications...');
     // Ensure we are initialized and have a valid non-UTC timezone if possible
     if (!_initialized) await init();
