@@ -386,20 +386,22 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
-      category: AndroidNotificationCategory.alarm,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
+      // Do NOT set category:alarm here — on Xiaomi HyperOS this routes the
+      // notification through the system clock app's group, blocking it.
+      // DND bypass is handled by the channel's audioAttributesUsage=alarm.
     );
 
     await _plugin.zonedSchedule(
       id,
       isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠',
       isTest ? 'Tap to reveal the test question ✨' : 'Tap to reveal the answer ✨',
-      scheduledDate, // Pass the local TZDateTime directly
+      scheduledDate,
       const NotificationDetails(android: androidDetails),
-      androidScheduleMode: AndroidScheduleMode.alarmClock,
-      // absoluteTime interpretation combined with a UTC TZDateTime is the 
-      // most robust method. It tells Android the exact epoch millisecond 
-      // to fire, regardless of how the phone handles local clock objects.
+      // alarmClock is intercepted by Xiaomi HyperOS power management for
+      // third-party apps. exactAllowWhileIdle uses setExactAndAllowWhileIdle()
+      // which bypasses that interception while still being exact and
+      // Doze-exempt. SCHEDULE_EXACT_ALARM permission is already declared.
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: isTest ? 'test:${question.id}' : question.id?.toString(),
