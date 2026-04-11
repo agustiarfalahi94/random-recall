@@ -93,13 +93,32 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    // Force-recreate the notification channel so that alarm audio attributes
-    // (audioAttributesUsage = alarm, which bypasses DND) are always applied.
-    // Android ignores channel-setting updates on existing channels, so we
-    // delete the old one and let it be recreated with the correct settings.
+    // Ensure the notification channel exists with the correct alarm audio
+    // attributes (DND bypass). Android ignores updates to channel settings on
+    // existing channels, so for users upgrading from an older build with the
+    // wrong settings we need a ONE-TIME delete-and-recreate migration.
+    //
+    // CRITICAL: Do NOT delete the channel on every launch. Deleting a channel
+    // wipes ALL its active tray notifications, which on MIUI/HyperOS (where
+    // the app is aggressively killed in the background) means every cold
+    // start from the launcher would erase pending notifications from the tray.
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.deleteNotificationChannel('random_recall_channel');
+
+    final prefs = await SharedPreferences.getInstance();
+    const migrationKey = 'notif_channel_v2_migrated';
+    final alreadyMigrated = prefs.getBool(migrationKey) ?? false;
+
+    if (!alreadyMigrated) {
+      // First run on this build: delete the legacy channel (if any) and
+      // recreate it with the alarm audio attributes. This wipes the tray once,
+      // which is acceptable on a one-time migration.
+      await androidPlugin?.deleteNotificationChannel('random_recall_channel');
+      debugPrint('NotificationService: Legacy channel deleted (one-time migration).');
+    }
+
+    // createNotificationChannel is a no-op if a channel with this ID already
+    // exists, so it's safe to call on every launch.
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         'random_recall_channel',
@@ -112,7 +131,13 @@ class NotificationService {
         audioAttributesUsage: AudioAttributesUsage.alarm,
       ),
     );
-    debugPrint('NotificationService: Notification channel recreated with alarm audio attributes.');
+
+    if (!alreadyMigrated) {
+      await prefs.setBool(migrationKey, true);
+      debugPrint('NotificationService: Channel recreated with alarm audio attributes (migrated).');
+    } else {
+      debugPrint('NotificationService: Channel already migrated, preserving tray.');
+    }
   }
 
   // ── Permission ────────────────────────────────────────────────────────────
