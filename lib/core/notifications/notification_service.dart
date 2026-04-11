@@ -251,19 +251,50 @@ class NotificationService {
     if (slots.isEmpty) return;
 
     // 1. Generate stable IDs and mirror log for the debug menu & tray matching
-    final debugList = slots.asMap().entries.map((entry) {
-      final i = entry.key;
-      final s = entry.value;
-      // Truly stable ID: Weekday (1-7) * 100 + SlotIndex (0-19).
-      // This ensures reschedules overwrite the same 'slot' even if jitter changes the minute.
-      final notifId = (s.scheduledAt.weekday * 100) + s.slotIndex;
-      
+    // Stable ID = days-since-epoch * 20 + slotIndex. Unique across the entire
+    // 8-day schedule window AND deterministic across reschedules (no week-collision).
+    int idForSlot(tz.TZDateTime when, int slotIndex) {
+      final daysSinceEpoch = when.toUtc().millisecondsSinceEpoch ~/ 86400000;
+      return (daysSinceEpoch * 20) + slotIndex;
+    }
+
+    final futureList = slots.map((s) {
       return {
         'time': s.scheduledAt.toIso8601String(),
         'id': s.questionId, // Renamed back to 'id' for DebugNotificationScreen compatibility
-        'notif_id': notifId,
+        'notif_id': idForSlot(s.scheduledAt, s.slotIndex),
       };
     }).toList();
+
+    // Preserve already-delivered entries that are still in the tray. Without
+    // this, the mirror log would lose past slots and the home-screen unanswered
+    // lookup (getOldestUnansweredQuestionId) would fail to map active tray
+    // notifications back to their question IDs after a reschedule.
+    final preservedDelivered = <Map<String, dynamic>>[];
+    try {
+      final activeNow = await _plugin.getActiveNotifications();
+      final activeIds = activeNow.map((n) => n.id).whereType<int>().toSet();
+      final oldRaw = prefs.getString('notif_schedule_mirror');
+      if (oldRaw != null && activeIds.isNotEmpty) {
+        final oldList = List<Map<String, dynamic>>.from(jsonDecode(oldRaw));
+        final newNotifIds = futureList
+            .map((e) => e['notif_id'] as int?)
+            .whereType<int>()
+            .toSet();
+        for (final entry in oldList) {
+          final nid = entry['notif_id'] as int?;
+          if (nid != null &&
+              activeIds.contains(nid) &&
+              !newNotifIds.contains(nid)) {
+            preservedDelivered.add(entry);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('NotificationService: Could not preserve delivered mirror entries: $e');
+    }
+
+    final debugList = [...preservedDelivered, ...futureList];
     await prefs.setString('notif_schedule_mirror', jsonEncode(debugList));
 
     final questionMap = {for (final q in questions) q.id!: q};
@@ -273,8 +304,7 @@ class NotificationService {
       if (question == null) continue;
 
       final scheduledDate = slot.scheduledAt;
-      // Truly stable ID: Weekday (1-7) * 100 + SlotIndex (0-19).
-      final notifId = (scheduledDate.weekday * 100) + slot.slotIndex;
+      final notifId = idForSlot(scheduledDate, slot.slotIndex);
 
       // Add a tiny delay every 10 items to let the UI thread breathe
       // and avoid saturating the platform channel.
@@ -316,11 +346,31 @@ class NotificationService {
   }
 
   /// Calculates how many notifications have fired since the user's last answer.
+  ///
+  /// Counts unique question IDs by intersecting active tray notifications with
+  /// the mirror log. This filters out phantom system entries (e.g. MIUI group
+  /// summaries) that would otherwise inflate the count by +1.
   Future<int> getUnansweredCount() async {
     try {
       final active = await _plugin.getActiveNotifications();
-      // Filter out the test notification (9999) so it doesn't count as a study item
-      return active.where((n) => n.id != 9999).length;
+      if (active.isEmpty) return 0;
+
+      final activeIds = active
+          .where((n) => n.id != null && n.id != 9999)
+          .map((n) => n.id!)
+          .toSet();
+      if (activeIds.isEmpty) return 0;
+
+      final log = await getMirrorLog();
+      final matchedQuestionIds = <int>{};
+      for (final entry in log) {
+        final nid = entry['notif_id'] as int?;
+        final qid = entry['id'] as int?;
+        if (nid != null && qid != null && activeIds.contains(nid)) {
+          matchedQuestionIds.add(qid);
+        }
+      }
+      return matchedQuestionIds.length;
     } catch (e) {
       return 0;
     }
