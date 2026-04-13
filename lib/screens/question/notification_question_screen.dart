@@ -165,6 +165,10 @@ class _NotificationQuestionScreenState
         // Clear the persistent tray notification for this question.
         await NotificationService.instance.cancelNotificationsForQuestion(_question!.id!);
 
+        // Update last-answer timestamp so the fallback badge count resets.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('last_answer_timestamp', now.millisecondsSinceEpoch);
+
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
           final result = await StreakService.recordActivity();

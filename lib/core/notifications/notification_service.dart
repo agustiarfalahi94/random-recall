@@ -372,30 +372,63 @@ class NotificationService {
 
   /// Calculates how many notifications have fired since the user's last answer.
   ///
-  /// Counts unique question IDs by intersecting active tray notifications with
-  /// the mirror log. This filters out phantom system entries (e.g. MIUI group
-  /// summaries) that would otherwise inflate the count by +1.
+  /// Primary: intersect active tray notifications with the mirror log.
+  /// Fallback (MIUI groups notifications → getActiveNotifications() returns 0):
+  /// count mirror-log entries whose scheduled time is in the past and after
+  /// the last recorded answer.
   Future<int> getUnansweredCount() async {
     try {
       final active = await _plugin.getActiveNotifications();
-      if (active.isEmpty) return 0;
-
       final activeIds = active
           .where((n) => n.id != null && n.id != 9999)
           .map((n) => n.id!)
           .toSet();
-      if (activeIds.isEmpty) return 0;
+
+      if (activeIds.isNotEmpty) {
+        final log = await getMirrorLog();
+        final matchedQuestionIds = <int>{};
+        for (final entry in log) {
+          final nid = entry['notif_id'] as int?;
+          final qid = entry['id'] as int?;
+          if (nid != null && qid != null && activeIds.contains(nid)) {
+            matchedQuestionIds.add(qid);
+          }
+        }
+        if (matchedQuestionIds.isNotEmpty) return matchedQuestionIds.length;
+      }
+
+      // Fallback: time-based count (MIUI groups suppress individual IDs)
+      return await _countFiredSinceLastAnswer();
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Time-based fallback: counts unique question IDs from the mirror log
+  /// whose scheduled time is in the past and after [last_answer_timestamp].
+  /// Capped to the last 24 h so stale ignored notifications don't accumulate.
+  Future<int> _countFiredSinceLastAnswer() async {
+    try {
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      final lastAnswerMs = prefs.getInt('last_answer_timestamp') ?? 0;
+      final lastAnswer = DateTime.fromMillisecondsSinceEpoch(lastAnswerMs);
+      final cutoff = now.subtract(const Duration(hours: 24));
+      final effectiveStart = lastAnswer.isAfter(cutoff) ? lastAnswer : cutoff;
 
       final log = await getMirrorLog();
-      final matchedQuestionIds = <int>{};
+      final firedUnique = <int>{};
       for (final entry in log) {
-        final nid = entry['notif_id'] as int?;
+        final timeStr = entry['time'] as String?;
         final qid = entry['id'] as int?;
-        if (nid != null && qid != null && activeIds.contains(nid)) {
-          matchedQuestionIds.add(qid);
+        if (timeStr == null || qid == null) continue;
+        final scheduled = DateTime.tryParse(timeStr);
+        if (scheduled == null) continue;
+        if (scheduled.isBefore(now) && scheduled.isAfter(effectiveStart)) {
+          firedUnique.add(qid);
         }
       }
-      return matchedQuestionIds.length;
+      return firedUnique.length;
     } catch (e) {
       return 0;
     }
@@ -404,22 +437,50 @@ class NotificationService {
   /// Finds the oldest question ID that was notified but not yet answered.
   Future<int?> getOldestUnansweredQuestionId() async {
     final active = await _plugin.getActiveNotifications();
-    if (active.isEmpty) return null;
-
-    // Get the IDs currently in the tray (excluding test)
     final activeIds = active.where((n) => n.id != 9999).map((n) => n.id).toSet();
-    if (activeIds.isEmpty) return null;
 
-    final log = await getMirrorLog();
-    
-    // Find the first log entry that matches an ID currently in the tray
-    for (final entry in log) {
-      final logNotifId = entry['notif_id'] as int?;
-      if (activeIds.contains(logNotifId)) {
-        return entry['id'] as int?;
+    if (activeIds.isNotEmpty) {
+      final log = await getMirrorLog();
+      for (final entry in log) {
+        final logNotifId = entry['notif_id'] as int?;
+        if (activeIds.contains(logNotifId)) {
+          return entry['id'] as int?;
+        }
       }
     }
-    return null;
+
+    // Fallback: oldest fired notification since last answer
+    return await _getOldestFiredSinceLastAnswer();
+  }
+
+  Future<int?> _getOldestFiredSinceLastAnswer() async {
+    try {
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      final lastAnswerMs = prefs.getInt('last_answer_timestamp') ?? 0;
+      final lastAnswer = DateTime.fromMillisecondsSinceEpoch(lastAnswerMs);
+      final cutoff = now.subtract(const Duration(hours: 24));
+      final effectiveStart = lastAnswer.isAfter(cutoff) ? lastAnswer : cutoff;
+
+      final log = await getMirrorLog();
+      final fired = log.where((entry) {
+        final timeStr = entry['time'] as String?;
+        if (timeStr == null) return false;
+        final scheduled = DateTime.tryParse(timeStr);
+        if (scheduled == null) return false;
+        return scheduled.isBefore(now) && scheduled.isAfter(effectiveStart);
+      }).toList();
+
+      fired.sort((a, b) {
+        final ta = DateTime.tryParse(a['time'] as String? ?? '') ?? DateTime(0);
+        final tb = DateTime.tryParse(b['time'] as String? ?? '') ?? DateTime(0);
+        return ta.compareTo(tb);
+      });
+
+      return fired.isNotEmpty ? (fired.first['id'] as int?) : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Clears any active notifications in the system tray for a specific question.

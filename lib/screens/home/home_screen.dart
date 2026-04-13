@@ -7,6 +7,7 @@ import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
+import '../question/notification_question_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
 import '../settings/notification_schedule_screen.dart';
@@ -438,7 +439,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
                 if (mounted) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => QuestionScreen(questionId: questionId),
+                      builder: (_) => NotificationQuestionScreen(questionId: questionId),
                     ),
                   ).then((_) => _refreshData());
                 }
