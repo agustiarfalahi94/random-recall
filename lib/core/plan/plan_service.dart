@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../auth/auth_service.dart';
 
 class PlanService {
   // Constants for free tier limits
@@ -8,12 +7,6 @@ class PlanService {
 
   /// Returns true if the user has an active premium subscription.
   static Future<bool> isPremium() async {
-    // Permanent bypass for developer test account
-    final currentUser = AuthService.instance.currentUser;
-    if (currentUser?.email == 'agustiarfalahi@gmail.com') {
-      return true;
-    }
-
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_premium') ?? false;
   }

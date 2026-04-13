@@ -99,9 +99,7 @@ class SubscriptionService {
 
   Future<void> _updatePremiumStatus(CustomerInfo customerInfo) async {
     final user = AuthService.instance.currentUser;
-    // Hardcoded bypass for developer test account
-    final isDeveloper = user?.email == 'agustiarfalahi@gmail.com';
-    final isPremium = customerInfo.entitlements.active.containsKey(_entitlementId) || isDeveloper;
+    final isPremium = customerInfo.entitlements.active.containsKey(_entitlementId);
     
     // 1. Update local SharedPreferences
     await PlanService.setPremiumStatus(isPremium);
