@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -387,15 +389,25 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _bonusQuestions = 0;
   int _unansweredCount = 0;
 
+  StreamSubscription<void>? _answeredSub;
+  Timer? _nextNotifTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Refresh badge immediately whenever a notification is answered anywhere
+    // (covers the case where _onNotificationTapped pushes the answer screen
+    // directly without going through the home screen's own navigation).
+    _answeredSub = NotificationService.instance.onNotificationAnswered
+        .listen((_) => _refreshData());
     _refreshData();
   }
 
   @override
   void dispose() {
+    _answeredSub?.cancel();
+    _nextNotifTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -420,6 +432,25 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         _unansweredCount = unanswered;
       });
     }
+
+    // Schedule a one-shot timer to fire exactly when the next notification is
+    // due, so the badge updates in real time while the app is in the foreground.
+    _nextNotifTimer?.cancel();
+    _nextNotifTimer = null;
+    try {
+      final log = await NotificationService.instance.getMirrorLog();
+      final now = DateTime.now();
+      DateTime? nextTime;
+      for (final entry in log) {
+        final t = DateTime.tryParse(entry['time'] as String? ?? '');
+        if (t != null && t.isAfter(now)) {
+          if (nextTime == null || t.isBefore(nextTime)) nextTime = t;
+        }
+      }
+      if (nextTime != null && mounted) {
+        _nextNotifTimer = Timer(nextTime.difference(now), _refreshData);
+      }
+    } catch (_) {}
   }
 
   @override
