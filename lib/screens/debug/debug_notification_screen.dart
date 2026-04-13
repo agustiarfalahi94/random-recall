@@ -123,7 +123,7 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
     }
     return Column(
       children: _mirrorLog.map((item) {
-        final time = DateTime.parse(item['time']);
+        final time = DateTime.parse(item['time']).toLocal();
         final qId = item['id'] as int;
         final qText = _questionMap[qId] ?? 'Deleted Question';
         final isFuture = time.isAfter(DateTime.now());
