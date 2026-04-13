@@ -7,6 +7,7 @@ import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
+import '../question/notification_question_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
 import '../settings/notification_schedule_screen.dart';
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: [
-        const _HomeTab(),
+        _HomeTab(), // Removed 'const' to ensure refresh when switching back to this tab
         const QuestionsListScreen(),
         const AnalyticsScreen(),
       ][_currentIndex],
@@ -374,32 +375,49 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 // ── Home tab with Practice Now button ────────────────────────────────────────
 
 class _HomeTab extends StatefulWidget {
-  const _HomeTab();
+  const _HomeTab({super.key});
 
   @override
   State<_HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<_HomeTab> {
+class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _streak = 0;
   int _timerSeconds = 0;
   int _bonusQuestions = 0;
+  int _unansweredCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadStreakData();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshData();
   }
 
-  Future<void> _loadStreakData() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshData();
+    }
+  }
+
+  Future<void> _refreshData() async {
     final prefs = await SharedPreferences.getInstance();
     final streak = await StreakService.getStreak();
     final bonus = await StreakService.getBonusQuestions();
+    final unanswered = await NotificationService.instance.getUnansweredCount();
     if (mounted) {
       setState(() {
         _streak = streak;
         _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
         _bonusQuestions = bonus;
+        _unansweredCount = unanswered;
       });
     }
   }
@@ -414,22 +432,64 @@ class _HomeTabState extends State<_HomeTab> {
       child: Column(
         children: [
           // ── Hero section ─────────────────────────────────────────────────
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.2),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+          GestureDetector(
+            onTap: () async {
+              if (_unansweredCount > 0) {
+                final questionId = await NotificationService.instance.getOldestUnansweredQuestionId();
+                if (mounted) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => NotificationQuestionScreen(questionId: questionId),
+                    ),
+                  ).then((_) => _refreshData());
+                }
+              }
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.2),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text('🧠', style: TextStyle(fontSize: 48)),
+                  ),
                 ),
+                if (_unansweredCount > 0)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.error,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colorScheme.surface, width: 3),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                      child: Center(
+                        child: Text(
+                          '$_unansweredCount',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
-            ),
-            child: const Center(
-              child: Text('🧠', style: TextStyle(fontSize: 48)),
             ),
           ),
           const SizedBox(height: 24),
@@ -456,7 +516,7 @@ class _HomeTabState extends State<_HomeTab> {
                   .push(MaterialPageRoute(
                     builder: (_) => const QuestionScreen(isPractice: true),
                   ))
-                  .then((_) => _loadStreakData()); // refresh on return
+                  .then((_) => _refreshData()); // refresh on return
             },
             icon: const Icon(Icons.play_arrow_rounded),
             label: const Text('Practice Now'),
@@ -477,7 +537,7 @@ class _HomeTabState extends State<_HomeTab> {
                   ),
                 ),
               );
-              _loadStreakData();
+              _refreshData();
             },
           ),
         ],

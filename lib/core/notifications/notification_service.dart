@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -21,6 +22,7 @@ class NotificationService {
   GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
+  bool _isScheduling = false;
   Completer<void>? _initCompleter;
   Timer? _scheduleDebounceTimer;
 
@@ -30,11 +32,19 @@ class NotificationService {
     if (_initialized) return;
     debugPrint('NotificationService: Initializing...');
 
-    // Listen for database changes to immediately refresh the 7-day alarm window
+    // Listen for database changes to refresh the schedule.
+    // We debounce this to avoid rapid re-scheduling during sync/practice.
     DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
       if (_scheduleDebounceTimer?.isActive ?? false) _scheduleDebounceTimer!.cancel();
-      _scheduleDebounceTimer = Timer(const Duration(seconds: 1), () {
-        scheduleNotifications();
+      _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
+        final prefs = await SharedPreferences.getInstance();
+        final lastCount = prefs.getInt('last_known_question_count') ?? 0;
+        final currentCount = await DatabaseHelper.instance.getQuestionCount();
+        
+        if (currentCount != lastCount) {
+          await prefs.setInt('last_known_question_count', currentCount);
+          scheduleNotifications();
+        }
       });
     });
 
@@ -52,10 +62,10 @@ class NotificationService {
       await _actualInit().timeout(const Duration(seconds: 4));
       _initialized = true; // Mark as initialized only if _actualInit completes successfully
     } catch (e) {
-      debugPrint('NotificationService: Initialization warning: $e');
+      debugPrint('NotificationService: Initialization error: $e');
       // We still mark as initialized if it was a timeout to avoid infinite waiting,
       // but the plugin might not be fully ready.
-      _initialized = (e is TimeoutException);
+      _initialized = false;
     } finally {
       if (!completer.isCompleted) {
         debugPrint('NotificationService: Init completer completed.');
@@ -69,7 +79,9 @@ class NotificationService {
     try {
       debugPrint('NotificationService: Setting local timezone...');
       final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+      final String timeZoneName = timezoneInfo.identifier;
+      debugPrint('NotificationService: Detected device timezone: $timeZoneName');
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (e) {
       debugPrint('NotificationService: Timezone detection failed: $e');
       tz.setLocalLocation(tz.UTC);
@@ -80,6 +92,52 @@ class NotificationService {
       const InitializationSettings(android: androidSettings),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+
+    // Ensure the notification channel exists with the correct alarm audio
+    // attributes (DND bypass). Android ignores updates to channel settings on
+    // existing channels, so for users upgrading from an older build with the
+    // wrong settings we need a ONE-TIME delete-and-recreate migration.
+    //
+    // CRITICAL: Do NOT delete the channel on every launch. Deleting a channel
+    // wipes ALL its active tray notifications, which on MIUI/HyperOS (where
+    // the app is aggressively killed in the background) means every cold
+    // start from the launcher would erase pending notifications from the tray.
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+
+    final prefs = await SharedPreferences.getInstance();
+    const migrationKey = 'notif_channel_v2_migrated';
+    final alreadyMigrated = prefs.getBool(migrationKey) ?? false;
+
+    if (!alreadyMigrated) {
+      // First run on this build: delete the legacy channel (if any) and
+      // recreate it with the alarm audio attributes. This wipes the tray once,
+      // which is acceptable on a one-time migration.
+      await androidPlugin?.deleteNotificationChannel('random_recall_channel');
+      debugPrint('NotificationService: Legacy channel deleted (one-time migration).');
+    }
+
+    // createNotificationChannel is a no-op if a channel with this ID already
+    // exists, so it's safe to call on every launch.
+    await androidPlugin?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'random_recall_channel',
+        'Random Recall',
+        description: 'Random quiz reminders',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        // alarm usage lets this channel bypass DND/silent mode
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+      ),
+    );
+
+    if (!alreadyMigrated) {
+      await prefs.setBool(migrationKey, true);
+      debugPrint('NotificationService: Channel recreated with alarm audio attributes (migrated).');
+    } else {
+      debugPrint('NotificationService: Channel already migrated, preserving tray.');
+    }
   }
 
   // ── Permission ────────────────────────────────────────────────────────────
@@ -103,7 +161,11 @@ class NotificationService {
         await android?.canScheduleExactNotifications() ?? true;
     debugPrint('NotificationService: Exact alarm permission granted: $canExact');
     if (!canExact) {
-      await android?.requestExactAlarmsPermission();
+      try {
+        await AppSettings.openAppSettings(type: AppSettingsType.alarm);
+      } catch (_) {
+        await android?.requestExactAlarmsPermission();
+      }
     }
 
     return notifGranted;
@@ -114,6 +176,26 @@ class NotificationService {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     return await android?.areNotificationsEnabled() ?? true;
+  }
+
+  // ── Settings sanitization ─────────────────────────────────────────────────
+
+  /// Detects and resets corrupted notification time-window settings.
+  /// Gemini's timezone bug could save hours in UTC (e.g. 0am–1am for a
+  /// GMT+8 user who configured 8am–9am). Reset to safe defaults when detected.
+  void _sanitizeNotificationPrefs(SharedPreferences prefs) {
+    final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
+    if (!randomAnytime) {
+      final startHour = prefs.getInt('notif_start_hour') ?? 8;
+      final endHour = prefs.getInt('notif_end_hour') ?? 20;
+      // Corrupted if: window is inverted, too narrow (<1h), or suspiciously
+      // in the middle of the night (both hours before 4am).
+      if (endHour - startHour < 1 || (startHour < 4 && endHour < 4)) {
+        debugPrint('NotificationService: Corrupted time window ($startHour–$endHour). Resetting to 8–20.');
+        prefs.setInt('notif_start_hour', 8);
+        prefs.setInt('notif_end_hour', 20);
+      }
+    }
   }
 
   // ── Schedule 7 days of one-time notifications ─────────────────────────────
@@ -127,18 +209,44 @@ class NotificationService {
   ///   4. Uses tz-aware 'now' to prevent scheduling in the past.
 
   Future<void> scheduleNotifications() async {
+    // Guard against concurrent calls — two simultaneous scheduling runs
+    // will interleave their zonedSchedule() calls and can corrupt the
+    // AlarmManager state. Drop any call that arrives while one is running.
+    if (_isScheduling) {
+      debugPrint('NotificationService: Scheduling already in progress, skipping.');
+      return;
+    }
+    _isScheduling = true;
+    try {
+      await _scheduleNotificationsInternal();
+    } finally {
+      _isScheduling = false;
+    }
+  }
+
+  Future<void> _scheduleNotificationsInternal() async {
     debugPrint('NotificationService: Scheduling notifications...');
-    if (!_initialized) {
-      await init();
+    // Ensure we are initialized and have a valid non-UTC timezone if possible
+    if (!_initialized) await init();
+    
+    if (tz.local == tz.UTC) {
+      debugPrint('NotificationService: Timezone not ready. Aborting schedule to prevent UTC shift.');
+      return;
     }
 
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload(); // Force refresh to catch recent UI changes
+    _sanitizeNotificationPrefs(prefs);
 
     final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
     final startHour = prefs.getInt('notif_start_hour') ?? 8;
     final endHour = prefs.getInt('notif_end_hour') ?? 20;
     final frequency = prefs.getInt('notif_frequency') ?? 3;
     final activeDaysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
+
+    debugPrint('NotificationService: Settings used: randomAnytime=$randomAnytime, '
+        'startHour=$startHour, endHour=$endHour, frequency=$frequency, '
+        'activeDays=$activeDaysStr');
     final activeDays = activeDaysStr.split(',').map(int.parse).toSet();
 
     // Fetch all questions once; the scheduler picks from them.
@@ -165,51 +273,82 @@ class NotificationService {
     );
     debugPrint('NotificationService: Calculated ${slots.length} notification slots for the next 7 days.');
 
-    // If no slots are calculated (e.g., no active days, or all in past), cancel existing.
     if (slots.isEmpty) return;
 
-    await cancelAll();
-    
-    // DEBUG: Mirror the schedule to SharedPreferences so we can inspect 
-    // the exact scheduled times in a Debug Menu later.
-    final debugList = slots.map((s) => {
-      'time': s.scheduledAt.toIso8601String(),
-      'id': s.questionId,
+    // 1. Generate stable IDs and mirror log for the debug menu & tray matching
+    // Stable ID = days-since-epoch * 20 + slotIndex. Unique across the entire
+    // 8-day schedule window AND deterministic across reschedules (no week-collision).
+    int idForSlot(tz.TZDateTime when, int slotIndex) {
+      final daysSinceEpoch = when.toUtc().millisecondsSinceEpoch ~/ 86400000;
+      return (daysSinceEpoch * 20) + slotIndex;
+    }
+
+    final futureList = slots.map((s) {
+      return {
+        'time': s.scheduledAt.toIso8601String(),
+        'id': s.questionId, // Renamed back to 'id' for DebugNotificationScreen compatibility
+        'notif_id': idForSlot(s.scheduledAt, s.slotIndex),
+      };
     }).toList();
+
+    // Preserve already-delivered entries that are still in the tray. Without
+    // this, the mirror log would lose past slots and the home-screen unanswered
+    // lookup (getOldestUnansweredQuestionId) would fail to map active tray
+    // notifications back to their question IDs after a reschedule.
+    final preservedDelivered = <Map<String, dynamic>>[];
+    try {
+      final activeNow = await _plugin.getActiveNotifications();
+      final activeIds = activeNow.map((n) => n.id).whereType<int>().toSet();
+      final oldRaw = prefs.getString('notif_schedule_mirror');
+      if (oldRaw != null && activeIds.isNotEmpty) {
+        final oldList = List<Map<String, dynamic>>.from(jsonDecode(oldRaw));
+        final newNotifIds = futureList
+            .map((e) => e['notif_id'] as int?)
+            .whereType<int>()
+            .toSet();
+        for (final entry in oldList) {
+          final nid = entry['notif_id'] as int?;
+          if (nid != null &&
+              activeIds.contains(nid) &&
+              !newNotifIds.contains(nid)) {
+            preservedDelivered.add(entry);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('NotificationService: Could not preserve delivered mirror entries: $e');
+    }
+
+    final debugList = [...preservedDelivered, ...futureList];
     await prefs.setString('notif_schedule_mirror', jsonEncode(debugList));
 
-    // Build a lookup so we don't do N linear scans
     final questionMap = {for (final q in questions) q.id!: q};
-
-    int notifId = 0;
-    for (final slot in slots) {
+    for (int i = 0; i < slots.length; i++) {
+      final slot = slots[i];
       final question = questionMap[slot.questionId];
       if (question == null) continue;
-      if (question.id == null) continue;
 
-      final scheduledDate = tz.TZDateTime.from(slot.scheduledAt, tz.local);
+      final scheduledDate = slot.scheduledAt;
+      final notifId = idForSlot(scheduledDate, slot.slotIndex);
 
       // Add a tiny delay every 10 items to let the UI thread breathe
       // and avoid saturating the platform channel.
-      if (notifId % 5 == 0) {
+      if (i % 5 == 0) {
         await Future.delayed(const Duration(milliseconds: 16));
       }
 
-      // Use a unique notifId for scheduling. Using question.id here would
-      // overwrite future alarms for the same question in the 7-day window.
       await _scheduleOneTimeNotification(
         id: notifId,
         scheduledDate: scheduledDate,
         question: question,
       );
 
-      notifId++;
-      if (notifId == 1) { // log only the first one
+      if (i == 0) { // log only the first one
         debugPrint('NotificationService: First upcoming notification at: $scheduledDate');
       }
     }
 
-    debugPrint('NotificationService: Successfully batched $notifId alarms to Android.');
+    debugPrint('NotificationService: Successfully batched ${slots.length} alarms to Android.');
   }
 
   /// Returns the number of currently pending (not-yet-fired) notifications.
@@ -231,6 +370,142 @@ class NotificationService {
     return List<Map<String, dynamic>>.from(jsonDecode(data));
   }
 
+  /// Calculates how many notifications have fired since the user's last answer.
+  ///
+  /// Primary: intersect active tray notifications with the mirror log.
+  /// Fallback (MIUI groups notifications → getActiveNotifications() returns 0):
+  /// count mirror-log entries whose scheduled time is in the past and after
+  /// the last recorded answer.
+  Future<int> getUnansweredCount() async {
+    try {
+      final active = await _plugin.getActiveNotifications();
+      final activeIds = active
+          .where((n) => n.id != null && n.id != 9999)
+          .map((n) => n.id!)
+          .toSet();
+
+      if (activeIds.isNotEmpty) {
+        final log = await getMirrorLog();
+        final matchedQuestionIds = <int>{};
+        for (final entry in log) {
+          final nid = entry['notif_id'] as int?;
+          final qid = entry['id'] as int?;
+          if (nid != null && qid != null && activeIds.contains(nid)) {
+            matchedQuestionIds.add(qid);
+          }
+        }
+        if (matchedQuestionIds.isNotEmpty) return matchedQuestionIds.length;
+      }
+
+      // Fallback: time-based count (MIUI groups suppress individual IDs)
+      return await _countFiredSinceLastAnswer();
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Time-based fallback: counts unique question IDs from the mirror log
+  /// whose scheduled time is in the past and after [last_answer_timestamp].
+  /// Capped to the last 24 h so stale ignored notifications don't accumulate.
+  Future<int> _countFiredSinceLastAnswer() async {
+    try {
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      final lastAnswerMs = prefs.getInt('last_answer_timestamp') ?? 0;
+      final lastAnswer = DateTime.fromMillisecondsSinceEpoch(lastAnswerMs);
+      final cutoff = now.subtract(const Duration(hours: 24));
+      final effectiveStart = lastAnswer.isAfter(cutoff) ? lastAnswer : cutoff;
+
+      final log = await getMirrorLog();
+      final firedUnique = <int>{};
+      for (final entry in log) {
+        final timeStr = entry['time'] as String?;
+        final qid = entry['id'] as int?;
+        if (timeStr == null || qid == null) continue;
+        final scheduled = DateTime.tryParse(timeStr);
+        if (scheduled == null) continue;
+        if (scheduled.isBefore(now) && scheduled.isAfter(effectiveStart)) {
+          firedUnique.add(qid);
+        }
+      }
+      return firedUnique.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Finds the oldest question ID that was notified but not yet answered.
+  Future<int?> getOldestUnansweredQuestionId() async {
+    final active = await _plugin.getActiveNotifications();
+    final activeIds = active.where((n) => n.id != 9999).map((n) => n.id).toSet();
+
+    if (activeIds.isNotEmpty) {
+      final log = await getMirrorLog();
+      for (final entry in log) {
+        final logNotifId = entry['notif_id'] as int?;
+        if (activeIds.contains(logNotifId)) {
+          return entry['id'] as int?;
+        }
+      }
+    }
+
+    // Fallback: oldest fired notification since last answer
+    return await _getOldestFiredSinceLastAnswer();
+  }
+
+  Future<int?> _getOldestFiredSinceLastAnswer() async {
+    try {
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      final lastAnswerMs = prefs.getInt('last_answer_timestamp') ?? 0;
+      final lastAnswer = DateTime.fromMillisecondsSinceEpoch(lastAnswerMs);
+      final cutoff = now.subtract(const Duration(hours: 24));
+      final effectiveStart = lastAnswer.isAfter(cutoff) ? lastAnswer : cutoff;
+
+      final log = await getMirrorLog();
+      final fired = log.where((entry) {
+        final timeStr = entry['time'] as String?;
+        if (timeStr == null) return false;
+        final scheduled = DateTime.tryParse(timeStr);
+        if (scheduled == null) return false;
+        return scheduled.isBefore(now) && scheduled.isAfter(effectiveStart);
+      }).toList();
+
+      fired.sort((a, b) {
+        final ta = DateTime.tryParse(a['time'] as String? ?? '') ?? DateTime(0);
+        final tb = DateTime.tryParse(b['time'] as String? ?? '') ?? DateTime(0);
+        return ta.compareTo(tb);
+      });
+
+      return fired.isNotEmpty ? (fired.first['id'] as int?) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Clears any active notifications in the system tray for a specific question.
+  Future<void> cancelNotificationsForQuestion(int questionId) async {
+    try {
+      final active = await _plugin.getActiveNotifications();
+      if (active.isEmpty) return;
+
+      final log = await getMirrorLog();
+      final activeIds = active.map((n) => n.id).toSet();
+
+      for (final entry in log) {
+        if (entry['id'] == questionId) {
+          final nId = entry['notif_id'] as int?;
+          if (nId != null && activeIds.contains(nId)) {
+            debugPrint('NotificationService: Cancelling active notification $nId for question $questionId');
+            await _plugin.cancel(nId);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('NotificationService: Error cancelling notification: $e');
+    }
+  }
+
   // ── Fire a single one-time notification (no matchDateTimeComponents) ──────
 
   Future<void> _scheduleOneTimeNotification({
@@ -247,7 +522,9 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
-      // Removed groupKey to prevent Android auto-dismissing multiple notifications.
+      // Do NOT set category:alarm here — on Xiaomi HyperOS this routes the
+      // notification through the system clock app's group, blocking it.
+      // DND bypass is handled by the channel's audioAttributesUsage=alarm.
     );
 
     await _plugin.zonedSchedule(
@@ -256,15 +533,11 @@ class NotificationService {
       isTest ? 'Tap to reveal the test question ✨' : 'Tap to reveal the answer ✨',
       scheduledDate,
       const NotificationDetails(android: androidDetails),
-      // alarmClock maps to AlarmManager.setAlarmClock() — the same API used
-      // by Android's built-in clock app. It is the highest-priority alarm type:
-      // it cannot be deferred by Doze, cannot be killed by MIUI/HyperOS battery
-      // management, and fires even when the device is in deep sleep.
-      // Requires SCHEDULE_EXACT_ALARM (declared in manifest, pre-granted on
-      // Android 13+). Shows a small clock icon in the status bar — expected
-      // behaviour for alarm-clock level scheduling.
-      androidScheduleMode: AndroidScheduleMode.alarmClock,
-      // No matchDateTimeComponents → fires once, never repeats
+      // alarmClock is intercepted by Xiaomi HyperOS power management for
+      // third-party apps. exactAllowWhileIdle uses setExactAndAllowWhileIdle()
+      // which bypasses that interception while still being exact and
+      // Doze-exempt. SCHEDULE_EXACT_ALARM permission is already declared.
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: isTest ? 'test:${question.id}' : question.id?.toString(),

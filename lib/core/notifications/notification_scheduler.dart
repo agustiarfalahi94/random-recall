@@ -1,11 +1,17 @@
 import 'dart:math';
+import 'package:timezone/timezone.dart' as tz;
 
 /// A single computed notification slot: when to fire and which question to show.
 class ScheduledSlot {
-  final DateTime scheduledAt; // naive local DateTime
+  final tz.TZDateTime scheduledAt; 
   final int questionId;
+  final int slotIndex;
 
-  const ScheduledSlot({required this.scheduledAt, required this.questionId});
+  const ScheduledSlot({
+    required this.scheduledAt, 
+    required this.questionId,
+    required this.slotIndex,
+  });
 }
 
 /// Pure scheduling logic — no platform channels, no DB, fully unit-testable.
@@ -35,7 +41,7 @@ class NotificationScheduler {
     required int endHour,
     required int frequency,
     required Set<int> activeDays,
-    required DateTime now,
+    required tz.TZDateTime now,
     required List<int> questionIds,
     Random? random,
   }) {
@@ -52,6 +58,7 @@ class NotificationScheduler {
     final dailyFrequency = frequency;
 
     for (int dayOffset = 0; dayOffset < daysToSchedule; dayOffset++) {
+      // Add duration to 'now' (which is already local) to get the target day
       final targetDate = now.add(Duration(days: dayOffset));
       final weekday = targetDate.weekday; // 1=Mon … 7=Sun
 
@@ -77,15 +84,18 @@ class NotificationScheduler {
       final spacing = totalMinutes / dayQuestionIds.length;
 
       for (int i = 0; i < dayQuestionIds.length; i++) {
-        // Calculate base minute for this slot, then add a small jitter (up to 30% of spacing)
-        // to keep it feeling random but guaranteed to be separated.
+        // Use a deterministic jitter based on the question ID. This prevents the 
+        // alarm time from "drifting" every time the app reschedules due to a sync.
         final baseOffsetMinutes = (spacing * i).toInt();
         final maxJitter = (spacing * 0.3).toInt().clamp(1, 59);
-        final jitter = rng.nextInt(maxJitter);
+        
+        // Seed the random with the question ID so the jitter is consistent for this question
+        final jitter = Random(dayQuestionIds[i]).nextInt(maxJitter);
         
         final totalOffset = baseOffsetMinutes + jitter;
         
-        var slotTime = DateTime(
+        var slotTime = tz.TZDateTime(
+          tz.local,
           targetDate.year,
           targetDate.month,
           targetDate.day,
@@ -97,11 +107,13 @@ class NotificationScheduler {
           slotTime = slotTime.subtract(Duration(minutes: jitter + 1));
         }
 
-        // Skip slots that have already passed today
-        if (slotTime.isAfter(now)) {
+        // Skip slots that have already passed today.
+        // Buffer of 2 minutes ensures the OS has time to register the alarm.
+        if (slotTime.isAfter(now.add(const Duration(minutes: 2)))) {
           slots.add(ScheduledSlot(
             scheduledAt: slotTime,
             questionId: dayQuestionIds[i],
+            slotIndex: i,
           ));
         }
       }
