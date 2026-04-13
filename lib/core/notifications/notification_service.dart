@@ -26,6 +26,12 @@ class NotificationService {
   Completer<void>? _initCompleter;
   Timer? _scheduleDebounceTimer;
 
+  // Fires whenever a notification is answered (tray cleared).
+  // Home screen subscribes to this to refresh the badge immediately.
+  final StreamController<void> _answeredController =
+      StreamController<void>.broadcast();
+  Stream<void> get onNotificationAnswered => _answeredController.stream;
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {
@@ -501,6 +507,8 @@ class NotificationService {
           }
         }
       }
+      // Notify listeners (e.g. home screen badge) that a notification was answered.
+      _answeredController.add(null);
     } catch (e) {
       debugPrint('NotificationService: Error cancelling notification: $e');
     }
