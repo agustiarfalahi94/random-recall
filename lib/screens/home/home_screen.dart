@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_service.dart';
 import '../../core/notifications/notification_service.dart';
+import '../../main.dart' show navigatorKey;
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../analytics/analytics_screen.dart';
@@ -325,46 +326,50 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               ],
             ),
             onTap: () async {
-              final navigator = Navigator.of(context);
+              // Use the root navigator directly — Navigator.of(context) inside a
+              // bottom sheet can resolve to the sheet's sub-tree navigator and
+              // silently fail to clear routes on the MaterialApp navigator.
+              final rootNav = navigatorKey.currentState!;
               final messenger = ScaffoldMessenger.of(context);
 
-              // 1. Close settings sheet
-              if (navigator.canPop()) navigator.pop();
-
-              // 2. Show a non-dismissible loading dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const Center(
-                  child: Card(
-                    margin: EdgeInsets.all(32),
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('Signing out safely...', style: TextStyle(fontWeight: FontWeight.w600)),
-                          SizedBox(height: 4),
-                          Text('Backing up your data', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                        ],
+              // Show loading dialog on the root navigator so popUntil can
+              // dismiss it together with the settings sheet in one shot.
+              rootNav.push(
+                DialogRoute(
+                  context: rootNav.overlay!.context,
+                  barrierDismissible: false,
+                  builder: (_) => const Center(
+                    child: Card(
+                      margin: EdgeInsets.all(32),
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Signing out safely...', style: TextStyle(fontWeight: FontWeight.w600)),
+                            SizedBox(height: 4),
+                            Text('Backing up your data', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               );
-              
+
               try {
                 await AuthService.instance.signOut(
                   onBeforeFinalSignOut: () async {
-                    // Pop ALL routes down to root so nothing obscures LoginScreen
-                    // when the StreamBuilder switches content after _auth.signOut().
-                    navigator.popUntil((route) => route.isFirst);
+                    // Clear every modal route (dialog + sheet) from the root
+                    // navigator so LoginScreen is immediately visible when the
+                    // StreamBuilder switches after _auth.signOut() fires.
+                    rootNav.popUntil((route) => route.isFirst);
                   },
                 );
               } catch (e) {
-                if (navigator.canPop()) navigator.pop();
+                if (rootNav.canPop()) rootNav.pop();
                 messenger.showSnackBar(SnackBar(content: Text('Sign out failed: $e')));
               }
             },
