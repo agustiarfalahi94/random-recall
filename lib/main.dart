@@ -2,11 +2,14 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/notifications/background_worker.dart';
 import 'core/notifications/notification_service.dart';
+import 'core/services/analytics_service.dart';
 import 'core/utils/battery_optimization.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
@@ -22,72 +25,100 @@ import 'screens/auth/verify_email_screen.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-  );
+  await SentryFlutter.init(
+    (options) {
+      options.dsn =
+          'https://0d061b8b4d28f29b194f9a44075ae8da@o4511217533190144.ingest.us.sentry.io/4511217537318912';
+      options.tracesSampleRate = 0.2;   // capture 20% of sessions for performance
+      options.profilesSampleRate = 0.0; // profiling disabled — not needed yet
+      options.enableAutoSessionTracking = true;
+      options.attachScreenshot = false; // off — questions contain user-created PII
+      options.sendDefaultPii = false;   // never send emails / Firebase tokens
+    },
+    appRunner: () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await Firebase.initializeApp();
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.debug,
+      );
 
-  // Start In-App Purchase listener
-  SubscriptionService.instance.init();
+      // PostHog: initialise after Firebase, before runApp
+      final postHogConfig = PostHogConfig(
+        'phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv',
+      )
+        ..host = 'https://us.i.posthog.com'
+        ..flushAt = 1       // flush after every single event (good for low-volume apps)
+        ..flushInterval = const Duration(seconds: 10); // also flush every 10 s
+      await Posthog().setup(postHogConfig);
 
-  // Wire up navigator key so notification taps can navigate
-  NotificationService.instance.navigatorKey = navigatorKey;
+      // Start In-App Purchase listener
+      SubscriptionService.instance.init();
 
-  runApp(const RandomRecallApp());
+      // Wire up navigator key so notification taps can navigate
+      NotificationService.instance.navigatorKey = navigatorKey;
 
-  // Handle cold-start from notification tap (navigator not ready during init)
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    try {
-      // Initialize service and check launch details
-      await NotificationService.instance.init();
-      
-      // Proactively prompt for permission on startup if missing
-      if (!await NotificationService.instance.hasPermission()) {
-        await NotificationService.instance.requestPermission();
-      }
-      
-      await NotificationService.instance.handleNotificationLaunch();
-      
-      final prefs = await SharedPreferences.getInstance();
-      final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
-      
-      // Reload user on startup safely
-      final currentUser = AuthService.instance.currentUser;
-      if (currentUser != null) {
+      runApp(const RandomRecallApp());
+
+      // Handle cold-start from notification tap (navigator not ready during init)
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
-          await currentUser.reload();
+          // Initialize service and check launch details
+          await NotificationService.instance.init();
+
+          // Proactively prompt for permission on startup if missing
+          if (!await NotificationService.instance.hasPermission()) {
+            await NotificationService.instance.requestPermission();
+          }
+
+          await NotificationService.instance.handleNotificationLaunch();
+
+          final prefs = await SharedPreferences.getInstance();
+          final onboardingComplete =
+              prefs.getBool('onboarding_complete') ?? false;
+
+          // Reload user on startup safely
+          final currentUser = AuthService.instance.currentUser;
+          if (currentUser != null) {
+            try {
+              await currentUser.reload();
+            } catch (e) {
+              // If reload fails for any reason (e.g., token expired, user deleted),
+              // treat it as a sign-out event to clear the local session.
+              debugPrint('main.dart: User reload failed: $e. Signing out...');
+              // Explicitly call signOut to ensure all local state is cleared.
+              // The authStateChanges stream will then handle navigation to LoginScreen.
+              await AuthService.instance.signOut();
+            }
+          }
+
+          final user = AuthService.instance.currentUser;
+
+          if (onboardingComplete && user != null && user.emailVerified) {
+            SyncService.instance.performRestore();
+            await registerNotificationWorker()
+                .catchError((e) => debugPrint('WorkManager failed: $e'));
+          }
+
+          // Track app open once the frame is fully live
+          AnalyticsService.instance.trackAppOpen().ignore();
         } catch (e) {
-          // If reload fails for any reason (e.g., token expired, user deleted),
-          // treat it as a sign-out event to clear the local session.
-          debugPrint('main.dart: User reload failed: $e. Signing out...');
-          // Explicitly call signOut to ensure all local state is cleared.
-          // The authStateChanges stream will then handle navigation to LoginScreen.
-            await AuthService.instance.signOut();
+          debugPrint('Startup background tasks failed: $e');
         }
-      }
 
-      final user = AuthService.instance.currentUser;
-
-      if (onboardingComplete && user != null && user.emailVerified) {
-        SyncService.instance.performRestore();
-        await registerNotificationWorker().catchError((e) => debugPrint('WorkManager failed: $e'));
-      }
-    } catch (e) {
-      debugPrint('Startup background tasks failed: $e');
-    }
-
-    // For existing users who updated the app: silently request battery
-    // optimisation whitelist if not already granted. The system dialog only
-    // appears once and is non-blocking — no UX disruption.
-    final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
-    if (onboardingComplete) {
-      isIgnoringBatteryOptimizations().then((isIgnoring) {
-        if (!isIgnoring) requestIgnoreBatteryOptimizations();
+        // For existing users who updated the app: silently request battery
+        // optimisation whitelist if not already granted. The system dialog only
+        // appears once and is non-blocking — no UX disruption.
+        final prefs = await SharedPreferences.getInstance();
+        final onboardingComplete =
+            prefs.getBool('onboarding_complete') ?? false;
+        if (onboardingComplete) {
+          isIgnoringBatteryOptimizations().then((isIgnoring) {
+            if (!isIgnoring) requestIgnoreBatteryOptimizations();
+          });
+        }
       });
-    }
-  });
+    },
+  );
 }
 
 class RandomRecallApp extends StatefulWidget {
@@ -142,6 +173,7 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
         title: 'Random Recall',
         debugShowCheckedModeBanner: false,
         navigatorKey: navigatorKey,
+        navigatorObservers: [SentryNavigatorObserver()],
         theme: _buildTheme(Brightness.light),
         darkTheme: _buildTheme(Brightness.dark),
         themeMode: ThemeMode.system,

@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
+import '../services/analytics_service.dart';
 import '../sync/sync_service.dart';
 import '../plan/subscription_service.dart';
 
@@ -46,6 +46,7 @@ class AuthService {
       if (userCredential.user != null) {
         await _ensureUserDocument(userCredential.user!);
         await initializeUserSession();
+        AnalyticsService.instance.trackLogin(method: 'google').ignore();
       }
       return userCredential;
     } catch (e) {
@@ -65,6 +66,7 @@ class AuthService {
       // Only initialize data if verified
       if (_auth.currentUser != null && _auth.currentUser!.emailVerified) {
         await initializeUserSession();
+        AnalyticsService.instance.trackLogin(method: 'email').ignore();
       }
     }
     return userCredential;
@@ -159,7 +161,9 @@ class AuthService {
       }
 
       debugPrint('AuthService: Performing Firebase signOut...');
-      // 7. FINAL STEP: Sign out of Firebase to trigger the UI switch in main.dart
+      // 7. Track logout before Firebase tears down the session
+      await AnalyticsService.instance.trackLogout().catchError((_) {});
+      // 8. FINAL STEP: Sign out of Firebase to trigger the UI switch in main.dart
       await _auth.signOut();
 
     } catch (e) {

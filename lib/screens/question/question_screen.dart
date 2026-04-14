@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/plan/plan_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
@@ -157,6 +158,11 @@ class _QuestionScreenState extends State<QuestionScreen>
         // Clear any persistent notification from the system tray for this question
         await NotificationService.instance
             .cancelNotificationsForQuestion(_question!.id!);
+
+        AnalyticsService.instance.trackQuestionAnswered(
+          isCorrect: isCorrect,
+          fromNotification: false,
+        ).ignore();
         
         // Track interaction time to clear the home screen badge
         final prefs = await SharedPreferences.getInstance();
