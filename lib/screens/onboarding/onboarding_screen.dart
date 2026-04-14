@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/utils/device_info.dart';
 import '../../models/question.dart';
 import '../../widgets/miui_battery_dialog.dart';
@@ -134,8 +135,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         prefs.remove(_kOnboardingCategoryId),
       ]);
 
+      AnalyticsService.instance.trackOnboardingCompleted().ignore();
+
       if (!mounted) return;
-      
+
       // 1. Clear the saving state and wait for the widget tree to rebuild.
       setState(() => _isSaving = false);
       

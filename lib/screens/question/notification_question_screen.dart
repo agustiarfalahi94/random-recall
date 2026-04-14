@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/plan/plan_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
@@ -132,6 +133,9 @@ class _NotificationQuestionScreenState
         _isLoading = false;
       });
       _startTimer();
+      if (!widget.isPractice) {
+        AnalyticsService.instance.trackNotificationTapped().ignore();
+      }
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -170,6 +174,11 @@ class _NotificationQuestionScreenState
         // Clear the persistent tray notification for this question and signal
         // the home screen badge to refresh (always fires, even on MIUI).
         await NotificationService.instance.cancelNotificationsForQuestion(_question!.id!);
+
+        AnalyticsService.instance.trackQuestionAnswered(
+          isCorrect: isCorrect,
+          fromNotification: true,
+        ).ignore();
 
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {

@@ -39,6 +39,10 @@ dependencies:
   android_intent_plus: ^5.0.0
   purchases_flutter: ^9.16.1
 
+  # Crash reporting & analytics
+  sentry_flutter: ^8.10.1
+  posthog_flutter: ^4.6.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
