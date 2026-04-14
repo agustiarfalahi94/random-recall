@@ -23,7 +23,9 @@ class AuthService {
 
   /// Stream of user authentication state changes.
   /// userChanges() notifies the UI whenever the user is reloaded (e.g., email verified).
-  Stream<User?> get authStateChanges => _auth.userChanges();
+  /// Stored as a lazy field (not a getter) so StreamBuilder always gets the same
+  /// instance and never misses emissions due to re-subscription on rebuild.
+  late final Stream<User?> authStateChanges = _auth.userChanges();
 
   /// Returns the current user if logged in.
   User? get currentUser => _auth.currentUser;
