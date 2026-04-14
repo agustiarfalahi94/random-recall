@@ -202,7 +202,7 @@ class SyncService {
         'notif_active_days': prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7',
         'notif_timer_seconds': prefs.getInt('notif_timer_seconds') ?? 0,
       };
-      
+
       final streakData = {
         'timer_streak_days': prefs.getInt('timer_streak_days') ?? 0,
         'timer_streak_last_date': prefs.getString('timer_streak_last_date') ?? '',
@@ -217,6 +217,7 @@ class SyncService {
         'last_sync_at': FieldValue.serverTimestamp(),
         'settings': settings,
         'streak': streakData,
+        'onboarding_complete': prefs.getBool('onboarding_complete') ?? false,
       }, SetOptions(merge: true));
 
       debugPrint('SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.');
@@ -254,7 +255,7 @@ class SyncService {
       final sSnap = await userDoc.collection('score_records').get();
       final userSnap = await userDoc.get();
 
-      bool dataFound = catSnap.docs.isNotEmpty || qSnap.docs.isNotEmpty;
+      bool dataFound = qSnap.docs.isNotEmpty;
 
       // Execute everything in a single transaction with Foreign Keys disabled
       await db.transaction((txn) async {
@@ -312,10 +313,18 @@ class SyncService {
         }
       }
 
-      // If data was restored, ensure we mark onboarding as complete locally
-      if (dataFound) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('onboarding_complete', true);
+      // Restore onboarding_complete from Firestore if present,
+      // otherwise infer it from whether the user has questions in the cloud.
+      if (userSnap.exists && userSnap.data() != null) {
+        final data = userSnap.data()!;
+        if (data.containsKey('onboarding_complete')) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('onboarding_complete', data['onboarding_complete'] as bool);
+        } else if (dataFound) {
+          // Legacy accounts that predate this field: infer from question presence
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('onboarding_complete', true);
+        }
       }
 
       // Refresh the UI so the user sees their restored data immediately

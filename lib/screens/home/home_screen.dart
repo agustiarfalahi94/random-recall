@@ -358,7 +358,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               try {
                 await AuthService.instance.signOut(
                   onBeforeFinalSignOut: () async {
-                    if (navigator.canPop()) navigator.pop();
+                    // Pop ALL routes down to root so nothing obscures LoginScreen
+                    // when the StreamBuilder switches content after _auth.signOut().
+                    navigator.popUntil((route) => route.isFirst);
                   },
                 );
               } catch (e) {
