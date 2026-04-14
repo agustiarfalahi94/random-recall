@@ -493,21 +493,25 @@ class NotificationService {
   Future<void> cancelNotificationsForQuestion(int questionId) async {
     try {
       final active = await _plugin.getActiveNotifications();
-      if (active.isEmpty) return;
+      // Do NOT return early when active is empty — on MIUI/HyperOS,
+      // getActiveNotifications() always returns [] due to notification grouping,
+      // so we must always fire the badge-refresh event regardless.
+      if (active.isNotEmpty) {
+        final log = await getMirrorLog();
+        final activeIds = active.map((n) => n.id).toSet();
 
-      final log = await getMirrorLog();
-      final activeIds = active.map((n) => n.id).toSet();
-
-      for (final entry in log) {
-        if (entry['id'] == questionId) {
-          final nId = entry['notif_id'] as int?;
-          if (nId != null && activeIds.contains(nId)) {
-            debugPrint('NotificationService: Cancelling active notification $nId for question $questionId');
-            await _plugin.cancel(nId);
+        for (final entry in log) {
+          if (entry['id'] == questionId) {
+            final nId = entry['notif_id'] as int?;
+            if (nId != null && activeIds.contains(nId)) {
+              debugPrint('NotificationService: Cancelling active notification $nId for question $questionId');
+              await _plugin.cancel(nId);
+            }
           }
         }
       }
-      // Notify listeners (e.g. home screen badge) that a notification was answered.
+      // Always notify listeners — badge must refresh even on MIUI where
+      // getActiveNotifications() returns empty and we rely on the time-based fallback.
       _answeredController.add(null);
     } catch (e) {
       debugPrint('NotificationService: Error cancelling notification: $e');
