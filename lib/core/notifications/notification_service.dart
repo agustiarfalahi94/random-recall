@@ -307,26 +307,41 @@ class NotificationService {
       };
     }).toList();
 
-    // Preserve already-delivered entries that are still in the tray. Without
-    // this, the mirror log would lose past slots and the home-screen unanswered
-    // lookup (getOldestUnansweredQuestionId) would fail to map active tray
-    // notifications back to their question IDs after a reschedule.
+    // Preserve already-delivered entries so the home-screen unanswered lookup
+    // can still resolve them after a reschedule. Two cases keep an entry:
+    //   1. It's still in the active tray (stock Android).
+    //   2. It's a past unanswered fire within the 24 h window (MIUI/HyperOS,
+    //      where the active tray is always empty due to notification grouping).
     final preservedDelivered = <Map<String, dynamic>>[];
     try {
       final activeNow = await _plugin.getActiveNotifications();
       final activeIds = activeNow.map((n) => n.id).whereType<int>().toSet();
       final oldRaw = prefs.getString('notif_schedule_mirror');
-      if (oldRaw != null && activeIds.isNotEmpty) {
+      if (oldRaw != null) {
         final oldList = List<Map<String, dynamic>>.from(jsonDecode(oldRaw));
         final newNotifIds = futureList
             .map((e) => e['notif_id'] as int?)
             .whereType<int>()
             .toSet();
+        final now = DateTime.now();
+        final cutoff = now.subtract(const Duration(hours: 24));
         for (final entry in oldList) {
           final nid = entry['notif_id'] as int?;
-          if (nid != null &&
-              activeIds.contains(nid) &&
-              !newNotifIds.contains(nid)) {
+          if (nid == null || newNotifIds.contains(nid)) continue;
+
+          final inActiveTray = activeIds.contains(nid);
+
+          bool isRecentUnansweredFire = false;
+          if (entry['answered_at'] == null) {
+            final scheduled = DateTime.tryParse(entry['time'] as String? ?? '');
+            if (scheduled != null &&
+                scheduled.isBefore(now) &&
+                scheduled.isAfter(cutoff)) {
+              isRecentUnansweredFire = true;
+            }
+          }
+
+          if (inActiveTray || isRecentUnansweredFire) {
             preservedDelivered.add(entry);
           }
         }
@@ -388,12 +403,18 @@ class NotificationService {
     return List<Map<String, dynamic>>.from(jsonDecode(data));
   }
 
-  /// Calculates how many notifications have fired since the user's last answer.
+  /// Calculates how many distinct questions have fired notifications that
+  /// the user hasn't answered yet.
   ///
-  /// Primary: intersect active tray notifications with the mirror log.
-  /// Fallback (MIUI groups notifications → getActiveNotifications() returns 0):
-  /// count mirror-log entries whose scheduled time is in the past and after
-  /// the last recorded answer.
+  /// Returns the union of two sources:
+  ///   1. Questions whose notifications are still in the system tray.
+  ///   2. Questions that fired but aren't in the tray (delayed by MIUI/HyperOS,
+  ///      swiped by the user, or grouped by the OS) — read from the mirror log
+  ///      where `answered_at` is still null.
+  ///
+  /// Combining (rather than short-circuiting on the tray) is what keeps the
+  /// badge stable when the tray is partially populated: e.g. 1 fresh tray
+  /// notification + 2 delayed past fires must read as 3, not 1.
   Future<int> getUnansweredCount() async {
     try {
       final active = await _plugin.getActiveNotifications();
@@ -402,108 +423,142 @@ class NotificationService {
           .map((n) => n.id!)
           .toSet();
 
+      final qids = <int>{};
+
+      // Source 1: questions whose notifications are still in the system tray.
       if (activeIds.isNotEmpty) {
         final log = await getMirrorLog();
-        final matchedQuestionIds = <int>{};
         for (final entry in log) {
           final nid = entry['notif_id'] as int?;
           final qid = entry['id'] as int?;
           if (nid != null && qid != null && activeIds.contains(nid)) {
-            matchedQuestionIds.add(qid);
+            qids.add(qid);
           }
         }
-        if (matchedQuestionIds.isNotEmpty) return matchedQuestionIds.length;
       }
 
-      // Fallback: time-based count (MIUI groups suppress individual IDs)
-      return await _countFiredSinceLastAnswer();
+      // Source 2: past-fired-but-not-answered entries from the mirror log
+      // (the only source that survives MIUI/HyperOS notification grouping).
+      qids.addAll(await _firedAndUnansweredQids());
+
+      return qids.length;
     } catch (e) {
       return 0;
     }
   }
 
-  /// Time-based fallback: counts unique question IDs from the mirror log
-  /// whose scheduled time is in the past and after [last_answer_timestamp].
-  /// Capped to the last 24 h so stale ignored notifications don't accumulate.
-  Future<int> _countFiredSinceLastAnswer() async {
+  /// Returns the set of unique question IDs that fired in the past 24 h and
+  /// have NOT been marked answered in the mirror log. Used by both the badge
+  /// count and the badge-tap routing.
+  Future<Set<int>> _firedAndUnansweredQids() async {
     try {
       final now = DateTime.now();
-      final prefs = await SharedPreferences.getInstance();
-      final lastAnswerMs = prefs.getInt('last_answer_timestamp') ?? 0;
-      final lastAnswer = DateTime.fromMillisecondsSinceEpoch(lastAnswerMs);
       final cutoff = now.subtract(const Duration(hours: 24));
-      final effectiveStart = lastAnswer.isAfter(cutoff) ? lastAnswer : cutoff;
 
       final log = await getMirrorLog();
-      final firedUnique = <int>{};
+      final qids = <int>{};
       for (final entry in log) {
+        if (entry['answered_at'] != null) continue;
         final timeStr = entry['time'] as String?;
         final qid = entry['id'] as int?;
         if (timeStr == null || qid == null) continue;
         final scheduled = DateTime.tryParse(timeStr);
         if (scheduled == null) continue;
-        if (scheduled.isBefore(now) && scheduled.isAfter(effectiveStart)) {
-          firedUnique.add(qid);
+        if (scheduled.isBefore(now) && scheduled.isAfter(cutoff)) {
+          qids.add(qid);
         }
       }
-      return firedUnique.length;
-    } catch (e) {
-      return 0;
+      return qids;
+    } catch (_) {
+      return <int>{};
     }
   }
 
-  /// Finds the oldest question ID that was notified but not yet answered.
+  /// Finds the oldest unanswered question ID across both sources:
+  /// the active system tray AND past-fired entries in the mirror log
+  /// that haven't been answered yet (within the 24 h window).
+  ///
+  /// Picking from the union — rather than short-circuiting on the tray —
+  /// ensures badge taps can reach delayed/grouped questions even while a
+  /// fresh notification is still sitting in the tray.
   Future<int?> getOldestUnansweredQuestionId() async {
-    final active = await _plugin.getActiveNotifications();
-    final activeIds = active.where((n) => n.id != 9999).map((n) => n.id).toSet();
-
-    if (activeIds.isNotEmpty) {
-      final log = await getMirrorLog();
-      for (final entry in log) {
-        final logNotifId = entry['notif_id'] as int?;
-        if (activeIds.contains(logNotifId)) {
-          return entry['id'] as int?;
-        }
-      }
-    }
-
-    // Fallback: oldest fired notification since last answer
-    return await _getOldestFiredSinceLastAnswer();
-  }
-
-  Future<int?> _getOldestFiredSinceLastAnswer() async {
     try {
+      final active = await _plugin.getActiveNotifications();
+      final activeIds = active
+          .where((n) => n.id != null && n.id != 9999)
+          .map((n) => n.id!)
+          .toSet();
+
       final now = DateTime.now();
-      final prefs = await SharedPreferences.getInstance();
-      final lastAnswerMs = prefs.getInt('last_answer_timestamp') ?? 0;
-      final lastAnswer = DateTime.fromMillisecondsSinceEpoch(lastAnswerMs);
       final cutoff = now.subtract(const Duration(hours: 24));
-      final effectiveStart = lastAnswer.isAfter(cutoff) ? lastAnswer : cutoff;
-
       final log = await getMirrorLog();
-      final fired = log.where((entry) {
+
+      // Build per-qid candidates with their scheduled time, deduping across
+      // multiple fires of the same question.
+      final candidates = <MapEntry<int, DateTime>>[];
+      final seenQids = <int>{};
+
+      for (final entry in log) {
+        if (entry['answered_at'] != null) continue;
+        final qid = entry['id'] as int?;
+        final nid = entry['notif_id'] as int?;
         final timeStr = entry['time'] as String?;
-        if (timeStr == null) return false;
+        if (qid == null || timeStr == null) continue;
         final scheduled = DateTime.tryParse(timeStr);
-        if (scheduled == null) return false;
-        return scheduled.isBefore(now) && scheduled.isAfter(effectiveStart);
-      }).toList();
+        if (scheduled == null) continue;
 
-      fired.sort((a, b) {
-        final ta = DateTime.tryParse(a['time'] as String? ?? '') ?? DateTime(0);
-        final tb = DateTime.tryParse(b['time'] as String? ?? '') ?? DateTime(0);
-        return ta.compareTo(tb);
-      });
+        final inTray = nid != null && activeIds.contains(nid);
+        final isRecentPastFire =
+            scheduled.isBefore(now) && scheduled.isAfter(cutoff);
 
-      return fired.isNotEmpty ? (fired.first['id'] as int?) : null;
+        if (!inTray && !isRecentPastFire) continue;
+        if (!seenQids.add(qid)) continue;
+
+        candidates.add(MapEntry(qid, scheduled));
+      }
+
+      if (candidates.isEmpty) return null;
+      candidates.sort((a, b) => a.value.compareTo(b.value));
+      return candidates.first.key;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Marks all past, still-unanswered mirror-log entries for [questionId]
+  /// as answered. Lets the badge fallback (used on MIUI/HyperOS where the
+  /// system tray is empty) stop counting them as "unanswered fires".
+  Future<void> _markQuestionAnsweredInMirror(int questionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('notif_schedule_mirror');
+    if (raw == null) return;
+
+    final list = List<Map<String, dynamic>>.from(jsonDecode(raw));
+    final now = DateTime.now();
+    bool changed = false;
+
+    for (final entry in list) {
+      if (entry['id'] != questionId) continue;
+      if (entry['answered_at'] != null) continue;
+      final timeStr = entry['time'] as String?;
+      final scheduled = timeStr != null ? DateTime.tryParse(timeStr) : null;
+      if (scheduled == null || !scheduled.isBefore(now)) continue;
+      entry['answered_at'] = now.millisecondsSinceEpoch;
+      changed = true;
+    }
+
+    if (changed) {
+      await prefs.setString('notif_schedule_mirror', jsonEncode(list));
     }
   }
 
   /// Clears any active notifications in the system tray for a specific question.
   Future<void> cancelNotificationsForQuestion(int questionId) async {
     try {
+      // Mark this question's past unanswered fires as answered in the mirror
+      // log so the MIUI badge fallback decrements correctly.
+      await _markQuestionAnsweredInMirror(questionId);
+
       final active = await _plugin.getActiveNotifications();
       // Do NOT return early when active is empty — on MIUI/HyperOS,
       // getActiveNotifications() always returns [] due to notification grouping,
