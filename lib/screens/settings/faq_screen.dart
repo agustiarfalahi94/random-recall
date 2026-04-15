@@ -220,16 +220,23 @@ class _FaqCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Outer Container provides only the border stroke.
+    // Inner Material provides background + rounded clip so that ExpansionTile's
+    // ink effects (ripple/highlight) are painted inside this Material and are
+    // correctly clipped to the rounded corners — not on the page-level Material
+    // where they appear as a square flash on the first/last tile of each card.
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
+      child: Material(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
         children: [
           for (int i = 0; i < items.length; i++) ...[
             _FaqTile(item: items[i], colorScheme: colorScheme),
@@ -242,6 +249,7 @@ class _FaqCard extends StatelessWidget {
               ),
           ],
         ],
+        ),
       ),
     );
   }
