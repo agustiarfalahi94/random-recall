@@ -8,6 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'package:firebase_performance/firebase_performance.dart';
+
+import '../config/remote_config_service.dart';
 import '../database/database_helper.dart';
 import '../../models/question.dart';
 import 'notification_scheduler.dart';
@@ -232,6 +235,9 @@ class NotificationService {
 
   Future<void> _scheduleNotificationsInternal() async {
     debugPrint('NotificationService: Scheduling notifications...');
+    final trace =
+        FirebasePerformance.instance.newTrace('notification_schedule');
+    await trace.start();
     // Ensure we are initialized and have a valid non-UTC timezone if possible
     if (!_initialized) await init();
     
@@ -245,9 +251,13 @@ class NotificationService {
     _sanitizeNotificationPrefs(prefs);
 
     final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
-    final startHour = prefs.getInt('notif_start_hour') ?? 8;
-    final endHour = prefs.getInt('notif_end_hour') ?? 20;
-    final frequency = prefs.getInt('notif_frequency') ?? 3;
+    final rc = RemoteConfigService.instance;
+    final startHour =
+        prefs.getInt('notif_start_hour') ?? rc.notifStartHour;
+    final endHour =
+        prefs.getInt('notif_end_hour') ?? rc.notifEndHour;
+    final frequency =
+        prefs.getInt('notif_frequency') ?? rc.notifFrequencyFree;
     final activeDaysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
 
     debugPrint('NotificationService: Settings used: randomAnytime=$randomAnytime, '
@@ -354,6 +364,8 @@ class NotificationService {
       }
     }
 
+    trace.putAttribute('slot_count', slots.length.toString());
+    await trace.stop();
     debugPrint('NotificationService: Successfully batched ${slots.length} alarms to Android.');
   }
 

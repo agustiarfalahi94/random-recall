@@ -1,6 +1,12 @@
+import 'dart:ui';
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_performance/firebase_performance.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +48,40 @@ Future<void> main() async {
         androidProvider: AndroidProvider.debug,
       );
 
+      // Crashlytics: route Flutter and async errors to Crashlytics + Sentry
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(!kDebugMode);
+      FlutterError.onError = (details) {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+        Sentry.captureException(details.exception, stackTrace: details.stack);
+      };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        Sentry.captureException(error, stackTrace: stack);
+        return true;
+      };
+
+      // Performance Monitoring: disable collection in debug builds
+      await FirebasePerformance.instance
+          .setPerformanceCollectionEnabled(!kDebugMode);
+
+      // Remote Config: set defaults that mirror current hardcoded values,
+      // then fetch latest in the background (applied next cold start)
+      final rc = FirebaseRemoteConfig.instance;
+      await rc.setConfigSettings(RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 10),
+        minimumFetchInterval: const Duration(hours: 1),
+      ));
+      await rc.setDefaults(const {
+        'notif_frequency_free': 3,
+        'notif_frequency_premium': 6,
+        'notif_start_hour': 8,
+        'notif_end_hour': 20,
+        'free_question_base': 20,
+        'free_max_custom_categories': 1,
+      });
+      rc.fetchAndActivate().ignore(); // non-blocking; defaults used this session
+
       // PostHog: initialise after Firebase, before runApp
       final postHogConfig = PostHogConfig(
         'phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv',
@@ -61,6 +101,9 @@ Future<void> main() async {
 
       // Handle cold-start from notification tap (navigator not ready during init)
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final startupTrace =
+            FirebasePerformance.instance.newTrace('cold_start_post_frame');
+        await startupTrace.start();
         try {
           // Initialize service and check launch details
           await NotificationService.instance.init();
@@ -103,6 +146,8 @@ Future<void> main() async {
           AnalyticsService.instance.trackAppOpen().ignore();
         } catch (e) {
           debugPrint('Startup background tasks failed: $e');
+        } finally {
+          await startupTrace.stop();
         }
 
         // For existing users who updated the app: silently request battery

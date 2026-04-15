@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
@@ -164,6 +165,8 @@ class SyncService {
     _isSyncing = true;
     debugPrint('SyncService: Starting backup for user ${user.uid}...');
 
+    final trace = FirebasePerformance.instance.newTrace('sync_backup');
+    await trace.start();
     try {
       final userDoc = _db.collection('users').doc(user.uid);
       final batch = _db.batch();
@@ -220,11 +223,13 @@ class SyncService {
         'onboarding_complete': prefs.getBool('onboarding_complete') ?? false,
       }, SetOptions(merge: true));
 
+      trace.putAttribute('question_count', questions.length.toString());
       debugPrint('SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.');
     } catch (e) {
       debugPrint('SyncService: Backup failed: $e');
       // Don't rethrow here so the UI calling it doesn't crash
     } finally {
+      await trace.stop();
       _isSyncing = false;
     }
   }
@@ -238,6 +243,8 @@ class SyncService {
     _isSyncing = true;
     debugPrint('SyncService: Starting restore for user ${user.uid}...');
 
+    final trace = FirebasePerformance.instance.newTrace('sync_restore');
+    await trace.start();
     try {
       // OPTIMIZATION: Skip automatic restore if data exists, unless forced (e.g. at login)
       final localCount = await _dbHelper.getQuestionCount();
@@ -330,10 +337,12 @@ class SyncService {
       // Refresh the UI so the user sees their restored data immediately
       _dbHelper.notifyUpdate();
 
+      trace.putAttribute('question_count', qSnap.docs.length.toString());
       debugPrint('SyncService: Restore completed successfully.');
     } catch (e) {
       debugPrint('SyncService: Restore failed with error: $e');
     } finally {
+      await trace.stop();
       _isSyncing = false;
     }
   }
