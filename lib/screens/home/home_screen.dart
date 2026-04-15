@@ -14,6 +14,7 @@ import '../categories/manage_categories_screen.dart';
 import '../question/notification_question_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
+import '../settings/faq_screen.dart';
 import '../settings/notification_schedule_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -317,6 +318,36 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             subtitle: const Text('Tell us what could be better'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => _showFeedbackDialog(context),
+          ),
+
+          const Divider(),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: colorScheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Icon(Icons.help_outline_rounded,
+                    color: colorScheme.onTertiaryContainer),
+              ),
+            ),
+            title: const Text(
+              'FAQ',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('Common questions & expected behaviour'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const FaqScreen()),
+              );
+            },
           ),
 
           const Divider(),
