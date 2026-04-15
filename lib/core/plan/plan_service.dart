@@ -1,9 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/remote_config_service.dart';
+
 class PlanService {
-  // Constants for free tier limits
-  static const int freeQuestionBase = 20;
-  static const int freeMaxCustomCategories = 1;
+  // Free tier limits — sourced from Remote Config so they can be tuned without
+  // shipping a new release. The Remote Config defaults match the old hardcoded values.
+  static int get freeQuestionBase =>
+      RemoteConfigService.instance.freeQuestionBase;
+  static int get freeMaxCustomCategories =>
+      RemoteConfigService.instance.freeMaxCustomCategories;
 
   /// Returns true if the user has an active premium subscription.
   static Future<bool> isPremium() async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_service.dart';
@@ -301,6 +302,31 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Icon(Icons.rate_review_rounded,
+                    color: colorScheme.onSecondaryContainer),
+              ),
+            ),
+            title: const Text(
+              'Send feedback',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text('Tell us what could be better'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => _showFeedbackDialog(context),
+          ),
+
+          const Divider(),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
                 color: colorScheme.errorContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -378,6 +404,59 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       ),
       ),
     );
+  }
+
+  Future<void> _showFeedbackDialog(BuildContext context) async {
+    Navigator.of(context).pop(); // close settings sheet first
+    final controller = TextEditingController();
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Send feedback'),
+        content: TextField(
+          controller: controller,
+          minLines: 3,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            hintText: 'What could be better?',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+
+    if (submitted == true && controller.text.trim().isNotEmpty) {
+      try {
+        final eventId = await Sentry.captureMessage('User feedback');
+        await Sentry.captureUserFeedback(SentryUserFeedback(
+          eventId: eventId,
+          comments: controller.text.trim(),
+          email: AuthService.instance.currentUser?.email,
+        ));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Feedback sent — thank you!')),
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not send feedback. Try again later.')),
+          );
+        }
+      }
+    }
+    controller.dispose();
   }
 }
 
