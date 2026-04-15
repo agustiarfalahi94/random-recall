@@ -327,7 +327,7 @@ class NotificationService {
         final cutoff = now.subtract(const Duration(hours: 24));
         for (final entry in oldList) {
           final nid = entry['notif_id'] as int?;
-          if (nid == null || newNotifIds.contains(nid)) continue;
+          if (nid == null) continue;
 
           final inActiveTray = activeIds.contains(nid);
 
@@ -341,9 +341,21 @@ class NotificationService {
             }
           }
 
+          // Preserve delivered entries BEFORE checking for ID collision with
+          // the new schedule. idForSlot() is day-based (daysSinceEpoch * 20 +
+          // slotIndex), so a new future slot and a past-fired slot on the same
+          // day can share the same notif_id when the time window changes.
+          // Without this guard, the fired entry is silently dropped and the
+          // badge count falls incorrectly. Having both entries in the log is
+          // harmless: the future entry's time > now, so _firedAndUnansweredQids
+          // won't double-count it.
           if (inActiveTray || isRecentUnansweredFire) {
             preservedDelivered.add(entry);
+            continue; // don't fall through to the ID-collision skip below
           }
+
+          // Not yet delivered — skip if the new schedule will overwrite this ID.
+          if (newNotifIds.contains(nid)) continue;
         }
       }
     } catch (e) {
