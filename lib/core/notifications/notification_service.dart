@@ -429,6 +429,11 @@ class NotificationService {
   /// badge stable when the tray is partially populated: e.g. 1 fresh tray
   /// notification + 2 delayed past fires must read as 3, not 1.
   Future<int> getUnansweredCount() async {
+    final qids = <int>{};
+
+    // Source 1: questions whose notifications are still in the system tray.
+    // Isolated in its own try-catch so a plugin failure (e.g. not yet
+    // initialized on cold start) doesn't prevent Source 2 from running.
     try {
       final active = await _plugin.getActiveNotifications();
       final activeIds = active
@@ -436,9 +441,6 @@ class NotificationService {
           .map((n) => n.id!)
           .toSet();
 
-      final qids = <int>{};
-
-      // Source 1: questions whose notifications are still in the system tray.
       if (activeIds.isNotEmpty) {
         final log = await getMirrorLog();
         for (final entry in log) {
@@ -449,15 +451,17 @@ class NotificationService {
           }
         }
       }
-
-      // Source 2: past-fired-but-not-answered entries from the mirror log
-      // (the only source that survives MIUI/HyperOS notification grouping).
-      qids.addAll(await _firedAndUnansweredQids());
-
-      return qids.length;
-    } catch (e) {
-      return 0;
+    } catch (_) {
+      // Source 1 failed (plugin not initialized, etc.). Continue with Source 2.
     }
+
+    // Source 2: past-fired-but-not-answered entries from the mirror log
+    // (the only source that survives MIUI/HyperOS notification grouping).
+    try {
+      qids.addAll(await _firedAndUnansweredQids());
+    } catch (_) {}
+
+    return qids.length;
   }
 
   /// Returns the set of unique question IDs that fired in the past 24 h and

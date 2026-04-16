@@ -519,6 +519,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     _answeredSub = NotificationService.instance.onNotificationAnswered
         .listen((_) => _refreshData());
     _refreshData();
+    // The notification plugin initializes in the post-frame callback (main.dart),
+    // which runs after the widget tree is built. Retry once after init is likely
+    // complete so the badge picks up notifications that fired while closed.
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) _refreshData();
+    });
   }
 
   @override
@@ -565,7 +571,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         }
       }
       if (nextTime != null && mounted) {
-        _nextNotifTimer = Timer(nextTime.difference(now), _refreshData);
+        // Add 2s buffer so the OS alarm has time to fire and the mirror log
+        // entry's scheduled time is safely in the past for isBefore() checks.
+        _nextNotifTimer = Timer(
+          nextTime.difference(now) + const Duration(seconds: 2),
+          _refreshData,
+        );
       }
     } catch (_) {}
   }
