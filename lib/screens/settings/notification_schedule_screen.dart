@@ -103,16 +103,19 @@ class _NotificationScheduleScreenState
   }
 
   Future<void> _save() async {
-    // Since notification slots are spaced by hour, the window must span at
-    // least 1 full hour (e.g. 1 PM start requires 2 PM or later end).
-    if (!_randomAnytime && _endTime.hour <= _startTime.hour) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End time must be at least 1 hour after start time.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
+    // The window must span at least 1 hour. Overnight windows (e.g. 11 PM → 2 AM)
+    // are valid — the span wraps around midnight.
+    if (!_randomAnytime) {
+      final span = (_endTime.hour - _startTime.hour) % 24;
+      if (span < 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The time window must span at least 1 hour.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
     }
 
     if (_activeDays.isEmpty) {
@@ -178,6 +181,8 @@ class _NotificationScheduleScreenState
     setState(() {
       if (isStart) {
         _startTime = picked;
+        // Always set end time to start + 1 hour
+        _endTime = TimeOfDay(hour: (picked.hour + 1) % 24, minute: 0);
       } else {
         _endTime = picked;
       }

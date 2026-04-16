@@ -197,9 +197,10 @@ class NotificationService {
     if (!randomAnytime) {
       final startHour = prefs.getInt('notif_start_hour') ?? 8;
       final endHour = prefs.getInt('notif_end_hour') ?? 20;
-      // Corrupted if: window is inverted, too narrow (<1h), or suspiciously
-      // in the middle of the night (both hours before 4am).
-      if (endHour - startHour < 1 || (startHour < 4 && endHour < 4)) {
+      // Corrupted if window span is 0 hours (start == end).
+      // Overnight windows (e.g. 23→2) are valid — span wraps around midnight.
+      final span = (endHour - startHour) % 24;
+      if (span < 1) {
         debugPrint('NotificationService: Corrupted time window ($startHour–$endHour). Resetting to 8–20.');
         prefs.setInt('notif_start_hour', 8);
         prefs.setInt('notif_end_hour', 20);
