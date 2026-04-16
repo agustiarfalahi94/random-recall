@@ -88,13 +88,20 @@ class NotificationScheduler {
       final spacing = totalMinutes / dayQuestionIds.length;
 
       // Window-end boundary: same day for normal, next day for overnight.
-      final windowEnd = tz.TZDateTime(
+      // Use .add(Duration) instead of day+1 for correct DST/month-boundary handling.
+      var windowEnd = tz.TZDateTime(
         tz.local,
         targetDate.year,
         targetDate.month,
-        targetDate.day + (isOvernight ? 1 : 0),
+        targetDate.day,
         effectiveEnd,
       );
+      if (isOvernight) {
+        windowEnd = tz.TZDateTime.from(
+          windowEnd.add(const Duration(days: 1)),
+          tz.local,
+        );
+      }
 
       for (int i = 0; i < dayQuestionIds.length; i++) {
         // Use a deterministic jitter based on the question ID. This prevents the

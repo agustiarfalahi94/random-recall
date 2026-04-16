@@ -4,7 +4,7 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 
 /// Thin singleton wrapper around PostHog + Crashlytics identity.
 /// All methods are fire-and-forget — callers use `.ignore()` so they never
-/// block the UI. Swallows all errors internally so a analytics failure can
+/// block the UI. Swallows all errors internally so an analytics failure can
 /// never surface to the user.
 class AnalyticsService {
   AnalyticsService._();
