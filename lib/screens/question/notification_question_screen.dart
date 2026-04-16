@@ -166,11 +166,6 @@ class _NotificationQuestionScreenState
           updatedAt: now,
         ));
 
-        // Save timestamp FIRST so the time-based fallback in getUnansweredCount()
-        // reads the updated value when the badge-refresh stream fires.
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('last_answer_timestamp', now.millisecondsSinceEpoch);
-
         // Clear the persistent tray notification for this question and signal
         // the home screen badge to refresh (always fires, even on MIUI).
         await NotificationService.instance.cancelNotificationsForQuestion(_question!.id!);
