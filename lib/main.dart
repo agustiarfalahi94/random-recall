@@ -88,7 +88,8 @@ Future<void> main() async {
       )
         ..host = 'https://us.i.posthog.com'
         ..flushAt = 1       // flush after every single event (good for low-volume apps)
-        ..flushInterval = const Duration(seconds: 10); // also flush every 10 s
+        ..flushInterval = const Duration(seconds: 10) // also flush every 10 s
+        ..debug = kDebugMode; // log PostHog events to console in debug builds
       await Posthog().setup(postHogConfig);
 
       // Start In-App Purchase listener

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/database/database_helper.dart';
+import '../../core/services/analytics_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 
@@ -78,6 +79,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
             updatedAt: DateTime.now(),
           ),
         );
+        AnalyticsService.instance.trackQuestionCreated().ignore();
       }
 
       if (!mounted) return;

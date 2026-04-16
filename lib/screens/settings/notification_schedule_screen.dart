@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../../core/utils/battery_optimization.dart';
@@ -136,7 +137,12 @@ class _NotificationScheduleScreenState
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
 
       await NotificationService.instance.scheduleNotifications();
-      
+      AnalyticsService.instance.trackScheduleChanged(
+        frequency: _frequency,
+        randomAnytime: _randomAnytime,
+        timerSeconds: _timerSeconds,
+      ).ignore();
+
       // Manually trigger a backup since settings live in SharedPreferences, not the DB
       await SyncService.instance.performBackup();
 

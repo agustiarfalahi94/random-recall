@@ -47,6 +47,10 @@ class AuthService {
         await _ensureUserDocument(userCredential.user!);
         await initializeUserSession();
         AnalyticsService.instance.trackLogin(method: 'google').ignore();
+        AnalyticsService.instance.identify(
+          userCredential.user!.uid,
+          email: userCredential.user!.email,
+        ).ignore();
       }
       return userCredential;
     } catch (e) {
@@ -67,6 +71,10 @@ class AuthService {
       if (_auth.currentUser != null && _auth.currentUser!.emailVerified) {
         await initializeUserSession();
         AnalyticsService.instance.trackLogin(method: 'email').ignore();
+        AnalyticsService.instance.identify(
+          userCredential.user!.uid,
+          email: userCredential.user!.email,
+        ).ignore();
       }
     }
     return userCredential;
@@ -161,8 +169,9 @@ class AuthService {
       }
 
       debugPrint('AuthService: Performing Firebase signOut...');
-      // 7. Track logout before Firebase tears down the session
+      // 7. Track logout and detach the user identity before Firebase tears down the session
       await AnalyticsService.instance.trackLogout().catchError((_) {});
+      await AnalyticsService.instance.reset().catchError((_) {});
       // 8. FINAL STEP: Sign out of Firebase to trigger the UI switch in main.dart
       await _auth.signOut();
 

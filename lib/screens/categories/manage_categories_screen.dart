@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../models/category.dart';
 import '../settings/subscription_screen.dart';
 
@@ -349,6 +350,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
           updatedAt: DateTime.now(),
         ),
       );
+      AnalyticsService.instance.trackCategoryCreated().ignore();
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
