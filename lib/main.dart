@@ -114,6 +114,10 @@ Future<void> main() async {
             await NotificationService.instance.requestPermission();
           }
 
+          // Clear any mirror-log entries for questions deleted since last run
+          // so the badge doesn't stay stuck after deletions.
+          await NotificationService.instance.cleanStaleMirrorEntries();
+
           await NotificationService.instance.handleNotificationLaunch();
 
           final prefs = await SharedPreferences.getInstance();

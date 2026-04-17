@@ -149,6 +149,36 @@ class NotificationService {
     }
   }
 
+  // ── Mirror log cleanup ────────────────────────────────────────────────────
+
+  /// Removes mirror-log entries whose question IDs no longer exist in the DB.
+  /// Called at startup so a stale badge from previously-deleted questions is
+  /// cleared immediately without waiting for the next full reschedule.
+  Future<void> cleanStaleMirrorEntries() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('notif_schedule_mirror');
+      if (raw == null) return;
+
+      final questions = await DatabaseHelper.instance.getAllQuestions();
+      final validQids = questions.where((q) => q.id != null).map((q) => q.id!).toSet();
+
+      final list = List<Map<String, dynamic>>.from(jsonDecode(raw));
+      final cleaned = list.where((entry) {
+        final qid = entry['id'] as int?;
+        return qid == null || validQids.contains(qid);
+      }).toList();
+
+      if (cleaned.length != list.length) {
+        await prefs.setString('notif_schedule_mirror', jsonEncode(cleaned));
+        _answeredController.add(null); // refresh badge
+        debugPrint('NotificationService: Removed ${list.length - cleaned.length} stale mirror entries for deleted questions.');
+      }
+    } catch (e) {
+      debugPrint('NotificationService: cleanStaleMirrorEntries error: $e');
+    }
+  }
+
   // ── Permission ────────────────────────────────────────────────────────────
 
   Future<bool> requestPermission() async {
@@ -308,6 +338,11 @@ class NotificationService {
       };
     }).toList();
 
+    // Build the set of valid question IDs so we can drop mirror entries for
+    // deleted questions. Without this, badge counts get stuck when a question
+    // is deleted while it still has unanswered fired notifications in the log.
+    final validQids = questionIds.toSet();
+
     // Preserve already-delivered entries so the home-screen unanswered lookup
     // can still resolve them after a reschedule. Two cases keep an entry:
     //   1. It's still in the active tray (stock Android).
@@ -329,6 +364,12 @@ class NotificationService {
         for (final entry in oldList) {
           final nid = entry['notif_id'] as int?;
           if (nid == null) continue;
+
+          // Drop entries for questions that no longer exist in the database.
+          // This clears the badge when a question is deleted while it still
+          // has unanswered fired notifications in the mirror log.
+          final entryQid = entry['id'] as int?;
+          if (entryQid != null && !validQids.contains(entryQid)) continue;
 
           final inActiveTray = activeIds.contains(nid);
 
