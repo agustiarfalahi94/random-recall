@@ -81,26 +81,6 @@ class SyncService {
         batch.set(docRef, s.toMap(), SetOptions(merge: true));
       }
 
-      // 3b. Reconcile: delete Firestore documents that no longer exist locally.
-      // Without this step, deleted questions/categories persist in Firestore and
-      // get re-inserted into SQLite by the real-time listener or performRestore.
-      final localQIds = questions
-          .where((q) => q.id != null)
-          .map((q) => q.id!.toString())
-          .toSet();
-      final localCatIds = categories
-          .where((c) => c.id != null)
-          .map((c) => c.id!.toString())
-          .toSet();
-      final remoteQSnap = await userDoc.collection('questions').get();
-      final remoteCatSnap = await userDoc.collection('categories').get();
-      for (final doc in remoteQSnap.docs) {
-        if (!localQIds.contains(doc.id)) batch.delete(doc.reference);
-      }
-      for (final doc in remoteCatSnap.docs) {
-        if (!localCatIds.contains(doc.id)) batch.delete(doc.reference);
-      }
-
       // 4. Backup User Settings (SharedPreferences)
       final prefs = await SharedPreferences.getInstance();
       final settings = {
@@ -121,7 +101,15 @@ class SyncService {
             prefs.getInt('timer_streak_bonus_questions') ?? 0,
       };
 
+      // Record which device performed this backup
+      final deviceId = prefs.getString('device_id') ?? 'unknown';
+
       // 4. Commit all changes at once
+      batch.set(
+        userDoc,
+        {'last_active_device_id': deviceId},
+        SetOptions(merge: true),
+      );
       await batch.commit();
 
       // 5. Update user profile with metadata
