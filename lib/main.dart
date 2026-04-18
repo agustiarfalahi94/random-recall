@@ -47,7 +47,9 @@ Future<void> _getOrCreateDeviceId() async {
       } catch (e) {
         // Fallback if UUID generation fails (rare)
         deviceId = DateTime.now().millisecondsSinceEpoch.toString();
-        debugPrint('Main: UUID generation failed, using timestamp fallback: $deviceId');
+        debugPrint(
+          'Main: UUID generation failed, using timestamp fallback: $deviceId',
+        );
       }
       await prefs.setString('device_id', deviceId);
       debugPrint('Main: Generated new device ID: $deviceId');

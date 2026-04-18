@@ -168,7 +168,6 @@ class AuthService {
             .catchError((e) => debugPrint('Signout backup failed: $e'));
       }
 
-
       // 3. Subscription and Google logout
       SubscriptionService.instance.logOut().catchError(
         (e) => debugPrint('RevenueCat logout failed: $e'),

@@ -101,11 +101,9 @@ class SyncService {
       final deviceId = prefs.getString('device_id') ?? 'unknown';
 
       // 4. Commit all changes at once
-      batch.set(
-        userDoc,
-        {'last_active_device_id': deviceId},
-        SetOptions(merge: true),
-      );
+      batch.set(userDoc, {
+        'last_active_device_id': deviceId,
+      }, SetOptions(merge: true));
       await batch.commit();
 
       // 5. Update user profile with metadata
