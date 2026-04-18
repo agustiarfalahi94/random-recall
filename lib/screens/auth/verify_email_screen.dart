@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -84,7 +84,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      l10n.verifyEmailSent(email: user?.email ?? ''),
+                      l10n.verifyEmailSent(user?.email ?? ''),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.grey, height: 1.5),
                     ),

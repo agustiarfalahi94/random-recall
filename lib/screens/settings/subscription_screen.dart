@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../core/plan/subscription_service.dart';
 import '../../core/plan/plan_service.dart';
@@ -45,9 +45,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.purchaseFailedSnack(error: e.toString())),
-          ),
+          SnackBar(content: Text(l10n.purchaseFailedSnack(e.toString()))),
         );
       }
     } finally {
@@ -137,7 +135,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         onPressed: () => _handleSubscribe(package),
                         child: Text(
                           l10n.getPremiumButton(
-                            price: package.storeProduct.priceString,
+                            package.storeProduct.priceString,
                           ),
                         ),
                       ),

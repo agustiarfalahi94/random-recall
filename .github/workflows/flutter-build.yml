@@ -26,6 +26,9 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Generate l10n files
+        run: flutter gen-l10n
+
       - name: Run Dart analyzer
         run: flutter analyze
 
@@ -50,6 +53,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate l10n files
+        run: flutter gen-l10n
 
       - name: Run tests
         run: flutter test --coverage
@@ -78,6 +84,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Generate l10n files
+        run: flutter gen-l10n
 
       - name: Build APK (debug)
         run: flutter build apk --debug

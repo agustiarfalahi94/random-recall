@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
@@ -179,7 +179,7 @@ class _NotificationScheduleScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.saveFailedSnack(error: e.toString()))),
+        SnackBar(content: Text(l10n.saveFailedSnack(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -240,9 +240,9 @@ class _NotificationScheduleScreenState
 
   String _frequencyLabel(int f, AppLocalizations l10n) {
     if (f == 1) return l10n.freqOnce;
-    if (f <= 3) return l10n.freqRecommended(count: f);
-    if (f <= 6) return l10n.freqActive(count: f);
-    if (f <= 9) return l10n.freqIntense(count: f);
+    if (f <= 3) return l10n.freqRecommended(f);
+    if (f <= 6) return l10n.freqActive(f);
+    if (f <= 9) return l10n.freqIntense(f);
     return l10n.freqMax;
   }
 
@@ -304,12 +304,12 @@ class _NotificationScheduleScreenState
                       Text(
                         _timerSeconds == 0
                             ? l10n.challengeModeOff(
-                                threshold: StreakService.challengeThreshold,
+                                StreakService.challengeThreshold,
                               )
                             : _timerSeconds <= StreakService.challengeThreshold
                             ? l10n.challengeModeActive
                             : l10n.challengeModeRelaxed(
-                                threshold: StreakService.challengeThreshold,
+                                StreakService.challengeThreshold,
                               ),
                         style: TextStyle(
                           fontSize: 13,

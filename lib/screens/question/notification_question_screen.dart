@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
@@ -318,6 +318,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
   }
 
   Widget _buildContent(ColorScheme colorScheme, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -560,7 +561,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
           const Text('🔥', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 12),
           Text(
-            l10n.streakDayTitle(streak: streak),
+            l10n.streakDayTitle(streak),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
             ),
@@ -568,7 +569,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            l10n.streakDescription(streak: streak),
+            l10n.streakDescription(streak),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/services/analytics_service.dart';
@@ -92,7 +92,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.saveFailedSnack(error: e.toString())),
+          content: Text(l10n.saveFailedSnack(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

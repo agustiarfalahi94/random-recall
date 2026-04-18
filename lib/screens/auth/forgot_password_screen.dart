@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -41,7 +41,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } on FirebaseAuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = AppLocalizations.of(context)!.resetError);
+      setState(() => _errorMessage = l10n.resetError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
@@ -101,7 +101,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     if (_usedCategoryIds.contains(cat.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.categoryHasQuestionsError(name: cat.name)),
+          content: Text(l10n.categoryHasQuestionsError(cat.name)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -112,9 +112,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.deleteCategoryTitle),
-        content: Text(
-          l10n.deleteCategoryContent(icon: cat.icon, name: cat.name),
-        ),
+        content: Text(l10n.deleteCategoryContent(cat.icon, cat.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -390,9 +388,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.saveCategoryFailedSnack(error: e.toString())),
-        ),
+        SnackBar(content: Text(l10n.saveCategoryFailedSnack(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -538,7 +534,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                           isPremium
                               ? l10n.premiumUnlimitedCategories
                               : l10n.freePlanCategoryNote(
-                                  count: PlanService.freeMaxCustomCategories,
+                                  PlanService.freeMaxCustomCategories,
                                 ),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isPremium

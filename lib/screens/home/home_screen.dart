@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -119,7 +119,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.syncFailedSnack(error: e.toString()))),
+        SnackBar(content: Text(l10n.syncFailedSnack(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isSyncingManual = false);
@@ -143,7 +143,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.testNotifFailedSnack(error: e.toString()))),
+        SnackBar(content: Text(l10n.testNotifFailedSnack(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isSendingTest = false);
@@ -498,9 +498,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                   if (rootNav.canPop()) rootNav.pop();
                   messenger.showSnackBar(
                     SnackBar(
-                      content: Text(
-                        l10n.signOutFailedSnack(error: e.toString()),
-                      ),
+                      content: Text(l10n.signOutFailedSnack(e.toString())),
                     ),
                   );
                 }
@@ -899,7 +897,7 @@ class _TimerChallengeCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      l10n.bonusCountLabel(count: bonusQuestions),
+                      l10n.bonusCountLabel(bonusQuestions),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -921,13 +919,13 @@ class _TimerChallengeCard extends StatelessWidget {
             Text(
               timerOn
                   ? (timerSeconds <= StreakService.challengeThreshold
-                        ? l10n.timerChallengeActiveDesc(seconds: timerSeconds)
+                        ? l10n.timerChallengeActiveDesc(timerSeconds)
                         : l10n.timerChallengeRelaxedDesc(
-                            seconds: timerSeconds,
-                            threshold: StreakService.challengeThreshold,
+                            timerSeconds,
+                            StreakService.challengeThreshold,
                           ))
                   : l10n.timerChallengeOffDesc(
-                      threshold: StreakService.challengeThreshold,
+                      StreakService.challengeThreshold,
                     ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -960,9 +958,9 @@ class _TimerChallengeCard extends StatelessWidget {
                 streak == 0
                     ? l10n.streakStart
                     : l10n.streakProgress(
-                        streak: streak,
-                        plural: streak == 1 ? '' : 's',
-                        days: daysToNext,
+                        streak,
+                        streak == 1 ? '' : 's',
+                        daysToNext,
                       ),
                 style: TextStyle(
                   fontSize: 12,

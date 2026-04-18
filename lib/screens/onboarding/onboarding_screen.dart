@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
@@ -193,7 +193,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.onboardingSomethingWentWrong(error: e.toString())),
+          content: Text(l10n.onboardingSomethingWentWrong(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

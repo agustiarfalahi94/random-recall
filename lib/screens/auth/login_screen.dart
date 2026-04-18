@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 import 'email_auth_screen.dart';
 
@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.loginFailedSnack(error: e.toString()))),
+          SnackBar(content: Text(l10n.loginFailedSnack(e.toString()))),
         );
       }
     } finally {
