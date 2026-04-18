@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,9 +33,9 @@ import 'screens/auth/verify_email_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// Retrieve or generate a unique device ID for this installation.
-/// Device ID is used for sync device tracking (single active device model) and analytics.
-Future<String> _getOrCreateDeviceId() async {
+/// Initialize device ID in SharedPreferences if not already present.
+/// Device ID will be read by sync and analytics services on subsequent calls.
+Future<void> _getOrCreateDeviceId() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     var deviceId = prefs.getString('device_id');
@@ -53,13 +54,9 @@ Future<String> _getOrCreateDeviceId() async {
     } else {
       debugPrint('Main: Using stored device ID: $deviceId');
     }
-
-    return deviceId;
   } catch (e) {
     // Critical fallback: if SharedPreferences fails entirely
-    final fallbackId = 'device_${DateTime.now().millisecondsSinceEpoch}';
-    debugPrint('Main: SharedPreferences error, using fallback device ID: $e');
-    return fallbackId;
+    debugPrint('Main: SharedPreferences error: $e');
   }
 }
 
@@ -411,24 +408,15 @@ class _HomeGateState extends State<_HomeGate> {
 
   Future<void> _initFlow() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // If a sync is already in progress (started by AuthService), wait for it
-    while (SyncService.instance.isSyncing) {
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
-
     bool complete = prefs.getBool('onboarding_complete') ?? false;
 
     if (!complete) {
-      // If locally incomplete, check the cloud once before forcing onboarding
-      debugPrint('HomeGate: Checking cloud for existing data...');
-      await SyncService.instance.performRestore();
-      // Re-check after restore attempt
-      complete = prefs.getBool('onboarding_complete') ?? false;
+      // No cloud data fetched yet. Restore will happen after login in initializeUserSession()
+      debugPrint('HomeGate: onboarding_complete not set, showing onboarding');
+    } else {
+      // Check if another device has logged in since this device was last active
+      await _checkActiveDevice();
     }
-
-    // Start the real-time bidirectional listeners
-    SyncService.instance.startRealtimeSync();
 
     if (mounted) {
       setState(() {
