@@ -1,0 +1,161 @@
+name: Flutter Build & Test
+
+on:
+  push:
+    branches: [develop, main, feature/**]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────
+  # ANALYSIS & TESTING - Runs on every commit
+  # ──────────────────────────────────────────────────────────────────
+  analyze:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run Dart analyzer
+        run: flutter analyze
+
+      - name: Check code formatting
+        run: dart format --output=none --set-exit-if-changed lib/
+
+  # ──────────────────────────────────────────────────────────────────
+  # UNIT & WIDGET TESTS
+  # ──────────────────────────────────────────────────────────────────
+  test:
+    name: Unit & Widget Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+
+  # ──────────────────────────────────────────────────────────────────
+  # BUILD APK - Ready for manual testing & Play Store deployment
+  # ──────────────────────────────────────────────────────────────────
+  build:
+    name: Build APK & AAB
+    runs-on: ubuntu-latest
+    needs: [analyze, test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK (debug)
+        run: flutter build apk --debug
+
+      - name: Build APK (release)
+        run: flutter build apk --release
+
+      - name: Build App Bundle (release)
+        run: flutter build appbundle --release
+
+      # ────────────────────────────────────────────────────────────
+      # STORE BUILD ARTIFACTS - For manual testing & future Play Store
+      # ────────────────────────────────────────────────────────────
+      - name: Upload APK (debug) as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: random-recall-debug.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
+
+      - name: Upload APK (release) as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: random-recall-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Upload App Bundle as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: random-recall-release.aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      # ────────────────────────────────────────────────────────────
+      # FUTURE: Play Store deployment (disabled until app goes live)
+      # ────────────────────────────────────────────────────────────
+      # When you're ready to deploy to Play Store:
+      # 1. Create service account in Google Play Console
+      # 2. Add credentials as GitHub secret: PLAY_STORE_CREDENTIALS
+      # 3. Uncomment the steps below
+      # 4. Uncomment the Play Store upload step
+
+      # - name: Upload to Play Store (Internal Testing)
+      #   if: github.ref == 'refs/heads/develop'
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJson: ${{ secrets.PLAY_STORE_CREDENTIALS }}
+      #     packageName: com.randomrecall.app
+      #     releaseFiles: build/app/outputs/bundle/release/app-release.aab
+      #     track: internal
+      #     status: completed
+
+      # - name: Upload to Play Store (Beta)
+      #   if: github.ref == 'refs/heads/staging'
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJson: ${{ secrets.PLAY_STORE_CREDENTIALS }}
+      #     packageName: com.randomrecall.app
+      #     releaseFiles: build/app/outputs/bundle/release/app-release.aab
+      #     track: beta
+      #     status: completed
+
+      # - name: Upload to Play Store (Production)
+      #   if: github.ref == 'refs/heads/main'
+      #   uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJson: ${{ secrets.PLAY_STORE_CREDENTIALS }}
+      #     packageName: com.randomrecall.app
+      #     releaseFiles: build/app/outputs/bundle/release/app-release.aab
+      #     track: production
+      #     status: completed
+
+      - name: Build Status Notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Build successful! APK & AAB ready for testing/deployment"
+          else
+            echo "❌ Build failed! Check logs above"
+          fi
