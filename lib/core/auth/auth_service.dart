@@ -168,8 +168,6 @@ class AuthService {
             .catchError((e) => debugPrint('Signout backup failed: $e'));
       }
 
-      // 2. Stop listeners
-      SyncService.instance.stopRealtimeSync();
 
       // 3. Subscription and Google logout
       SubscriptionService.instance.logOut().catchError(
