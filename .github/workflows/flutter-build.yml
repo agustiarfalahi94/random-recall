@@ -114,9 +114,6 @@ jobs:
       - name: Build APK (debug)
         run: flutter build apk --debug
 
-      - name: Build APK (release)
-        run: flutter build apk --release
-
       - name: Build App Bundle (release)
         run: flutter build appbundle --release
 
@@ -129,20 +126,15 @@ jobs:
           name: random-recall-debug.apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30
+          if-no-files-found: warn
 
-      - name: Upload APK (release) as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: random-recall-release.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
-
-      - name: Upload App Bundle as artifact
+      - name: Upload App Bundle (release) as artifact
         uses: actions/upload-artifact@v4
         with:
           name: random-recall-release.aab
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
+          if-no-files-found: warn
 
       # ────────────────────────────────────────────────────────────
       # FUTURE: Play Store deployment (disabled until app goes live)
