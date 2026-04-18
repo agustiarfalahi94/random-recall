@@ -44,12 +44,13 @@ class NotificationService {
     // Listen for database changes to refresh the schedule.
     // We debounce this to avoid rapid re-scheduling during sync/practice.
     DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
-      if (_scheduleDebounceTimer?.isActive ?? false) _scheduleDebounceTimer!.cancel();
+      if (_scheduleDebounceTimer?.isActive ?? false)
+        _scheduleDebounceTimer!.cancel();
       _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
         final prefs = await SharedPreferences.getInstance();
         final lastCount = prefs.getInt('last_known_question_count') ?? 0;
         final currentCount = await DatabaseHelper.instance.getQuestionCount();
-        
+
         if (currentCount != lastCount) {
           await prefs.setInt('last_known_question_count', currentCount);
           scheduleNotifications();
@@ -60,7 +61,8 @@ class NotificationService {
     if (_initCompleter != null) return _initCompleter!.future;
     // If init is already in progress, return its future to avoid re-entering.
     // This is crucial to prevent multiple initializations if called concurrently.
-    if (_initCompleter != null && !_initCompleter!.isCompleted) return _initCompleter!.future;
+    if (_initCompleter != null && !_initCompleter!.isCompleted)
+      return _initCompleter!.future;
 
     final completer = Completer<void>();
     _initCompleter = completer;
@@ -69,7 +71,8 @@ class NotificationService {
       // Wrap in a defensive timeout. If the native side hangs (common on MIUI/HyperOS),
       // we complete the future anyway so the app can continue.
       await _actualInit().timeout(const Duration(seconds: 4));
-      _initialized = true; // Mark as initialized only if _actualInit completes successfully
+      _initialized =
+          true; // Mark as initialized only if _actualInit completes successfully
     } catch (e) {
       debugPrint('NotificationService: Initialization error: $e');
       // We still mark as initialized if it was a timeout to avoid infinite waiting,
@@ -89,13 +92,17 @@ class NotificationService {
       debugPrint('NotificationService: Setting local timezone...');
       final timezoneInfo = await FlutterTimezone.getLocalTimezone();
       final String timeZoneName = timezoneInfo.identifier;
-      debugPrint('NotificationService: Detected device timezone: $timeZoneName');
+      debugPrint(
+        'NotificationService: Detected device timezone: $timeZoneName',
+      );
       tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (e) {
       debugPrint('NotificationService: Timezone detection failed: $e');
       tz.setLocalLocation(tz.UTC);
     }
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     debugPrint('NotificationService: Initializing plugin...');
     await _plugin.initialize(
       const InitializationSettings(android: androidSettings),
@@ -111,8 +118,10 @@ class NotificationService {
     // wipes ALL its active tray notifications, which on MIUI/HyperOS (where
     // the app is aggressively killed in the background) means every cold
     // start from the launcher would erase pending notifications from the tray.
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     final prefs = await SharedPreferences.getInstance();
     const migrationKey = 'notif_channel_v2_migrated';
@@ -123,7 +132,9 @@ class NotificationService {
       // recreate it with the alarm audio attributes. This wipes the tray once,
       // which is acceptable on a one-time migration.
       await androidPlugin?.deleteNotificationChannel('random_recall_channel');
-      debugPrint('NotificationService: Legacy channel deleted (one-time migration).');
+      debugPrint(
+        'NotificationService: Legacy channel deleted (one-time migration).',
+      );
     }
 
     // createNotificationChannel is a no-op if a channel with this ID already
@@ -143,9 +154,13 @@ class NotificationService {
 
     if (!alreadyMigrated) {
       await prefs.setBool(migrationKey, true);
-      debugPrint('NotificationService: Channel recreated with alarm audio attributes (migrated).');
+      debugPrint(
+        'NotificationService: Channel recreated with alarm audio attributes (migrated).',
+      );
     } else {
-      debugPrint('NotificationService: Channel already migrated, preserving tray.');
+      debugPrint(
+        'NotificationService: Channel already migrated, preserving tray.',
+      );
     }
   }
 
@@ -161,7 +176,10 @@ class NotificationService {
       if (raw == null) return;
 
       final questions = await DatabaseHelper.instance.getAllQuestions();
-      final validQids = questions.where((q) => q.id != null).map((q) => q.id!).toSet();
+      final validQids = questions
+          .where((q) => q.id != null)
+          .map((q) => q.id!)
+          .toSet();
 
       final list = List<Map<String, dynamic>>.from(jsonDecode(raw));
       final cleaned = list.where((entry) {
@@ -172,7 +190,9 @@ class NotificationService {
       if (cleaned.length != list.length) {
         await prefs.setString('notif_schedule_mirror', jsonEncode(cleaned));
         _answeredController.add(null); // refresh badge
-        debugPrint('NotificationService: Removed ${list.length - cleaned.length} stale mirror entries for deleted questions.');
+        debugPrint(
+          'NotificationService: Removed ${list.length - cleaned.length} stale mirror entries for deleted questions.',
+        );
       }
     } catch (e) {
       debugPrint('NotificationService: cleanStaleMirrorEntries error: $e');
@@ -183,22 +203,27 @@ class NotificationService {
 
   Future<bool> requestPermission() async {
     debugPrint('NotificationService: Requesting notification permissions...');
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     // Request POST_NOTIFICATIONS (Android 13+).
     final notifGranted =
         await android?.requestNotificationsPermission() ?? false;
-    debugPrint('NotificationService: Notifications permission granted: $notifGranted');
+    debugPrint(
+      'NotificationService: Notifications permission granted: $notifGranted',
+    );
 
     // Request SCHEDULE_EXACT_ALARM if not already granted.
     // On Android 13+ this is pre-granted at install — the call is a no-op.
     // On Android 12 it opens the "Alarms & Reminders" system settings page.
     // Note: We use inexactAllowWhileIdle by default, but still check for exact
     // permission for alarmClock mode, which is more reliable.
-    final canExact =
-        await android?.canScheduleExactNotifications() ?? true;
-    debugPrint('NotificationService: Exact alarm permission granted: $canExact');
+    final canExact = await android?.canScheduleExactNotifications() ?? true;
+    debugPrint(
+      'NotificationService: Exact alarm permission granted: $canExact',
+    );
     if (!canExact) {
       try {
         await AppSettings.openAppSettings(type: AppSettingsType.alarm);
@@ -212,8 +237,10 @@ class NotificationService {
 
   /// Returns true if the app currently has notification permission granted.
   Future<bool> hasPermission() async {
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     return await android?.areNotificationsEnabled() ?? true;
   }
 
@@ -231,7 +258,9 @@ class NotificationService {
       // Overnight windows (e.g. 23→2) are valid — span wraps around midnight.
       final span = (endHour - startHour) % 24;
       if (span < 1) {
-        debugPrint('NotificationService: Corrupted time window ($startHour–$endHour). Resetting to 8–20.');
+        debugPrint(
+          'NotificationService: Corrupted time window ($startHour–$endHour). Resetting to 8–20.',
+        );
         prefs.setInt('notif_start_hour', 8);
         prefs.setInt('notif_end_hour', 20);
       }
@@ -253,7 +282,9 @@ class NotificationService {
     // will interleave their zonedSchedule() calls and can corrupt the
     // AlarmManager state. Drop any call that arrives while one is running.
     if (_isScheduling) {
-      debugPrint('NotificationService: Scheduling already in progress, skipping.');
+      debugPrint(
+        'NotificationService: Scheduling already in progress, skipping.',
+      );
       return;
     }
     _isScheduling = true;
@@ -266,14 +297,17 @@ class NotificationService {
 
   Future<void> _scheduleNotificationsInternal() async {
     debugPrint('NotificationService: Scheduling notifications...');
-    final trace =
-        FirebasePerformance.instance.newTrace('notification_schedule');
+    final trace = FirebasePerformance.instance.newTrace(
+      'notification_schedule',
+    );
     await trace.start();
     // Ensure we are initialized and have a valid non-UTC timezone if possible
     if (!_initialized) await init();
-    
+
     if (tz.local == tz.UTC) {
-      debugPrint('NotificationService: Timezone not ready. Aborting schedule to prevent UTC shift.');
+      debugPrint(
+        'NotificationService: Timezone not ready. Aborting schedule to prevent UTC shift.',
+      );
       return;
     }
 
@@ -283,17 +317,17 @@ class NotificationService {
 
     final randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
     final rc = RemoteConfigService.instance;
-    final startHour =
-        prefs.getInt('notif_start_hour') ?? rc.notifStartHour;
-    final endHour =
-        prefs.getInt('notif_end_hour') ?? rc.notifEndHour;
-    final frequency =
-        prefs.getInt('notif_frequency') ?? rc.notifFrequencyFree;
-    final activeDaysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
+    final startHour = prefs.getInt('notif_start_hour') ?? rc.notifStartHour;
+    final endHour = prefs.getInt('notif_end_hour') ?? rc.notifEndHour;
+    final frequency = prefs.getInt('notif_frequency') ?? rc.notifFrequencyFree;
+    final activeDaysStr =
+        prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
 
-    debugPrint('NotificationService: Settings used: randomAnytime=$randomAnytime, '
-        'startHour=$startHour, endHour=$endHour, frequency=$frequency, '
-        'activeDays=$activeDaysStr');
+    debugPrint(
+      'NotificationService: Settings used: randomAnytime=$randomAnytime, '
+      'startHour=$startHour, endHour=$endHour, frequency=$frequency, '
+      'activeDays=$activeDaysStr',
+    );
     final activeDays = activeDaysStr.split(',').map(int.parse).toSet();
 
     // Fetch all questions once; the scheduler picks from them.
@@ -318,7 +352,9 @@ class NotificationService {
       now: tz.TZDateTime.now(tz.local),
       questionIds: questionIds,
     );
-    debugPrint('NotificationService: Calculated ${slots.length} notification slots for the next 7 days.');
+    debugPrint(
+      'NotificationService: Calculated ${slots.length} notification slots for the next 7 days.',
+    );
 
     if (slots.isEmpty) return;
 
@@ -333,7 +369,8 @@ class NotificationService {
     final futureList = slots.map((s) {
       return {
         'time': s.scheduledAt.toIso8601String(),
-        'id': s.questionId, // Renamed back to 'id' for DebugNotificationScreen compatibility
+        'id': s
+            .questionId, // Renamed back to 'id' for DebugNotificationScreen compatibility
         'notif_id': idForSlot(s.scheduledAt, s.slotIndex),
       };
     }).toList();
@@ -401,7 +438,9 @@ class NotificationService {
         }
       }
     } catch (e) {
-      debugPrint('NotificationService: Could not preserve delivered mirror entries: $e');
+      debugPrint(
+        'NotificationService: Could not preserve delivered mirror entries: $e',
+      );
     }
 
     final debugList = [...preservedDelivered, ...futureList];
@@ -428,14 +467,19 @@ class NotificationService {
         question: question,
       );
 
-      if (i == 0) { // log only the first one
-        debugPrint('NotificationService: First upcoming notification at: $scheduledDate');
+      if (i == 0) {
+        // log only the first one
+        debugPrint(
+          'NotificationService: First upcoming notification at: $scheduledDate',
+        );
       }
     }
 
     trace.putAttribute('slot_count', slots.length.toString());
     await trace.stop();
-    debugPrint('NotificationService: Successfully batched ${slots.length} alarms to Android.');
+    debugPrint(
+      'NotificationService: Successfully batched ${slots.length} alarms to Android.',
+    );
   }
 
   /// Returns the number of currently pending (not-yet-fired) notifications.
@@ -629,7 +673,9 @@ class NotificationService {
           if (entry['id'] == questionId) {
             final nId = entry['notif_id'] as int?;
             if (nId != null && activeIds.contains(nId)) {
-              debugPrint('NotificationService: Cancelling active notification $nId for question $questionId');
+              debugPrint(
+                'NotificationService: Cancelling active notification $nId for question $questionId',
+              );
               await _plugin.cancel(nId);
             }
           }
@@ -667,9 +713,11 @@ class NotificationService {
     // Read localized notification strings from SharedPreferences
     // (set by AppProvider when locale changes)
     final prefs = await SharedPreferences.getInstance();
-    final title = prefs.getString(isTest ? 'test_notif_title' : 'notif_title') ??
+    final title =
+        prefs.getString(isTest ? 'test_notif_title' : 'notif_title') ??
         (isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠');
-    final body = prefs.getString(isTest ? 'test_notif_body' : 'notif_body') ??
+    final body =
+        prefs.getString(isTest ? 'test_notif_body' : 'notif_body') ??
         'Tap to answer the question';
 
     await _plugin.zonedSchedule(
@@ -717,7 +765,8 @@ class NotificationService {
     // Read localized notification strings from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final title = prefs.getString('test_notif_title') ?? 'Test Notification 🧪';
-    final body = prefs.getString('test_notif_body') ?? 'Tap to answer the question';
+    final body =
+        prefs.getString('test_notif_body') ?? 'Tap to answer the question';
 
     await _plugin.show(
       9999,
@@ -726,7 +775,9 @@ class NotificationService {
       const NotificationDetails(android: androidDetails),
       payload: 'test:${question.id}',
     );
-    debugPrint('NotificationService: Immediate test notification fired via show().');
+    debugPrint(
+      'NotificationService: Immediate test notification fired via show().',
+    );
   }
 
   // ── Cancel all ────────────────────────────────────────────────────────────
@@ -745,8 +796,10 @@ class NotificationService {
     final questionId = int.tryParse(isTest ? payload.substring(5) : payload);
     // Pop everything back to root before pushing the answer screen.
     navigator.popUntil((route) => route.isFirst);
-    navigator.pushNamed(isTest ? '/question_practice' : '/question',
-        arguments: questionId);
+    navigator.pushNamed(
+      isTest ? '/question_practice' : '/question',
+      arguments: questionId,
+    );
   }
 
   // ── Handle cold-start via notification tap ────────────────────────────────

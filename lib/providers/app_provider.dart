@@ -31,14 +31,28 @@ class AppProvider extends ChangeNotifier {
     final isIndonesian = languageCode == 'id';
 
     await Future.wait([
-      prefs.setString('notif_title',
-        isIndonesian ? 'Saatnya mengingat kembali! 🧠' : 'Time for a quick recall! 🧠'),
-      prefs.setString('notif_body',
-        isIndonesian ? 'Tap untuk menjawab pertanyaan' : 'Tap to answer the question'),
-      prefs.setString('test_notif_title',
-        isIndonesian ? 'Notifikasi Pengujian 🧪' : 'Test Notification 🧪'),
-      prefs.setString('test_notif_body',
-        isIndonesian ? 'Tap untuk menjawab pertanyaan' : 'Tap to answer the question'),
+      prefs.setString(
+        'notif_title',
+        isIndonesian
+            ? 'Saatnya mengingat kembali! 🧠'
+            : 'Time for a quick recall! 🧠',
+      ),
+      prefs.setString(
+        'notif_body',
+        isIndonesian
+            ? 'Tap untuk menjawab pertanyaan'
+            : 'Tap to answer the question',
+      ),
+      prefs.setString(
+        'test_notif_title',
+        isIndonesian ? 'Notifikasi Pengujian 🧪' : 'Test Notification 🧪',
+      ),
+      prefs.setString(
+        'test_notif_body',
+        isIndonesian
+            ? 'Tap untuk menjawab pertanyaan'
+            : 'Tap to answer the question',
+      ),
     ]);
   }
 

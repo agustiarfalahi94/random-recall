@@ -109,11 +109,9 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
       final canAdd = await PlanService.canAddQuestion(_totalQuestionCount);
       if (!canAdd) {
         if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const SubscriptionScreen(),
-          ),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
         return;
       }
     }
@@ -224,7 +222,9 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: atLimit
                           ? colorScheme.errorContainer
@@ -246,8 +246,14 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         const SizedBox(width: 5),
                         Text(
                           atLimit
-                              ? l10n.questionLimitReached(count: _totalQuestionCount, limit: _questionLimit)
-                              : l10n.questionCount(count: _totalQuestionCount, limit: _questionLimit),
+                              ? l10n.questionLimitReached(
+                                  count: _totalQuestionCount,
+                                  limit: _questionLimit,
+                                )
+                              : l10n.questionCount(
+                                  count: _totalQuestionCount,
+                                  limit: _questionLimit,
+                                ),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: atLimit
                                 ? colorScheme.onErrorContainer
@@ -285,7 +291,10 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
               height: 56,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 children: [
                   // "All" chip
                   Padding(
@@ -319,8 +328,11 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         selected: isSelected,
                         showCheckmark: false,
                         onSelected: (_) {
-                          setState(() => _selectedCategoryId =
-                              isSelected ? null : cat.id);
+                          setState(
+                            () => _selectedCategoryId = isSelected
+                                ? null
+                                : cat.id,
+                          );
                           _loadData();
                         },
                         selectedColor: colorScheme.primaryContainer,
@@ -335,7 +347,6 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                       ),
                     );
                   }),
-
                 ],
               ),
             ),
@@ -345,26 +356,25 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _questions.isEmpty
-                    ? _buildEmptyState(colorScheme, theme)
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                          itemCount: _questions.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final q = _questions[index];
-                            final cat = _categoryFor(q.categoryId);
-                            return _QuestionCard(
-                              question: q,
-                              category: cat,
-                              onEdit: () => _openAddEdit(question: q),
-                              onDelete: () => _deleteQuestion(q),
-                            );
-                          },
-                        ),
-                      ),
+                ? _buildEmptyState(colorScheme, theme)
+                : RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      itemCount: _questions.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final q = _questions[index];
+                        final cat = _categoryFor(q.categoryId);
+                        return _QuestionCard(
+                          question: q,
+                          category: cat,
+                          onEdit: () => _openAddEdit(question: q),
+                          onDelete: () => _deleteQuestion(q),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -445,7 +455,8 @@ class _AddMenuTile extends StatelessWidget {
           color: colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.4)),
+            color: colorScheme.outlineVariant.withOpacity(0.4),
+          ),
         ),
         child: Row(
           children: [
@@ -479,8 +490,10 @@ class _AddMenuTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -538,7 +551,9 @@ class _QuestionCard extends StatelessWidget {
                   Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(6),
@@ -596,8 +611,11 @@ class _QuestionCard extends StatelessWidget {
                     // Delete
                     IconButton.outlined(
                       onPressed: onDelete,
-                      icon: Icon(Icons.delete_outline_rounded,
-                          size: 18, color: colorScheme.error),
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: colorScheme.error,
+                      ),
                       tooltip: AppLocalizations.of(context)!.delete,
                       style: IconButton.styleFrom(
                         padding: const EdgeInsets.all(6),

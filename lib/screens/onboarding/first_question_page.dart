@@ -4,8 +4,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/database/database_helper.dart';
 import '../../models/category.dart';
 
-typedef OnFirstQuestionNext = void Function(
-    String question, String answer, int categoryId);
+typedef OnFirstQuestionNext =
+    void Function(String question, String answer, int categoryId);
 
 class FirstQuestionPage extends StatefulWidget {
   const FirstQuestionPage({
@@ -50,7 +50,8 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
     final general = categories.where((c) => c.name == 'General').firstOrNull;
     setState(() {
       _categories = categories;
-      _selectedCategoryId = general?.id ?? (categories.isNotEmpty ? categories.first.id : null);
+      _selectedCategoryId =
+          general?.id ?? (categories.isNotEmpty ? categories.first.id : null);
       _isLoadingCategories = false;
     });
   }
@@ -93,7 +94,11 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
               ),
 
               const SizedBox(height: 16),
-              _StepIndicator(currentStep: 2, totalSteps: 3, colorScheme: colorScheme),
+              _StepIndicator(
+                currentStep: 2,
+                totalSteps: 3,
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 28),
               Text(
                 l10n.firstQuestionTitle,
@@ -123,8 +128,10 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                   hintText: l10n.questionHintOnboarding,
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return l10n.validationEnterQuestion;
-                  if (value.trim().length < 5) return l10n.validationQuestionTooShort;
+                  if (value == null || value.trim().isEmpty)
+                    return l10n.validationEnterQuestion;
+                  if (value.trim().length < 5)
+                    return l10n.validationQuestionTooShort;
                   return null;
                 },
               ),
@@ -137,9 +144,12 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                 maxLines: 3,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(hintText: l10n.answerHintOnboarding),
+                decoration: InputDecoration(
+                  hintText: l10n.answerHintOnboarding,
+                ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return l10n.validationEnterAnswer;
+                  if (value == null || value.trim().isEmpty)
+                    return l10n.validationEnterAnswer;
                   return null;
                 },
               ),
@@ -169,18 +179,24 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                   decoration: InputDecoration(hintText: l10n.selectCategory),
                   borderRadius: BorderRadius.circular(12),
                   items: _categories
-                      .map((cat) => DropdownMenuItem<int>(
-                            value: cat.id,
-                            child: Row(
-                              children: [
-                                Text(cat.icon, style: const TextStyle(fontSize: 18)),
-                                const SizedBox(width: 10),
-                                Text(cat.name),
-                              ],
-                            ),
-                          ))
+                      .map(
+                        (cat) => DropdownMenuItem<int>(
+                          value: cat.id,
+                          child: Row(
+                            children: [
+                              Text(
+                                cat.icon,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(cat.name),
+                            ],
+                          ),
+                        ),
+                      )
                       .toList(),
-                  onChanged: (value) => setState(() => _selectedCategoryId = value),
+                  onChanged: (value) =>
+                      setState(() => _selectedCategoryId = value),
                   validator: (value) {
                     if (value == null) return l10n.validationSelectCategory;
                     return null;
@@ -188,10 +204,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                 ),
 
               const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: _submit,
-                child: const Text('Next →'),
-              ),
+              ElevatedButton(onPressed: _submit, child: const Text('Next →')),
               const SizedBox(height: 32),
             ],
           ),
@@ -242,7 +255,9 @@ class _StepIndicator extends StatelessWidget {
             height: 4,
             decoration: BoxDecoration(
               color: isActive
-                  ? (isCurrent ? colorScheme.primary : colorScheme.primaryContainer)
+                  ? (isCurrent
+                        ? colorScheme.primary
+                        : colorScheme.primaryContainer)
                   : colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(4),
             ),

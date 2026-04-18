@@ -36,11 +36,12 @@ Future<void> main() async {
     (options) {
       options.dsn =
           'https://0d061b8b4d28f29b194f9a44075ae8da@o4511217533190144.ingest.us.sentry.io/4511217537318912';
-      options.tracesSampleRate = 0.2;   // capture 20% of sessions for performance
+      options.tracesSampleRate = 0.2; // capture 20% of sessions for performance
       options.profilesSampleRate = 0.0; // profiling disabled — not needed yet
       options.enableAutoSessionTracking = true;
-      options.attachScreenshot = false; // off — questions contain user-created PII
-      options.sendDefaultPii = false;   // never send emails / Firebase tokens
+      options.attachScreenshot =
+          false; // off — questions contain user-created PII
+      options.sendDefaultPii = false; // never send emails / Firebase tokens
     },
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -50,8 +51,9 @@ Future<void> main() async {
       );
 
       // Crashlytics: route Flutter and async errors to Crashlytics + Sentry
-      await FirebaseCrashlytics.instance
-          .setCrashlyticsCollectionEnabled(!kDebugMode);
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+        !kDebugMode,
+      );
       FlutterError.onError = (details) {
         FirebaseCrashlytics.instance.recordFlutterFatalError(details);
         Sentry.captureException(details.exception, stackTrace: details.stack);
@@ -63,16 +65,19 @@ Future<void> main() async {
       };
 
       // Performance Monitoring: disable collection in debug builds
-      await FirebasePerformance.instance
-          .setPerformanceCollectionEnabled(!kDebugMode);
+      await FirebasePerformance.instance.setPerformanceCollectionEnabled(
+        !kDebugMode,
+      );
 
       // Remote Config: set defaults that mirror current hardcoded values,
       // then fetch latest in the background (applied next cold start)
       final rc = FirebaseRemoteConfig.instance;
-      await rc.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        minimumFetchInterval: const Duration(hours: 1),
-      ));
+      await rc.setConfigSettings(
+        RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 10),
+          minimumFetchInterval: const Duration(hours: 1),
+        ),
+      );
       await rc.setDefaults(const {
         'notif_frequency_free': 3,
         'notif_frequency_premium': 6,
@@ -81,16 +86,20 @@ Future<void> main() async {
         'free_question_base': 20,
         'free_max_custom_categories': 1,
       });
-      rc.fetchAndActivate().ignore(); // non-blocking; defaults used this session
+      rc
+          .fetchAndActivate()
+          .ignore(); // non-blocking; defaults used this session
 
       // PostHog: initialise after Firebase, before runApp
-      final postHogConfig = PostHogConfig(
-        'phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv',
-      )
-        ..host = 'https://us.i.posthog.com'
-        ..flushAt = 5       // batch up to 5 events per network request
-        ..flushInterval = const Duration(seconds: 10) // also flush every 10 s
-        ..debug = kDebugMode; // log PostHog events to console in debug builds
+      final postHogConfig =
+          PostHogConfig('phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv')
+            ..host = 'https://us.i.posthog.com'
+            ..flushAt =
+                5 // batch up to 5 events per network request
+            ..flushInterval =
+                const Duration(seconds: 10) // also flush every 10 s
+            ..debug =
+                kDebugMode; // log PostHog events to console in debug builds
       await Posthog().setup(postHogConfig);
 
       // Start In-App Purchase listener
@@ -103,8 +112,9 @@ Future<void> main() async {
 
       // Handle cold-start from notification tap (navigator not ready during init)
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final startupTrace =
-            FirebasePerformance.instance.newTrace('cold_start_post_frame');
+        final startupTrace = FirebasePerformance.instance.newTrace(
+          'cold_start_post_frame',
+        );
         await startupTrace.start();
         try {
           // Initialize service and check launch details
@@ -144,8 +154,9 @@ Future<void> main() async {
 
           if (onboardingComplete && user != null && user.emailVerified) {
             SyncService.instance.performRestore();
-            await registerNotificationWorker()
-                .catchError((e) => debugPrint('WorkManager failed: $e'));
+            await registerNotificationWorker().catchError(
+              (e) => debugPrint('WorkManager failed: $e'),
+            );
           }
 
           // Track app open once the frame is fully live
@@ -179,7 +190,8 @@ class RandomRecallApp extends StatefulWidget {
   State<RandomRecallApp> createState() => _RandomRecallAppState();
 }
 
-class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingObserver {
+class _RandomRecallAppState extends State<RandomRecallApp>
+    with WidgetsBindingObserver {
   bool _hasPermission = true;
   bool _isChecking = true;
 
@@ -217,9 +229,7 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AppProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AppProvider())],
       child: Builder(
         builder: (ctx) {
           final locale = ctx.select<AppProvider, Locale?>((p) => p.locale);
@@ -235,48 +245,56 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: ThemeMode.system,
             home: _isChecking
-                ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+                ? const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  )
                 : !_hasPermission
-                    ? const PermissionRequiredScreen()
-                    : StreamBuilder<User?>(
-                        stream: AuthService.instance.authStateChanges,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Scaffold(
-                              body: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          final user = snapshot.data;
-                          if (user == null) return const LoginScreen();
+                ? const PermissionRequiredScreen()
+                : StreamBuilder<User?>(
+                    stream: AuthService.instance.authStateChanges,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final user = snapshot.data;
+                      if (user == null) return const LoginScreen();
 
-                          // ROBUST GATE: Check if user is Google or Anonymous
-                          final isGoogle = user.providerData.any((p) => p.providerId == 'google.com');
-                          final isAnonymous = user.isAnonymous;
+                      // ROBUST GATE: Check if user is Google or Anonymous
+                      final isGoogle = user.providerData.any(
+                        (p) => p.providerId == 'google.com',
+                      );
+                      final isAnonymous = user.isAnonymous;
 
-                          // If NOT Google and NOT Anonymous, it MUST be an Email user.
-                          // They are ONLY verified if emailVerified is strictly true.
-                          final bool isVerified = isGoogle || isAnonymous || user.emailVerified;
+                      // If NOT Google and NOT Anonymous, it MUST be an Email user.
+                      // They are ONLY verified if emailVerified is strictly true.
+                      final bool isVerified =
+                          isGoogle || isAnonymous || user.emailVerified;
 
-                          if (!isVerified) {
-                            return const VerifyEmailScreen();
-                          }
+                      if (!isVerified) {
+                        return const VerifyEmailScreen();
+                      }
 
-                          return const _HomeGate();
-                        },
-                      ),
+                      return const _HomeGate();
+                    },
+                  ),
             // Named routes for notification tap navigation
             onGenerateRoute: (settings) {
               if (settings.name == '/question') {
                 final questionId = settings.arguments as int?;
                 return MaterialPageRoute(
-                  builder: (_) => NotificationQuestionScreen(questionId: questionId),
+                  builder: (_) =>
+                      NotificationQuestionScreen(questionId: questionId),
                 );
               }
               if (settings.name == '/question_practice') {
                 final questionId = settings.arguments as int?;
                 return MaterialPageRoute(
                   builder: (_) => NotificationQuestionScreen(
-                      questionId: questionId, isPractice: true),
+                    questionId: questionId,
+                    isPractice: true,
+                  ),
                 );
               }
               return null;
@@ -313,8 +331,10 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -325,10 +345,7 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
             borderRadius: BorderRadius.circular(14),
           ),
           elevation: 0,
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       cardTheme: CardThemeData(
@@ -361,7 +378,7 @@ class _HomeGateState extends State<_HomeGate> {
 
   Future<void> _initFlow() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // If a sync is already in progress (started by AuthService), wait for it
     while (SyncService.instance.isSyncing) {
       await Future.delayed(const Duration(milliseconds: 100));

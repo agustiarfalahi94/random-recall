@@ -56,7 +56,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final savedCategoryId = prefs.getInt(_kOnboardingCategoryId);
 
     // Only restore if there is valid question data (means the user got past page 1)
-    if (savedPage >= 2 && savedQuestion != null && savedAnswer != null && savedCategoryId != null) {
+    if (savedPage >= 2 &&
+        savedQuestion != null &&
+        savedAnswer != null &&
+        savedCategoryId != null) {
       setState(() {
         _questionText = savedQuestion;
         _answerText = savedAnswer;
@@ -77,7 +80,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Future<void> _onFirstQuestionNext(String question, String answer, int categoryId) async {
+  Future<void> _onFirstQuestionNext(
+    String question,
+    String answer,
+    int categoryId,
+  ) async {
     setState(() {
       _questionText = question;
       _answerText = answer;
@@ -112,13 +119,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // Save first question to DB
       final db = DatabaseHelper.instance;
       final now = DateTime.now();
-      await db.insertQuestion(Question(
-        question: _questionText!,
-        answer: _answerText!,
-        categoryId: _categoryId!,
-        createdAt: now,
-        updatedAt: now,
-      ));
+      await db.insertQuestion(
+        Question(
+          question: _questionText!,
+          answer: _answerText!,
+          categoryId: _categoryId!,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
       // Save notification prefs + mark onboarding complete
       final prefs = await SharedPreferences.getInstance();
@@ -127,7 +136,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         prefs.setInt('notif_start_hour', startHour),
         prefs.setInt('notif_end_hour', endHour),
         prefs.setInt('notif_frequency', frequency),
-        prefs.setString('notif_active_days', activeDays.map((d) => d.toString()).join(',')),
+        prefs.setString(
+          'notif_active_days',
+          activeDays.map((d) => d.toString()).join(','),
+        ),
         prefs.setBool('onboarding_complete', true),
         // Clear draft now that onboarding is fully complete
         prefs.remove(_kOnboardingPage),
@@ -142,17 +154,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       // 1. Clear the saving state and wait for the widget tree to rebuild.
       setState(() => _isSaving = false);
-      
+
       // Give MIUI/HyperOS a moment to settle the UI and remove the loader overlay.
       await Future.delayed(const Duration(milliseconds: 100));
 
       if (!mounted) return;
 
-      // 2. Use pushReplacement - it is often more stable than pushAndRemoveUntil 
+      // 2. Use pushReplacement - it is often more stable than pushAndRemoveUntil
       // during heavy lifecycle events like returning from permission settings.
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
 
       // 3. Trigger background tasks after the transition is complete.
       // We wait 3 seconds to ensure the Home screen is fully interactive first.
@@ -167,14 +179,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (miui) {
             // Ensure the Home screen is fully settled before showing MIUI dialog
             await Future.delayed(const Duration(milliseconds: 500));
-            final homeContext = NotificationService.instance.navigatorKey?.currentContext;
+            final homeContext =
+                NotificationService.instance.navigatorKey?.currentContext;
             if (homeContext != null) await MiuiBatteryDialog.show(homeContext);
           }
         } catch (e) {
           debugPrint('Onboarding: Background tasks failed: $e');
         }
       });
-
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
@@ -204,20 +216,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               NotificationSetupPage(
                 onBack: () => _goToPage(1),
-                onComplete: ({
-                  required bool randomAnytime,
-                  required int startHour,
-                  required int endHour,
-                  required int frequency,
-                  required List<int> activeDays,
-                }) =>
-                    _onNotificationSetupComplete(
-                  randomAnytime: randomAnytime,
-                  startHour: startHour,
-                  endHour: endHour,
-                  frequency: frequency,
-                  activeDays: activeDays,
-                ),
+                onComplete:
+                    ({
+                      required bool randomAnytime,
+                      required int startHour,
+                      required int endHour,
+                      required int frequency,
+                      required List<int> activeDays,
+                    }) => _onNotificationSetupComplete(
+                      randomAnytime: randomAnytime,
+                      startHour: startHour,
+                      endHour: endHour,
+                      frequency: frequency,
+                      activeDays: activeDays,
+                    ),
               ),
             ],
           ),

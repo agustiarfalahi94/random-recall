@@ -93,8 +93,5 @@ class StreakResult {
   final int streak;
   final bool milestoneReached;
 
-  const StreakResult({
-    required this.streak,
-    required this.milestoneReached,
-  });
+  const StreakResult({required this.streak, required this.milestoneReached});
 }

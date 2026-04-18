@@ -22,16 +22,18 @@ class NotificationQuestionScreen extends StatefulWidget {
   /// When true (test notification), score and streak are NOT recorded.
   final bool isPractice;
 
-  const NotificationQuestionScreen(
-      {super.key, this.questionId, this.isPractice = false});
+  const NotificationQuestionScreen({
+    super.key,
+    this.questionId,
+    this.isPractice = false,
+  });
 
   @override
   State<NotificationQuestionScreen> createState() =>
       _NotificationQuestionScreenState();
 }
 
-class _NotificationQuestionScreenState
-    extends State<NotificationQuestionScreen>
+class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
     with SingleTickerProviderStateMixin {
   Question? _question;
   Category? _category;
@@ -91,9 +93,15 @@ class _NotificationQuestionScreenState
     if (_timerSeconds <= 0) return;
     setState(() => _remaining = _timerSeconds);
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       setState(() => _remaining--);
-      if (_remaining <= 0) { t.cancel(); _grade(false); }
+      if (_remaining <= 0) {
+        t.cancel();
+        _grade(false);
+      }
     });
   }
 
@@ -159,25 +167,29 @@ class _NotificationQuestionScreenState
       // Test notifications are practice — don't affect score or streak.
       if (!widget.isPractice) {
         final now = DateTime.now();
-        _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
-          questionId: _question!.id!,
-          categoryId: _question!.categoryId,
-          isCorrect: isCorrect,
-          answeredAt: now,
-          updatedAt: now,
-        ));
+        _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
+          ScoreRecord(
+            questionId: _question!.id!,
+            categoryId: _question!.categoryId,
+            isCorrect: isCorrect,
+            answeredAt: now,
+            updatedAt: now,
+          ),
+        );
 
         // Clear the persistent tray notification for this question and signal
         // the home screen badge to refresh (always fires, even on MIUI).
-        await NotificationService.instance.cancelNotificationsForQuestion(_question!.id!);
+        await NotificationService.instance.cancelNotificationsForQuestion(
+          _question!.id!,
+        );
 
-        AnalyticsService.instance.trackQuestionAnswered(
-          isCorrect: isCorrect,
-          fromNotification: true,
-        ).ignore();
+        AnalyticsService.instance
+            .trackQuestionAnswered(isCorrect: isCorrect, fromNotification: true)
+            .ignore();
 
         // Record streak only when timer is ON and ≤ the challenge threshold.
-        if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
+        if (_timerSeconds > 0 &&
+            _timerSeconds <= StreakService.challengeThreshold) {
           final result = await StreakService.recordActivity();
           if (result.milestoneReached && mounted) {
             await showDialog(
@@ -201,18 +213,19 @@ class _NotificationQuestionScreenState
   }
 
   Future<void> _undoGrade() async {
-    if (!_graded || !_isPremium || (!widget.isPractice && _undoUsedToday)) return;
+    if (!_graded || !_isPremium || (!widget.isPractice && _undoUsedToday))
+      return;
 
     try {
       // If it was a recorded score (not practice), delete it from local DB
       if (!widget.isPractice && _lastScoreId != null) {
         await DatabaseHelper.instance.deleteScoreRecord(_lastScoreId!);
       }
-      
+
       if (!widget.isPractice) {
         await PlanService.consumeUndo();
       }
-      
+
       setState(() {
         _graded = false;
         _isCorrect = false;
@@ -242,14 +255,19 @@ class _NotificationQuestionScreenState
                 children: [
                   Text(_category!.icon, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
-          Expanded(child: Text(_category!.name, overflow: TextOverflow.ellipsis)),
+                  Expanded(
+                    child: Text(
+                      _category!.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               )
-      : Text(l10n.appTitle),
-    leading: IconButton(
-      icon: const Icon(Icons.close_rounded),
-      onPressed: _close, // Use helper to handle pop vs system pop
-    ),
+            : Text(l10n.appTitle),
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded),
+          onPressed: _close, // Use helper to handle pop vs system pop
+        ),
         actions: [
           if (_timerSeconds > 0 && !_graded && !_isLoading)
             _TimerBadge(remaining: _remaining, total: _timerSeconds),
@@ -259,8 +277,8 @@ class _NotificationQuestionScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _question == null
-              ? _buildEmptyState(colorScheme, theme)
-              : _buildContent(colorScheme, theme),
+          ? _buildEmptyState(colorScheme, theme)
+          : _buildContent(colorScheme, theme),
     );
   }
 
@@ -319,8 +337,10 @@ class _NotificationQuestionScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
@@ -371,14 +391,17 @@ class _NotificationQuestionScreenState
                     color: colorScheme.secondaryContainer.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: colorScheme.secondary.withOpacity(0.2)),
+                      color: colorScheme.secondary.withOpacity(0.2),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.secondary,
                           borderRadius: BorderRadius.circular(8),
@@ -467,8 +490,12 @@ class _NotificationQuestionScreenState
                         children: [
                           Text(
                             _isCorrect
-                                ? (widget.isPractice ? l10n.closingInMoment : l10n.scoreRecordedClosing)
-                                : (widget.isPractice ? l10n.keepPracticing : l10n.scoreRecordedKeepPracticing),
+                                ? (widget.isPractice
+                                      ? l10n.closingInMoment
+                                      : l10n.scoreRecordedClosing)
+                                : (widget.isPractice
+                                      ? l10n.keepPracticing
+                                      : l10n.scoreRecordedKeepPracticing),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -486,14 +513,20 @@ class _NotificationQuestionScreenState
 
               const SizedBox(height: 24),
 
-              if (!_isCorrect && _isPremium && (widget.isPractice || !_undoUsedToday))
+              if (!_isCorrect &&
+                  _isPremium &&
+                  (widget.isPractice || !_undoUsedToday))
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _undoGrade,
                         icon: const Icon(Icons.undo_rounded, size: 18),
-                        label: Text(widget.isPractice ? l10n.undoButton : l10n.undoOncePerDay),
+                        label: Text(
+                          widget.isPractice
+                              ? l10n.undoButton
+                              : l10n.undoOncePerDay,
+                        ),
                       ),
                     ),
                   ],
@@ -567,8 +600,8 @@ class _TimerBadge extends StatelessWidget {
     final color = fraction > 0.5
         ? Colors.green
         : fraction > 0.25
-            ? Colors.orange
-            : Colors.red;
+        ? Colors.orange
+        : Colors.red;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),

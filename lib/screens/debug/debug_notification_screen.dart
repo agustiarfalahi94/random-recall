@@ -10,7 +10,8 @@ class DebugNotificationScreen extends StatefulWidget {
   const DebugNotificationScreen({super.key});
 
   @override
-  State<DebugNotificationScreen> createState() => _DebugNotificationScreenState();
+  State<DebugNotificationScreen> createState() =>
+      _DebugNotificationScreenState();
 }
 
 class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
@@ -28,16 +29,18 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
 
   Future<void> _refreshData() async {
     setState(() => _isLoading = true);
-    
+
     final battery = await isIgnoringBatteryOptimizations();
-    
+
     // Check exact alarm status directly from the plugin implementation
     final android = FlutterLocalNotificationsPlugin()
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     final exact = await android?.canScheduleExactNotifications() ?? false;
 
     final mirror = await NotificationService.instance.getMirrorLog();
-    
+
     // Load question texts so the IDs in the log make sense
     final allQuestions = await DatabaseHelper.instance.getAllQuestions();
     final qMap = {for (var q in allQuestions) q.id!: q.question};
@@ -63,45 +66,59 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
           IconButton(onPressed: _refreshData, icon: const Icon(Icons.refresh)),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSectionHeader('System Permissions'),
-              _buildStatusSection(),
-              const SizedBox(height: 24),
-              _buildSectionHeader('Mirror Log (App Logic View)'),
-              _buildMirrorList(theme),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    await NotificationService.instance.sendTestNotification();
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Test alarm set for 1 second from now! 🔔')),
-                    );
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.send_rounded),
-                label: const Text('Fire Immediate Test Notification'),
-              ),
-            ],
-          ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildSectionHeader('System Permissions'),
+                _buildStatusSection(),
+                const SizedBox(height: 24),
+                _buildSectionHeader('Mirror Log (App Logic View)'),
+                _buildMirrorList(theme),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      await NotificationService.instance.sendTestNotification();
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Test alarm set for 1 second from now! 🔔',
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text('Fire Immediate Test Notification'),
+                ),
+              ],
+            ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(title.toUpperCase(), 
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.1, color: Colors.grey)),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 1.1,
+          color: Colors.grey,
+        ),
+      ),
     );
   }
 
@@ -109,7 +126,10 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
     return Card(
       child: Column(
         children: [
-          _StatusRow(label: 'Battery Opt. Whitelisted', value: _isBatteryIgnored),
+          _StatusRow(
+            label: 'Battery Opt. Whitelisted',
+            value: _isBatteryIgnored,
+          ),
           const Divider(height: 1),
           _StatusRow(label: 'Exact Alarm Allowed', value: _canExactAlarm),
         ],
@@ -131,8 +151,10 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
         return Card(
           child: ListTile(
             dense: true,
-            leading: Icon(isFuture ? Icons.event_available : Icons.event_busy, 
-              color: isFuture ? theme.colorScheme.primary : Colors.grey),
+            leading: Icon(
+              isFuture ? Icons.event_available : Icons.event_busy,
+              color: isFuture ? theme.colorScheme.primary : Colors.grey,
+            ),
             title: Text(DateFormat('EEE, MMM dd — HH:mm').format(time)),
             subtitle: Text('Q#$qId: $qText'),
           ),

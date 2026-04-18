@@ -8,7 +8,8 @@ class PermissionRequiredScreen extends StatefulWidget {
   const PermissionRequiredScreen({super.key});
 
   @override
-  State<PermissionRequiredScreen> createState() => _PermissionRequiredScreenState();
+  State<PermissionRequiredScreen> createState() =>
+      _PermissionRequiredScreenState();
 }
 
 class _PermissionRequiredScreenState extends State<PermissionRequiredScreen> {
@@ -50,21 +51,33 @@ class _PermissionRequiredScreenState extends State<PermissionRequiredScreen> {
               const SizedBox(height: 32),
               Text(
                 l10n.notifRequired,
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 l10n.notifRequiredDesc,
-                style: TextStyle(color: colorScheme.onSurfaceVariant, height: 1.5),
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               ElevatedButton(
                 onPressed: _isChecking ? null : _handleAction,
                 child: _isChecking
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(l10n.enableNotifications),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(l10n.enableNotifications),
               ),
               const SizedBox(height: 16),
               TextButton(

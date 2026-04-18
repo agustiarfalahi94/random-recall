@@ -23,55 +23,70 @@ class FaqScreen extends StatelessWidget {
           // ── Notifications ─────────────────────────────────────────────────
           _SectionHeader(label: l10n.faqSectionNotifications, theme: theme),
           const SizedBox(height: 8),
-          _FaqCard(colorScheme: colorScheme, items: [
-            _FaqItem(question: l10n.faqQ1, answer: l10n.faqA1),
-            _FaqItem(question: l10n.faqQ2, answer: l10n.faqA2),
-            _FaqItem(question: l10n.faqQ3, answer: l10n.faqA3),
-            _FaqItem(question: l10n.faqQ4, answer: l10n.faqA4),
-            _FaqItem(question: l10n.faqQ5, answer: l10n.faqA5),
-            _FaqItem(question: l10n.faqQ6, answer: l10n.faqA6),
-          ]),
+          _FaqCard(
+            colorScheme: colorScheme,
+            items: [
+              _FaqItem(question: l10n.faqQ1, answer: l10n.faqA1),
+              _FaqItem(question: l10n.faqQ2, answer: l10n.faqA2),
+              _FaqItem(question: l10n.faqQ3, answer: l10n.faqA3),
+              _FaqItem(question: l10n.faqQ4, answer: l10n.faqA4),
+              _FaqItem(question: l10n.faqQ5, answer: l10n.faqA5),
+              _FaqItem(question: l10n.faqQ6, answer: l10n.faqA6),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
           // ── Question Bank & Limits ─────────────────────────────────────────
           _SectionHeader(label: l10n.faqSectionQuestionBank, theme: theme),
           const SizedBox(height: 8),
-          _FaqCard(colorScheme: colorScheme, items: [
-            _FaqItem(question: l10n.faqQ7, answer: l10n.faqA7),
-            _FaqItem(question: l10n.faqQ8, answer: l10n.faqA8),
-            _FaqItem(question: l10n.faqQ9, answer: l10n.faqA9),
-          ]),
+          _FaqCard(
+            colorScheme: colorScheme,
+            items: [
+              _FaqItem(question: l10n.faqQ7, answer: l10n.faqA7),
+              _FaqItem(question: l10n.faqQ8, answer: l10n.faqA8),
+              _FaqItem(question: l10n.faqQ9, answer: l10n.faqA9),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
           // ── Challenge Mode ─────────────────────────────────────────────────
           _SectionHeader(label: l10n.faqSectionChallengeMode, theme: theme),
           const SizedBox(height: 8),
-          _FaqCard(colorScheme: colorScheme, items: [
-            _FaqItem(question: l10n.faqQ10, answer: l10n.faqA10),
-            _FaqItem(question: l10n.faqQ11, answer: l10n.faqA11),
-          ]),
+          _FaqCard(
+            colorScheme: colorScheme,
+            items: [
+              _FaqItem(question: l10n.faqQ10, answer: l10n.faqA10),
+              _FaqItem(question: l10n.faqQ11, answer: l10n.faqA11),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
           // ── Account & Sync ─────────────────────────────────────────────────
           _SectionHeader(label: l10n.faqSectionAccountSync, theme: theme),
           const SizedBox(height: 8),
-          _FaqCard(colorScheme: colorScheme, items: [
-            _FaqItem(question: l10n.faqQ12, answer: l10n.faqA12),
-            _FaqItem(question: l10n.faqQ13, answer: l10n.faqA13),
-          ]),
+          _FaqCard(
+            colorScheme: colorScheme,
+            items: [
+              _FaqItem(question: l10n.faqQ12, answer: l10n.faqA12),
+              _FaqItem(question: l10n.faqQ13, answer: l10n.faqA13),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
           // ── Permissions ────────────────────────────────────────────────────
           _SectionHeader(label: l10n.faqSectionPermissions, theme: theme),
           const SizedBox(height: 8),
-          _FaqCard(colorScheme: colorScheme, items: [
-            _FaqItem(question: l10n.faqQ14, answer: l10n.faqA14),
-            _FaqItem(question: l10n.faqQ15, answer: l10n.faqA15),
-          ]),
+          _FaqCard(
+            colorScheme: colorScheme,
+            items: [
+              _FaqItem(question: l10n.faqQ14, answer: l10n.faqA14),
+              _FaqItem(question: l10n.faqQ15, answer: l10n.faqA15),
+            ],
+          ),
         ],
       ),
     );
@@ -124,18 +139,18 @@ class _FaqCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: Column(
-        children: [
-          for (int i = 0; i < items.length; i++) ...[
-            _FaqTile(item: items[i], colorScheme: colorScheme),
-            if (i < items.length - 1)
-              Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-              ),
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              _FaqTile(item: items[i], colorScheme: colorScheme),
+              if (i < items.length - 1)
+                Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+            ],
           ],
-        ],
         ),
       ),
     );
@@ -156,15 +171,11 @@ class _FaqTile extends StatelessWidget {
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        childrenPadding:
-            const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         title: Text(
           item.question,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
         iconColor: colorScheme.primary,
         collapsedIconColor: colorScheme.onSurfaceVariant,

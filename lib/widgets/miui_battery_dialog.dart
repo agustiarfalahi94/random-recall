@@ -71,14 +71,18 @@ class MiuiBatteryDialog extends StatelessWidget {
           // Title
           Row(
             children: [
-              Icon(Icons.battery_saver_rounded,
-                  color: colorScheme.primary, size: 26),
+              Icon(
+                Icons.battery_saver_rounded,
+                color: colorScheme.primary,
+                size: 26,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   l10n.miuiDialogTitle,
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -86,8 +90,9 @@ class MiuiBatteryDialog extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             l10n.miuiDialogSubtitle,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -200,16 +205,18 @@ class _Step extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     title,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 description,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

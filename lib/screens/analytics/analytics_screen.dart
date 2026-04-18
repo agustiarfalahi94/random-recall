@@ -116,12 +116,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
               const SizedBox(height: 12),
               if (!_isPremium)
-                _LockedCategorySection(stats: _stats, colorScheme: colorScheme, theme: theme)
+                _LockedCategorySection(
+                  stats: _stats,
+                  colorScheme: colorScheme,
+                  theme: theme,
+                )
               else
-                ..._stats.map((s) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _CategoryScoreCard(stat: s, colorScheme: colorScheme, theme: theme),
-                    )),
+                ..._stats.map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _CategoryScoreCard(
+                      stat: s,
+                      colorScheme: colorScheme,
+                      theme: theme,
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
@@ -199,10 +209,7 @@ class _OverallScoreCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
-          ],
+          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -379,9 +386,7 @@ class _CategoryScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withOpacity(0.4),
-        ),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,18 +430,32 @@ class _CategoryScoreCard extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Stats
-          Builder(builder: (context) {
-            final l10n = AppLocalizations.of(context)!;
-            return Row(
-              children: [
-                _MiniStat(label: l10n.analyticsTotal, value: '$total', colorScheme: colorScheme),
-                const SizedBox(width: 16),
-                _MiniStat(label: l10n.analyticsCorrectLabel, value: '$correct', colorScheme: colorScheme),
-                const SizedBox(width: 16),
-                _MiniStat(label: l10n.analyticsWrongLabel, value: '$wrong', colorScheme: colorScheme),
-              ],
-            );
-          }),
+          Builder(
+            builder: (context) {
+              final l10n = AppLocalizations.of(context)!;
+              return Row(
+                children: [
+                  _MiniStat(
+                    label: l10n.analyticsTotal,
+                    value: '$total',
+                    colorScheme: colorScheme,
+                  ),
+                  const SizedBox(width: 16),
+                  _MiniStat(
+                    label: l10n.analyticsCorrectLabel,
+                    value: '$correct',
+                    colorScheme: colorScheme,
+                  ),
+                  const SizedBox(width: 16),
+                  _MiniStat(
+                    label: l10n.analyticsWrongLabel,
+                    value: '$wrong',
+                    colorScheme: colorScheme,
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -468,10 +487,7 @@ class _MiniStat extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-            fontSize: 11,
-          ),
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 11),
         ),
       ],
     );
@@ -495,8 +511,11 @@ class _LockBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lock_rounded,
-              size: 12, color: colorScheme.onTertiaryContainer),
+          Icon(
+            Icons.lock_rounded,
+            size: 12,
+            color: colorScheme.onTertiaryContainer,
+          ),
           const SizedBox(width: 4),
           Text(
             AppLocalizations.of(context)!.upgradeToPremium,
@@ -570,7 +589,9 @@ class _LockedCategorySection extends StatelessWidget {
                       ),
                     );
                   },
-                  child: Text(AppLocalizations.of(context)!.analyticsSubscribeButton),
+                  child: Text(
+                    AppLocalizations.of(context)!.analyticsSubscribeButton,
+                  ),
                 ),
               ),
             ],
@@ -587,23 +608,23 @@ class _LockedCategorySection extends StatelessWidget {
               Column(
                 children: stats
                     .take(2)
-                    .map((s) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _CategoryScoreCard(
-                            stat: s,
-                            colorScheme: colorScheme,
-                            theme: theme,
-                          ),
-                        ))
+                    .map(
+                      (s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _CategoryScoreCard(
+                          stat: s,
+                          colorScheme: colorScheme,
+                          theme: theme,
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
               // Blur + tint overlay
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                  child: Container(
-                    color: colorScheme.surface.withOpacity(0.5),
-                  ),
+                  child: Container(color: colorScheme.surface.withOpacity(0.5)),
                 ),
               ),
             ],

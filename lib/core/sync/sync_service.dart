@@ -31,7 +31,7 @@ class SyncService {
     Timer? debounceTimer;
     _dbHelper.onDatabaseUpdated.listen((_) {
       if (_isSyncing) return;
-      
+
       if (debounceTimer?.isActive ?? false) debounceTimer!.cancel();
       debounceTimer = Timer(const Duration(seconds: 5), () {
         performBackup().catchError((e) {
@@ -47,55 +47,77 @@ class SyncService {
   void startRealtimeSync() async {
     final user = AuthService.instance.currentUser;
     if (user == null) return;
-    
+
     stopRealtimeSync(); // Clear existing listeners first
     debugPrint('SyncService: Starting real-time listeners for ${user.uid}...');
 
     final userDoc = _db.collection('users').doc(user.uid);
 
     // 1. Listen to Categories
-    _subscriptions.add(userDoc.collection('categories').snapshots().listen((snap) {
-      _applyRemoteChanges(snap, 'categories', (map) => Category.fromMap(map));
-    }));
+    _subscriptions.add(
+      userDoc.collection('categories').snapshots().listen((snap) {
+        _applyRemoteChanges(snap, 'categories', (map) => Category.fromMap(map));
+      }),
+    );
 
     // 2. Listen to Questions
-    _subscriptions.add(userDoc.collection('questions').snapshots().listen((snap) {
-      _applyRemoteChanges(snap, 'questions', (map) => Question.fromMap(map));
-    }));
+    _subscriptions.add(
+      userDoc.collection('questions').snapshots().listen((snap) {
+        _applyRemoteChanges(snap, 'questions', (map) => Question.fromMap(map));
+      }),
+    );
 
     // 3. Listen to Score Records
-    _subscriptions.add(userDoc.collection('score_records').snapshots().listen((snap) {
-      _applyRemoteChanges(snap, 'score_records', (map) => ScoreRecord.fromMap(map));
-    }));
+    _subscriptions.add(
+      userDoc.collection('score_records').snapshots().listen((snap) {
+        _applyRemoteChanges(
+          snap,
+          'score_records',
+          (map) => ScoreRecord.fromMap(map),
+        );
+      }),
+    );
 
     // 4. Listen to user doc (Settings & Streak)
-    _subscriptions.add(userDoc.snapshots().listen((doc) async {
-      if (!doc.exists || _isSyncing) return;
-      final data = doc.data();
-      if (data == null) return;
+    _subscriptions.add(
+      userDoc.snapshots().listen((doc) async {
+        if (!doc.exists || _isSyncing) return;
+        final data = doc.data();
+        if (data == null) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Update Premium status in real-time
-      if (data.containsKey('is_premium')) {
-        await prefs.setBool('is_premium', data['is_premium'] as bool);
-      }
+        final prefs = await SharedPreferences.getInstance();
 
-      if (data.containsKey('settings')) {
-        final s = data['settings'] as Map<String, dynamic>;
-        if (s.containsKey('notif_frequency')) await prefs.setInt('notif_frequency', s['notif_frequency']);
-        if (s.containsKey('notif_timer_seconds')) await prefs.setInt('notif_timer_seconds', s['notif_timer_seconds']);
-        if (s.containsKey('notif_random_anytime')) await prefs.setBool('notif_random_anytime', s['notif_random_anytime']);
-        if (s.containsKey('notif_start_hour')) await prefs.setInt('notif_start_hour', s['notif_start_hour']);
-        if (s.containsKey('notif_end_hour')) await prefs.setInt('notif_end_hour', s['notif_end_hour']);
-        if (s.containsKey('notif_active_days')) await prefs.setString('notif_active_days', s['notif_active_days']);
-        await NotificationService.instance.scheduleNotifications();
-      }
-      if (data.containsKey('streak')) {
-        final str = data['streak'] as Map<String, dynamic>;
-        if (str.containsKey('timer_streak_days')) await prefs.setInt('timer_streak_days', str['timer_streak_days']);
-      }
-    }));
+        // Update Premium status in real-time
+        if (data.containsKey('is_premium')) {
+          await prefs.setBool('is_premium', data['is_premium'] as bool);
+        }
+
+        if (data.containsKey('settings')) {
+          final s = data['settings'] as Map<String, dynamic>;
+          if (s.containsKey('notif_frequency'))
+            await prefs.setInt('notif_frequency', s['notif_frequency']);
+          if (s.containsKey('notif_timer_seconds'))
+            await prefs.setInt('notif_timer_seconds', s['notif_timer_seconds']);
+          if (s.containsKey('notif_random_anytime'))
+            await prefs.setBool(
+              'notif_random_anytime',
+              s['notif_random_anytime'],
+            );
+          if (s.containsKey('notif_start_hour'))
+            await prefs.setInt('notif_start_hour', s['notif_start_hour']);
+          if (s.containsKey('notif_end_hour'))
+            await prefs.setInt('notif_end_hour', s['notif_end_hour']);
+          if (s.containsKey('notif_active_days'))
+            await prefs.setString('notif_active_days', s['notif_active_days']);
+          await NotificationService.instance.scheduleNotifications();
+        }
+        if (data.containsKey('streak')) {
+          final str = data['streak'] as Map<String, dynamic>;
+          if (str.containsKey('timer_streak_days'))
+            await prefs.setInt('timer_streak_days', str['timer_streak_days']);
+        }
+      }),
+    );
   }
 
   /// Stops all active Firestore listeners.
@@ -115,7 +137,7 @@ class SyncService {
   ) async {
     if (_isSyncing) return;
     _isSyncing = true; // Prevent backup loop during remote apply
-    
+
     try {
       final db = await _dbHelper.database;
       bool localChanged = false;
@@ -125,19 +147,27 @@ class SyncService {
 
       await db.transaction((txn) async {
         for (var change in snapshot.docChanges) {
-          if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
+          if (change.type == DocumentChangeType.added ||
+              change.type == DocumentChangeType.modified) {
             final remoteData = change.doc.data();
             if (remoteData == null) continue;
 
             // NORMALIZE: Go through model to filter extra fields and convert types (bool -> int)
             final model = fromMap(remoteData);
             Map<String, dynamic>? map;
-            if (model is Category) map = model.toMap();
-            else if (model is Question) map = model.toMap();
-            else if (model is ScoreRecord) map = model.toMap();
+            if (model is Category)
+              map = model.toMap();
+            else if (model is Question)
+              map = model.toMap();
+            else if (model is ScoreRecord)
+              map = model.toMap();
 
             if (map != null) {
-              await txn.insert(tableName, map, conflictAlgorithm: ConflictAlgorithm.replace);
+              await txn.insert(
+                tableName,
+                map,
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
               localChanged = true;
             }
           } else if (change.type == DocumentChangeType.removed) {
@@ -163,7 +193,7 @@ class SyncService {
 
   /// Performs a full backup of local data to Firestore.
   ///
-  /// This iterates through Categories, Questions, and Score Records, 
+  /// This iterates through Categories, Questions, and Score Records,
   /// pushing them to the user's private collection using a write batch.
   Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
@@ -205,9 +235,15 @@ class SyncService {
       // 3b. Reconcile: delete Firestore documents that no longer exist locally.
       // Without this step, deleted questions/categories persist in Firestore and
       // get re-inserted into SQLite by the real-time listener or performRestore.
-      final localQIds   = questions.where((q) => q.id != null).map((q) => q.id!.toString()).toSet();
-      final localCatIds = categories.where((c) => c.id != null).map((c) => c.id!.toString()).toSet();
-      final remoteQSnap   = await userDoc.collection('questions').get();
+      final localQIds = questions
+          .where((q) => q.id != null)
+          .map((q) => q.id!.toString())
+          .toSet();
+      final localCatIds = categories
+          .where((c) => c.id != null)
+          .map((c) => c.id!.toString())
+          .toSet();
+      final remoteQSnap = await userDoc.collection('questions').get();
       final remoteCatSnap = await userDoc.collection('categories').get();
       for (final doc in remoteQSnap.docs) {
         if (!localQIds.contains(doc.id)) batch.delete(doc.reference);
@@ -223,14 +259,17 @@ class SyncService {
         'notif_start_hour': prefs.getInt('notif_start_hour') ?? 8,
         'notif_end_hour': prefs.getInt('notif_end_hour') ?? 20,
         'notif_frequency': prefs.getInt('notif_frequency') ?? 3,
-        'notif_active_days': prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7',
+        'notif_active_days':
+            prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7',
         'notif_timer_seconds': prefs.getInt('notif_timer_seconds') ?? 0,
       };
 
       final streakData = {
         'timer_streak_days': prefs.getInt('timer_streak_days') ?? 0,
-        'timer_streak_last_date': prefs.getString('timer_streak_last_date') ?? '',
-        'timer_streak_bonus_questions': prefs.getInt('timer_streak_bonus_questions') ?? 0,
+        'timer_streak_last_date':
+            prefs.getString('timer_streak_last_date') ?? '',
+        'timer_streak_bonus_questions':
+            prefs.getInt('timer_streak_bonus_questions') ?? 0,
       };
 
       // 4. Commit all changes at once
@@ -245,7 +284,9 @@ class SyncService {
       }, SetOptions(merge: true));
 
       trace.putAttribute('question_count', questions.length.toString());
-      debugPrint('SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.');
+      debugPrint(
+        'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.',
+      );
     } catch (e) {
       debugPrint('SyncService: Backup failed: $e');
       // Don't rethrow here so the UI calling it doesn't crash
@@ -257,10 +298,13 @@ class SyncService {
 
   /// Downloads all user data from Firestore and merges it into the local database.
   /// Used when logging into a new device or performing a manual refresh.
-  Future<void> performRestore({bool force = false, bool isInitialLogin = false}) async {
+  Future<void> performRestore({
+    bool force = false,
+    bool isInitialLogin = false,
+  }) async {
     final user = AuthService.instance.currentUser;
     if (user == null || !user.emailVerified || _isSyncing) return;
-    
+
     _isSyncing = true;
     debugPrint('SyncService: Starting restore for user ${user.uid}...');
 
@@ -270,13 +314,15 @@ class SyncService {
       // OPTIMIZATION: Skip automatic restore if data exists, unless forced (e.g. at login)
       final localCount = await _dbHelper.getQuestionCount();
       if (!force && localCount > 0) {
-        debugPrint('SyncService: Local data exists, skipping automatic full restore.');
+        debugPrint(
+          'SyncService: Local data exists, skipping automatic full restore.',
+        );
         return;
       }
 
       final db = await _dbHelper.database;
       final userDoc = _db.collection('users').doc(user.uid);
-      
+
       // Fetch everything from cloud first to keep the transaction short
       final catSnap = await userDoc.collection('categories').get();
       final qSnap = await userDoc.collection('questions').get();
@@ -298,17 +344,29 @@ class SyncService {
 
         // 1. Restore Categories
         for (var doc in catSnap.docs) {
-          await txn.insert('categories', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
+          await txn.insert(
+            'categories',
+            doc.data(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
 
         // 2. Restore Questions
         for (var doc in qSnap.docs) {
-          await txn.insert('questions', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
+          await txn.insert(
+            'questions',
+            doc.data(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
 
         // 3. Restore Score Records
         for (var doc in sSnap.docs) {
-          await txn.insert('score_records', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
+          await txn.insert(
+            'score_records',
+            doc.data(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
         }
 
         await txn.execute('PRAGMA foreign_keys = ON;');
@@ -318,7 +376,7 @@ class SyncService {
       if (userSnap.exists && userSnap.data() != null) {
         final data = userSnap.data()!;
         final prefs = await SharedPreferences.getInstance();
-        
+
         // Pull Premium status directly from Firestore document root
         if (data.containsKey('is_premium')) {
           await prefs.setBool('is_premium', data['is_premium'] as bool);
@@ -326,18 +384,48 @@ class SyncService {
 
         if (data.containsKey('settings')) {
           final s = data['settings'] as Map<String, dynamic>;
-          if (s.containsKey('notif_random_anytime')) await prefs.setBool('notif_random_anytime', s['notif_random_anytime'] as bool);
-          if (s.containsKey('notif_start_hour')) await prefs.setInt('notif_start_hour', s['notif_start_hour'] as int);
-          if (s.containsKey('notif_end_hour')) await prefs.setInt('notif_end_hour', s['notif_end_hour'] as int);
-          if (s.containsKey('notif_frequency')) await prefs.setInt('notif_frequency', s['notif_frequency'] as int);
-          if (s.containsKey('notif_active_days')) await prefs.setString('notif_active_days', s['notif_active_days'] as String);
-          if (s.containsKey('notif_timer_seconds')) await prefs.setInt('notif_timer_seconds', s['notif_timer_seconds'] as int);
+          if (s.containsKey('notif_random_anytime'))
+            await prefs.setBool(
+              'notif_random_anytime',
+              s['notif_random_anytime'] as bool,
+            );
+          if (s.containsKey('notif_start_hour'))
+            await prefs.setInt(
+              'notif_start_hour',
+              s['notif_start_hour'] as int,
+            );
+          if (s.containsKey('notif_end_hour'))
+            await prefs.setInt('notif_end_hour', s['notif_end_hour'] as int);
+          if (s.containsKey('notif_frequency'))
+            await prefs.setInt('notif_frequency', s['notif_frequency'] as int);
+          if (s.containsKey('notif_active_days'))
+            await prefs.setString(
+              'notif_active_days',
+              s['notif_active_days'] as String,
+            );
+          if (s.containsKey('notif_timer_seconds'))
+            await prefs.setInt(
+              'notif_timer_seconds',
+              s['notif_timer_seconds'] as int,
+            );
         }
         if (data.containsKey('streak')) {
           final str = data['streak'] as Map<String, dynamic>;
-          if (str.containsKey('timer_streak_days')) await prefs.setInt('timer_streak_days', str['timer_streak_days'] as int);
-          if (str.containsKey('timer_streak_last_date')) await prefs.setString('timer_streak_last_date', str['timer_streak_last_date'] as String);
-          if (str.containsKey('timer_streak_bonus_questions')) await prefs.setInt('timer_streak_bonus_questions', str['timer_streak_bonus_questions'] as int);
+          if (str.containsKey('timer_streak_days'))
+            await prefs.setInt(
+              'timer_streak_days',
+              str['timer_streak_days'] as int,
+            );
+          if (str.containsKey('timer_streak_last_date'))
+            await prefs.setString(
+              'timer_streak_last_date',
+              str['timer_streak_last_date'] as String,
+            );
+          if (str.containsKey('timer_streak_bonus_questions'))
+            await prefs.setInt(
+              'timer_streak_bonus_questions',
+              str['timer_streak_bonus_questions'] as int,
+            );
         }
       }
 
@@ -347,7 +435,10 @@ class SyncService {
         final data = userSnap.data()!;
         if (data.containsKey('onboarding_complete')) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('onboarding_complete', data['onboarding_complete'] as bool);
+          await prefs.setBool(
+            'onboarding_complete',
+            data['onboarding_complete'] as bool,
+          );
         } else if (dataFound) {
           // Legacy accounts that predate this field: infer from question presence
           final prefs = await SharedPreferences.getInstance();

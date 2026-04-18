@@ -10,9 +10,36 @@ import '../settings/subscription_screen.dart';
 // ── Available icons for category picker ──────────────────────────────────────
 // Curated list covering the most common personal knowledge areas.
 const _categoryIcons = [
-  '📌', '💼', '🍳', '☕', '📚', '🎵', '💪', '🌍', '💻', '🎨',
-  '🏠', '❤️', '🌱', '✈️', '🎮', '💰', '🔬', '🎭', '🚗', '⚽',
-  '🧘', '🍕', '📷', '🎯', '🧠', '🌙', '🔑', '🛒', '🐶', '🎁',
+  '📌',
+  '💼',
+  '🍳',
+  '☕',
+  '📚',
+  '🎵',
+  '💪',
+  '🌍',
+  '💻',
+  '🎨',
+  '🏠',
+  '❤️',
+  '🌱',
+  '✈️',
+  '🎮',
+  '💰',
+  '🔬',
+  '🎭',
+  '🚗',
+  '⚽',
+  '🧘',
+  '🍕',
+  '📷',
+  '🎯',
+  '🧠',
+  '🌙',
+  '🔑',
+  '🛒',
+  '🐶',
+  '🎁',
 ];
 
 class ManageCategoriesScreen extends StatefulWidget {
@@ -23,7 +50,8 @@ class ManageCategoriesScreen extends StatefulWidget {
 }
 
 class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
-  List<Category> _customCategories = []; // non-default categories — shown in list
+  List<Category> _customCategories =
+      []; // non-default categories — shown in list
   Set<int> _usedCategoryIds = {};
   bool _isLoading = true;
 
@@ -50,11 +78,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     final canAdd = await PlanService.canAddCategory(_customCategories.length);
     if (!mounted) return;
     if (!canAdd) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const SubscriptionScreen(),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
       return;
     }
 
@@ -86,7 +112,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.deleteCategoryTitle),
-        content: Text(l10n.deleteCategoryContent(icon: cat.icon, name: cat.name)),
+        content: Text(
+          l10n.deleteCategoryContent(icon: cat.icon, name: cat.name),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -130,13 +158,16 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                   future: PlanService.isPremium(),
                   builder: (_, snap) {
                     if (snap.data == true) return const SizedBox.shrink();
-                    final atCreationLimit = _customCategories.length >=
+                    final atCreationLimit =
+                        _customCategories.length >=
                         PlanService.freeMaxCustomCategories;
                     return Container(
                       width: double.infinity,
                       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: atCreationLimit
                             ? colorScheme.errorContainer
@@ -168,8 +199,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text('🏷️',
-                                    style: const TextStyle(fontSize: 48)),
+                                Text(
+                                  '🏷️',
+                                  style: const TextStyle(fontSize: 48),
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   l10n.noCategoriesYet,
@@ -197,8 +230,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                               const SizedBox(height: 8),
                           itemBuilder: (_, index) {
                             final cat = _customCategories[index];
-                            final hasQuestions =
-                                _usedCategoryIds.contains(cat.id);
+                            final hasQuestions = _usedCategoryIds.contains(
+                              cat.id,
+                            );
                             return _CategoryTile(
                               category: cat,
                               hasQuestions: hasQuestions,
@@ -304,7 +338,9 @@ class _CategoryTile extends StatelessWidget {
                     ? colorScheme.onSurface.withOpacity(0.3)
                     : colorScheme.error,
               ),
-              tooltip: hasQuestions ? l10n.cannotDeleteTooltip : l10n.deleteTooltip,
+              tooltip: hasQuestions
+                  ? l10n.cannotDeleteTooltip
+                  : l10n.deleteTooltip,
             ),
           ],
         ),
@@ -354,7 +390,9 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.saveCategoryFailedSnack(error: e.toString()))),
+        SnackBar(
+          content: Text(l10n.saveCategoryFailedSnack(error: e.toString())),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -433,13 +471,11 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                             : colorScheme.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(10),
                         border: selected
-                            ? Border.all(
-                                color: colorScheme.primary, width: 2)
+                            ? Border.all(color: colorScheme.primary, width: 2)
                             : null,
                       ),
                       child: Center(
-                        child: Text(icon,
-                            style: const TextStyle(fontSize: 22)),
+                        child: Text(icon, style: const TextStyle(fontSize: 22)),
                       ),
                     ),
                   );
@@ -464,14 +500,13 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
               controller: _nameController,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(
-                hintText: l10n.categoryNameHint,
-              ),
+              decoration: InputDecoration(hintText: l10n.categoryNameHint),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
                   return l10n.validationCategoryNameEmpty;
                 }
-                if (v.trim().length < 2) return l10n.validationCategoryNameShort;
+                if (v.trim().length < 2)
+                  return l10n.validationCategoryNameShort;
                 return null;
               },
             ),
@@ -502,7 +537,9 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         child: Text(
                           isPremium
                               ? l10n.premiumUnlimitedCategories
-                              : l10n.freePlanCategoryNote(count: PlanService.freeMaxCustomCategories),
+                              : l10n.freePlanCategoryNote(
+                                  count: PlanService.freeMaxCustomCategories,
+                                ),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isPremium
                                 ? colorScheme.primary
@@ -531,7 +568,9 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : Text('$_selectedIcon  ${l10n.createCategoryButton}'),
               ),

@@ -50,8 +50,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       if (e.code == 'user-not-found') {
         message = l10n.errorNoAccount;
       } else if (e.code == 'wrong-password' ||
-                 e.code == 'invalid-credential' ||
-                 e.code == 'INVALID_LOGIN_CREDENTIALS') {
+          e.code == 'invalid-credential' ||
+          e.code == 'INVALID_LOGIN_CREDENTIALS') {
         message = l10n.errorWrongPassword;
       } else if (e.code == 'invalid-email') {
         message = l10n.errorInvalidEmail;
@@ -64,9 +64,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       }
       setState(() => _errorMessage = message);
     } on FirebaseException {
-      setState(() => _errorMessage = AppLocalizations.of(context)!.errorAuthFailed);
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.errorAuthFailed,
+      );
     } catch (e) {
-      setState(() => _errorMessage = AppLocalizations.of(context)!.errorUnexpected);
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.errorUnexpected,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -79,9 +83,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.emailAuthTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.emailAuthTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -97,7 +99,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               const SizedBox(height: 24),
               Text(
                 l10n.welcomeBack,
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -111,7 +115,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
+                    style: TextStyle(
+                      color: colorScheme.onErrorContainer,
+                      fontSize: 13,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -126,8 +133,11 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return l10n.validationEnterEmail;
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                  if (value == null || value.isEmpty)
+                    return l10n.validationEnterEmail;
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
                     return l10n.validationValidEmail;
                   }
                   return null;
@@ -142,7 +152,8 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return l10n.validationEnterPassword;
+                  if (value == null || value.isEmpty)
+                    return l10n.validationEnterPassword;
                   if (value.length < 6) return l10n.validationPasswordLength;
                   return null;
                 },
@@ -152,12 +163,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
                 child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
-                    )
-                  : Text(l10n.loginButton),
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(l10n.loginButton),
               ),
               const SizedBox(height: 16),
               TextButton(
@@ -165,7 +179,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     ? null
                     : () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const EmailSignupScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const EmailSignupScreen(),
+                          ),
                         );
                       },
                 child: Text(
@@ -178,10 +194,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     ? null
                     : () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
                         );
                       },
-                child: Text(l10n.forgotPasswordLink, style: TextStyle(color: colorScheme.secondary, fontSize: 13)),
+                child: Text(
+                  l10n.forgotPasswordLink,
+                  style: TextStyle(color: colorScheme.secondary, fontSize: 13),
+                ),
               ),
             ],
           ),

@@ -45,7 +45,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.purchaseFailedSnack(error: e.toString()))),
+          SnackBar(
+            content: Text(l10n.purchaseFailedSnack(error: e.toString())),
+          ),
         );
       }
     } finally {
@@ -63,9 +65,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       appBar: AppBar(title: Text(l10n.upgradeToPremium)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _isPremium 
-              ? _buildPremiumActive(theme, colorScheme)
-              : _buildPaywall(theme, colorScheme),
+          : _isPremium
+          ? _buildPremiumActive(theme, colorScheme)
+          : _buildPaywall(theme, colorScheme),
     );
   }
 
@@ -79,7 +81,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SizedBox(height: 16),
           Text(
             l10n.premiumUnlockTitle,
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -131,14 +135,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: ElevatedButton(
                         onPressed: () => _handleSubscribe(package),
-                        child: Text(l10n.getPremiumButton(price: package.storeProduct.priceString)),
+                        child: Text(
+                          l10n.getPremiumButton(
+                            price: package.storeProduct.priceString,
+                          ),
+                        ),
                       ),
                     ),
                 ] else
                   Text(l10n.loadingPlans),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed: () => SubscriptionService.instance.restorePurchases(),
+                  onPressed: () =>
+                      SubscriptionService.instance.restorePurchases(),
                   child: Text(l10n.restorePurchase),
                 ),
               ],
@@ -147,7 +156,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SizedBox(height: 16),
           Text(
             l10n.cancelAnytime,
-            style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -165,11 +176,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             const Text('🌟', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
-            Text(l10n.premiumActiveMember, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              l10n.premiumActiveMember,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 12),
             Text(l10n.premiumActiveDesc, textAlign: TextAlign.center),
             const SizedBox(height: 32),
-            OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l10n.premiumGreat)),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.premiumGreat),
+            ),
           ],
         ),
       ),
@@ -199,7 +218,10 @@ class _FeatureTile extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(icon, color: color),
           ),
           const SizedBox(width: 16),
@@ -207,8 +229,17 @@ class _FeatureTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),

@@ -19,9 +19,7 @@ class AnalyticsService {
     try {
       await Posthog().identify(
         userId: userId,
-        userProperties: {
-          if (email != null) 'email': email,
-        },
+        userProperties: {if (email != null) 'email': email},
       );
     } catch (e) {
       debugPrint('AnalyticsService.identify PostHog error: $e');
@@ -64,11 +62,10 @@ class AnalyticsService {
   Future<void> trackQuestionAnswered({
     required bool isCorrect,
     required bool fromNotification,
-  }) =>
-      _capture('question_answered', {
-        'correct': isCorrect,
-        'source': fromNotification ? 'notification' : 'manual',
-      });
+  }) => _capture('question_answered', {
+    'correct': isCorrect,
+    'source': fromNotification ? 'notification' : 'manual',
+  });
 
   Future<void> trackOnboardingCompleted() => _capture('onboarding_completed');
 
@@ -82,20 +79,15 @@ class AnalyticsService {
     required int frequency,
     required bool randomAnytime,
     required int timerSeconds,
-  }) =>
-      _capture('schedule_changed', {
-        'frequency': frequency,
-        'random_anytime': randomAnytime,
-        'timer_seconds': timerSeconds,
-      });
+  }) => _capture('schedule_changed', {
+    'frequency': frequency,
+    'random_anytime': randomAnytime,
+    'timer_seconds': timerSeconds,
+  });
 
-  Future<void> _capture(String event,
-      [Map<String, Object>? properties]) async {
+  Future<void> _capture(String event, [Map<String, Object>? properties]) async {
     try {
-      await Posthog().capture(
-        eventName: event,
-        properties: properties,
-      );
+      await Posthog().capture(eventName: event, properties: properties);
     } catch (_) {
       // Never let analytics errors surface to the user.
     }

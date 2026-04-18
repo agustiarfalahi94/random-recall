@@ -46,6 +46,8 @@
   "loginSubtitle": "Masuk untuk sinkronisasi progres dan membuka fitur premium.",
   "continueWithGoogle": "Lanjutkan dengan Google",
   "continueWithEmail": "Lanjutkan dengan Email",
+  "providerGoogle": "Google",
+  "providerEmail": "Email",
   "loginFailedSnack": "Login gagal: {error}",
   "@loginFailedSnack": {
     "placeholders": { "error": { "type": "String" } }

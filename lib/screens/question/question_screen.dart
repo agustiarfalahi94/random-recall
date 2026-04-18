@@ -37,10 +37,10 @@ class _QuestionScreenState extends State<QuestionScreen>
   bool _graded = false;
   bool _isCorrect = false;
   int? _lastQuestionId; // prevents same question back-to-back
-  int? _lastScoreId;    // stored to allow "Undo" for premium users
+  int? _lastScoreId; // stored to allow "Undo" for premium users
 
   // Timer
-  int _timerSeconds = 0;   // 0 = off, loaded from prefs
+  int _timerSeconds = 0; // 0 = off, loaded from prefs
   int _remaining = 0;
   bool _isPremium = false;
   bool _undoUsedToday = false;
@@ -89,9 +89,15 @@ class _QuestionScreenState extends State<QuestionScreen>
     if (_timerSeconds <= 0) return;
     setState(() => _remaining = _timerSeconds);
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       setState(() => _remaining--);
-      if (_remaining <= 0) { t.cancel(); _grade(false); }
+      if (_remaining <= 0) {
+        t.cancel();
+        _grade(false);
+      }
     });
   }
 
@@ -148,25 +154,31 @@ class _QuestionScreenState extends State<QuestionScreen>
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
         final now = DateTime.now();
-        _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(ScoreRecord(
-          questionId: _question!.id!,
-          categoryId: _question!.categoryId,
-          isCorrect: isCorrect,
-          answeredAt: now,
-          updatedAt: now,
-        ));
+        _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
+          ScoreRecord(
+            questionId: _question!.id!,
+            categoryId: _question!.categoryId,
+            isCorrect: isCorrect,
+            answeredAt: now,
+            updatedAt: now,
+          ),
+        );
 
         // Clear any persistent notification from the system tray for this question
-        await NotificationService.instance
-            .cancelNotificationsForQuestion(_question!.id!);
+        await NotificationService.instance.cancelNotificationsForQuestion(
+          _question!.id!,
+        );
 
-        AnalyticsService.instance.trackQuestionAnswered(
-          isCorrect: isCorrect,
-          fromNotification: false,
-        ).ignore();
+        AnalyticsService.instance
+            .trackQuestionAnswered(
+              isCorrect: isCorrect,
+              fromNotification: false,
+            )
+            .ignore();
 
         // Record streak only when timer is ON and ≤ the challenge threshold.
-        if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
+        if (_timerSeconds > 0 &&
+            _timerSeconds <= StreakService.challengeThreshold) {
           final result = await StreakService.recordActivity();
           if (result.milestoneReached && mounted) {
             _showStreakMilestoneDialog(result.streak);
@@ -186,7 +198,7 @@ class _QuestionScreenState extends State<QuestionScreen>
   Future<void> _undoGrade() async {
     // Manual practice allows unlimited undo.
     if (!_graded || (!widget.isPractice && _undoUsedToday)) return;
-    
+
     // Only Premium users can undo
     if (!_isPremium) return;
 
@@ -211,9 +223,9 @@ class _QuestionScreenState extends State<QuestionScreen>
 
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.undoSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.undoSuccess)));
       }
     } catch (e) {
       if (mounted) {
@@ -275,8 +287,8 @@ class _QuestionScreenState extends State<QuestionScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _question == null
-              ? _buildEmptyState(colorScheme, theme)
-              : _buildContent(colorScheme, theme),
+          ? _buildEmptyState(colorScheme, theme)
+          : _buildContent(colorScheme, theme),
     );
   }
 
@@ -329,9 +341,7 @@ class _QuestionScreenState extends State<QuestionScreen>
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withOpacity(0.4),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colorScheme.primary.withOpacity(0.2),
-              ),
+              border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -340,7 +350,9 @@ class _QuestionScreenState extends State<QuestionScreen>
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: colorScheme.primary,
                         borderRadius: BorderRadius.circular(8),
@@ -404,7 +416,9 @@ class _QuestionScreenState extends State<QuestionScreen>
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: colorScheme.secondary,
                               borderRadius: BorderRadius.circular(8),
@@ -496,7 +510,9 @@ class _QuestionScreenState extends State<QuestionScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isCorrect ? l10n.nextQuestionPrompt : l10n.keepPracticing,
+                            _isCorrect
+                                ? l10n.nextQuestionPrompt
+                                : l10n.keepPracticing,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -516,12 +532,18 @@ class _QuestionScreenState extends State<QuestionScreen>
 
               Row(
                 children: [
-                  if (!_isCorrect && _isPremium && (widget.isPractice || !_undoUsedToday)) ...[
+                  if (!_isCorrect &&
+                      _isPremium &&
+                      (widget.isPractice || !_undoUsedToday)) ...[
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _undoGrade,
                         icon: const Icon(Icons.undo_rounded, size: 18),
-                        label: Text(widget.isPractice ? l10n.undoButton : l10n.undoOncePerDay),
+                        label: Text(
+                          widget.isPractice
+                              ? l10n.undoButton
+                              : l10n.undoOncePerDay,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -613,8 +635,8 @@ class _TimerBadge extends StatelessWidget {
     final color = fraction > 0.5
         ? Colors.green
         : fraction > 0.25
-            ? Colors.orange
-            : Colors.red;
+        ? Colors.orange
+        : Colors.red;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),

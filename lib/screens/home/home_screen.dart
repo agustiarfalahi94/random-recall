@@ -113,9 +113,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       await SyncService.instance.performRestore();
       if (!mounted) return;
       Navigator.of(context).pop(); // Close settings sheet on success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.syncCompleteSnack)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.syncCompleteSnack)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,313 +158,356 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
     final user = AuthService.instance.currentUser;
     // More robust check: is the primary sign-in provider Google?
-    final isGoogle = user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
-    
-    final providerLabel = isGoogle ? 'Google' : 'Email';
-    final providerIcon = isGoogle 
-        ? Icons.g_mobiledata_rounded 
+    final isGoogle =
+        user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
+
+    final providerLabel = isGoogle ? l10n.providerGoogle : l10n.providerEmail;
+    final providerIcon = isGoogle
+        ? Icons.g_mobiledata_rounded
         : Icons.alternate_email_rounded;
 
     return SingleChildScrollView(
       child: Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min, // Still min to keep it compact on large screens
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          Text(
-            l10n.settingsTitle,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Sync Now button
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.sync_rounded, color: colorScheme.primary),
-            ),
-            title: Text(
-              l10n.syncDataNow,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(l10n.syncSubtitle),
-            trailing: _isSyncingManual
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.refresh_rounded, size: 20),
-            onTap: _isSyncingManual ? null : _syncNow,
-          ),
-
-          const Divider(),
-
-          // Test notification button
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(child: Text('🔔', style: TextStyle(fontSize: 20))),
-            ),
-            title: Text(
-              l10n.sendTestNotification,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(l10n.sendTestSubtitle),
-            trailing: _isSendingTest
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.chevron_right_rounded),
-            onTap: _isSendingTest ? null : _sendTestNotification,
-          ),
-
-          const Divider(),
-
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(child: Text('⏰', style: TextStyle(fontSize: 20))),
-            ),
-            title: Text(
-              l10n.notifScheduleMenuItem,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(l10n.notifScheduleMenuSubtitle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NotificationScheduleScreen(),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize:
+              MainAxisSize.min, // Still min to keep it compact on large screens
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-              );
-            },
-          ),
-
-          const Divider(),
-
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(child: Text('🏷️', style: TextStyle(fontSize: 20))),
             ),
-            title: Text(
-              l10n.manageCategoriesMenuItem,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            const SizedBox(height: 20),
+
+            Text(
+              l10n.settingsTitle,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            subtitle: Text(l10n.manageCategoriesMenuSubtitle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ManageCategoriesScreen(),
+            const SizedBox(height: 24),
+
+            // Sync Now button
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            },
-          ),
-
-          const Divider(),
-
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                child: Icon(Icons.sync_rounded, color: colorScheme.primary),
               ),
-              child: Center(
-                child: Icon(Icons.rate_review_rounded,
-                    color: colorScheme.onSecondaryContainer),
+              title: Text(
+                l10n.syncDataNow,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
+              subtitle: Text(l10n.syncSubtitle),
+              trailing: _isSyncingManual
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh_rounded, size: 20),
+              onTap: _isSyncingManual ? null : _syncNow,
             ),
-            title: Text(
-              l10n.sendFeedbackMenuItem,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(l10n.sendFeedbackMenuSubtitle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => _showFeedbackDialog(context),
-          ),
 
-          const Divider(),
+            const Divider(),
 
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(12),
+            // Test notification button
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text('🔔', style: TextStyle(fontSize: 20)),
+                ),
               ),
-              child: Center(
-                child: Icon(Icons.help_outline_rounded,
-                    color: colorScheme.onTertiaryContainer),
+              title: Text(
+                l10n.sendTestNotification,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
+              subtitle: Text(l10n.sendTestSubtitle),
+              trailing: _isSendingTest
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right_rounded),
+              onTap: _isSendingTest ? null : _sendTestNotification,
             ),
-            title: Text(
-              l10n.faqMenuItem,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(l10n.faqMenuSubtitle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FaqScreen()),
-              );
-            },
-          ),
 
-          const Divider(),
+            const Divider(),
 
-          // Language switcher
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text('⏰', style: TextStyle(fontSize: 20)),
+                ),
               ),
-              child: Icon(Icons.language_rounded, color: colorScheme.onPrimaryContainer),
-            ),
-            title: Text(
-              l10n.language,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(l10n.languageSubtitle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => _showLanguageDialog(context),
-          ),
-
-          const Divider(),
-
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(12),
+              title: Text(
+                l10n.notifScheduleMenuItem,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              child: Center(
-                child: Icon(Icons.logout_rounded, color: colorScheme.onErrorContainer),
+              subtitle: Text(l10n.notifScheduleMenuSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationScheduleScreen(),
+                  ),
+                );
+              },
+            ),
+
+            const Divider(),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text('🏷️', style: TextStyle(fontSize: 20)),
+                ),
               ),
+              title: Text(
+                l10n.manageCategoriesMenuItem,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(l10n.manageCategoriesMenuSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ManageCategoriesScreen(),
+                  ),
+                );
+              },
             ),
-            title: Text(
-              l10n.signOut,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Row(
-              children: [
-                Icon(providerIcon, size: 14, color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '$providerLabel • ${user?.email ?? "User"}',
-                    style: const TextStyle(fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
+
+            const Divider(),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.rate_review_rounded,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
-              ],
+              ),
+              title: Text(
+                l10n.sendFeedbackMenuItem,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(l10n.sendFeedbackMenuSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showFeedbackDialog(context),
             ),
-            onTap: () async {
-              final l10n = AppLocalizations.of(context)!;
-              // Use the root navigator directly — Navigator.of(context) inside a
-              // bottom sheet can resolve to the sheet's sub-tree navigator and
-              // silently fail to clear routes on the MaterialApp navigator.
-              final rootNav = navigatorKey.currentState!;
-              final messenger = ScaffoldMessenger.of(context);
 
-              // Show loading dialog on the root navigator so popUntil can
-              // dismiss it together with the settings sheet in one shot.
-              rootNav.push(
-                DialogRoute(
-                  context: rootNav.overlay!.context,
-                  barrierDismissible: false,
-                  builder: (_) => Center(
-                    child: Card(
-                      margin: const EdgeInsets.all(32),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 16),
-                            Text(l10n.signingOutSafely, style: const TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 4),
-                            Text(l10n.backingUpData, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
+            const Divider(),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.help_outline_rounded,
+                    color: colorScheme.onTertiaryContainer,
+                  ),
+                ),
+              ),
+              title: Text(
+                l10n.faqMenuItem,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(l10n.faqMenuSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const FaqScreen()));
+              },
+            ),
+
+            const Divider(),
+
+            // Language switcher
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.language_rounded,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              title: Text(
+                l10n.language,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(l10n.languageSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showLanguageDialog(context),
+            ),
+
+            const Divider(),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.logout_rounded,
+                    color: colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+              title: Text(
+                l10n.signOut,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Row(
+                children: [
+                  Icon(
+                    providerIcon,
+                    size: 14,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '$providerLabel • ${user?.email ?? "User"}',
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              onTap: () async {
+                final l10n = AppLocalizations.of(context)!;
+                // Use the root navigator directly — Navigator.of(context) inside a
+                // bottom sheet can resolve to the sheet's sub-tree navigator and
+                // silently fail to clear routes on the MaterialApp navigator.
+                final rootNav = navigatorKey.currentState!;
+                final messenger = ScaffoldMessenger.of(context);
+
+                // Show loading dialog on the root navigator so popUntil can
+                // dismiss it together with the settings sheet in one shot.
+                rootNav.push(
+                  DialogRoute(
+                    context: rootNav.overlay!.context,
+                    barrierDismissible: false,
+                    builder: (_) => Center(
+                      child: Card(
+                        margin: const EdgeInsets.all(32),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Text(
+                                l10n.signingOutSafely,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                l10n.backingUpData,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-
-              try {
-                await AuthService.instance.signOut(
-                  onBeforeFinalSignOut: () async {
-                    // Clear every modal route (dialog + sheet) from the root
-                    // navigator so LoginScreen is immediately visible when the
-                    // StreamBuilder switches after _auth.signOut() fires.
-                    rootNav.popUntil((route) => route.isFirst);
-                  },
                 );
-              } catch (e) {
-                if (rootNav.canPop()) rootNav.pop();
-                messenger.showSnackBar(SnackBar(content: Text(l10n.signOutFailedSnack(error: e.toString()))));
-              }
-            },
-          ),
-        ],
-      ),
+
+                try {
+                  await AuthService.instance.signOut(
+                    onBeforeFinalSignOut: () async {
+                      // Clear every modal route (dialog + sheet) from the root
+                      // navigator so LoginScreen is immediately visible when the
+                      // StreamBuilder switches after _auth.signOut() fires.
+                      rootNav.popUntil((route) => route.isFirst);
+                    },
+                  );
+                } catch (e) {
+                  if (rootNav.canPop()) rootNav.pop();
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        l10n.signOutFailedSnack(error: e.toString()),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -481,9 +524,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           controller: controller,
           minLines: 3,
           maxLines: 6,
-          decoration: InputDecoration(
-            hintText: l10n.feedbackHint,
-          ),
+          decoration: InputDecoration(hintText: l10n.feedbackHint),
           autofocus: true,
         ),
         actions: [
@@ -502,21 +543,23 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     if (submitted == true && controller.text.trim().isNotEmpty) {
       try {
         final eventId = await Sentry.captureMessage('User feedback');
-        await Sentry.captureUserFeedback(SentryUserFeedback(
-          eventId: eventId,
-          comments: controller.text.trim(),
-          email: AuthService.instance.currentUser?.email,
-        ));
+        await Sentry.captureUserFeedback(
+          SentryUserFeedback(
+            eventId: eventId,
+            comments: controller.text.trim(),
+            email: AuthService.instance.currentUser?.email,
+          ),
+        );
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.feedbackSentSnack)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.feedbackSentSnack)));
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.feedbackFailedSnack)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.feedbackFailedSnack)));
         }
       }
     }
@@ -582,8 +625,9 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     // Refresh badge immediately whenever a notification is answered anywhere
     // (covers the case where _onNotificationTapped pushes the answer screen
     // directly without going through the home screen's own navigation).
-    _answeredSub = NotificationService.instance.onNotificationAnswered
-        .listen((_) => _refreshData());
+    _answeredSub = NotificationService.instance.onNotificationAnswered.listen(
+      (_) => _refreshData(),
+    );
     _refreshData();
     // The notification plugin initializes in the post-frame callback (main.dart),
     // which runs after the widget tree is built. Retry once after init is likely
@@ -664,13 +708,18 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
           GestureDetector(
             onTap: () async {
               if (_unansweredCount > 0) {
-                final questionId = await NotificationService.instance.getOldestUnansweredQuestionId();
+                final questionId = await NotificationService.instance
+                    .getOldestUnansweredQuestionId();
                 if (mounted) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => NotificationQuestionScreen(questionId: questionId),
-                    ),
-                  ).then((_) => _refreshData());
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) => NotificationQuestionScreen(
+                            questionId: questionId,
+                          ),
+                        ),
+                      )
+                      .then((_) => _refreshData());
                 }
               }
             },
@@ -704,16 +753,23 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
                       decoration: BoxDecoration(
                         color: colorScheme.error,
                         shape: BoxShape.circle,
-                        border: Border.all(color: colorScheme.surface, width: 3),
+                        border: Border.all(
+                          color: colorScheme.surface,
+                          width: 3,
+                        ),
                       ),
-                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
                       child: Center(
                         child: Text(
                           '$_unansweredCount',
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -742,9 +798,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context)
-                  .push(MaterialPageRoute(
-                    builder: (_) => const QuestionScreen(isPractice: true),
-                  ))
+                  .push(
+                    MaterialPageRoute(
+                      builder: (_) => const QuestionScreen(isPractice: true),
+                    ),
+                  )
                   .then((_) => _refreshData()); // refresh on return
             },
             icon: const Icon(Icons.play_arrow_rounded),
@@ -761,9 +819,8 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             onSetTimer: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => const NotificationScheduleScreen(
-                    scrollToTimer: true,
-                  ),
+                  builder: (_) =>
+                      const NotificationScheduleScreen(scrollToTimer: true),
                 ),
               );
               _refreshData();
@@ -797,135 +854,142 @@ class _TimerChallengeCard extends StatelessWidget {
     final theme = Theme.of(context);
     final timerOn = timerSeconds > 0;
     // Challenge is only active when timer is ≤ threshold — relaxed timers don't count
-    final challengeActive = timerSeconds > 0 &&
-        timerSeconds <= StreakService.challengeThreshold;
+    final challengeActive =
+        timerSeconds > 0 && timerSeconds <= StreakService.challengeThreshold;
     final daysToNext = challengeActive ? (7 - (streak % 7)) : 7;
     final progressInCycle = challengeActive ? (streak % 7) : 0;
 
     return GestureDetector(
       onTap: onSetTimer,
       child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: timerOn
-              ? colorScheme.primary.withOpacity(0.3)
-              : colorScheme.outlineVariant.withOpacity(0.4),
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: timerOn
+                ? colorScheme.primary.withOpacity(0.3)
+                : colorScheme.outlineVariant.withOpacity(0.4),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text('🔥', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  l10n.timerChallengeTitle,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (bonusQuestions > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l10n.bonusCountLabel(count: bonusQuestions),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-              if (timerOn) ...[
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.edit_outlined,
-                  size: 16,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            timerOn
-                ? (timerSeconds <= StreakService.challengeThreshold
-                    ? l10n.timerChallengeActiveDesc(seconds: timerSeconds)
-                    : l10n.timerChallengeRelaxedDesc(
-                        seconds: timerSeconds,
-                        threshold: StreakService.challengeThreshold))
-                : l10n.timerChallengeOffDesc(threshold: StreakService.challengeThreshold),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
-
-          if (challengeActive) ...[
-            const SizedBox(height: 16),
-            // Progress bar: days in current 7-day cycle
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
-              children: List.generate(7, (i) {
-                final filled = i < progressInCycle;
-                return Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: filled
-                          ? colorScheme.primary
-                          : colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
+              children: [
+                const Text('🔥', style: TextStyle(fontSize: 24)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    l10n.timerChallengeTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                );
-              }),
+                ),
+                if (bonusQuestions > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      l10n.bonusCountLabel(count: bonusQuestions),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                if (timerOn) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 8),
             Text(
-              streak == 0
-                  ? l10n.streakStart
-                  : l10n.streakProgress(
-                      streak: streak,
-                      plural: streak == 1 ? '' : 's',
-                      days: daysToNext),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
+              timerOn
+                  ? (timerSeconds <= StreakService.challengeThreshold
+                        ? l10n.timerChallengeActiveDesc(seconds: timerSeconds)
+                        : l10n.timerChallengeRelaxedDesc(
+                            seconds: timerSeconds,
+                            threshold: StreakService.challengeThreshold,
+                          ))
+                  : l10n.timerChallengeOffDesc(
+                      threshold: StreakService.challengeThreshold,
+                    ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
               ),
             ),
-          ] else ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onSetTimer,
-                icon: const Icon(Icons.timer_outlined, size: 18),
-                label: Text(l10n.setATimer),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+
+            if (challengeActive) ...[
+              const SizedBox(height: 16),
+              // Progress bar: days in current 7-day cycle
+              Row(
+                children: List.generate(7, (i) {
+                  final filled = i < progressInCycle;
+                  return Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 4),
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: filled
+                            ? colorScheme.primary
+                            : colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                streak == 0
+                    ? l10n.streakStart
+                    : l10n.streakProgress(
+                        streak: streak,
+                        plural: streak == 1 ? '' : 's',
+                        days: daysToNext,
+                      ),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onSetTimer,
+                  icon: const Icon(Icons.timer_outlined, size: 18),
+                  label: Text(l10n.setATimer),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
-    )); // GestureDetector + Container
+    ); // GestureDetector + Container
   }
 }

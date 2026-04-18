@@ -21,8 +21,12 @@ class ScoreRecord {
       questionId: map['question_id'] as int,
       categoryId: map['category_id'] as int,
       isCorrect: (map['is_correct'] as int) == 1,
-      answeredAt: DateTime.parse(map['answered_at']?.toString() ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updated_at']?.toString() ?? DateTime.now().toIso8601String()),
+      answeredAt: DateTime.parse(
+        map['answered_at']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        map['updated_at']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 
@@ -38,8 +42,12 @@ class ScoreRecord {
   }
 
   ScoreRecord copyWith({
-    int? id, int? questionId, int? categoryId,
-    bool? isCorrect, DateTime? answeredAt, DateTime? updatedAt,
+    int? id,
+    int? questionId,
+    int? categoryId,
+    bool? isCorrect,
+    DateTime? answeredAt,
+    DateTime? updatedAt,
   }) {
     return ScoreRecord(
       id: id ?? this.id,

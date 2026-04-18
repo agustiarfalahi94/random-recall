@@ -103,7 +103,8 @@ class UpgradeBottomSheet extends StatelessWidget {
               color: colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: colorScheme.outlineVariant.withOpacity(0.4)),
+                color: colorScheme.outlineVariant.withOpacity(0.4),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,9 +145,7 @@ class UpgradeBottomSheet extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SubscriptionScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
                 );
               },
               style: FilledButton.styleFrom(

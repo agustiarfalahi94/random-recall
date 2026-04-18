@@ -24,10 +24,10 @@ class _WelcomePageState extends State<WelcomePage>
       duration: const Duration(milliseconds: 800),
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
     _animController.forward();
   }
 
@@ -117,9 +117,21 @@ class _WelcomePageState extends State<WelcomePage>
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _FeatureChip(icon: '⚡', label: l10n.featureRandom, colorScheme: colorScheme),
-                    _FeatureChip(icon: '🔔', label: l10n.featureNotifications, colorScheme: colorScheme),
-                    _FeatureChip(icon: '📊', label: l10n.featureAnalytics, colorScheme: colorScheme),
+                    _FeatureChip(
+                      icon: '⚡',
+                      label: l10n.featureRandom,
+                      colorScheme: colorScheme,
+                    ),
+                    _FeatureChip(
+                      icon: '🔔',
+                      label: l10n.featureNotifications,
+                      colorScheme: colorScheme,
+                    ),
+                    _FeatureChip(
+                      icon: '📊',
+                      label: l10n.featureAnalytics,
+                      colorScheme: colorScheme,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),

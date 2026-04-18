@@ -47,23 +47,34 @@ class _NotificationScheduleScreenState
     if (_debugTaps >= 7) {
       _debugTaps = 0;
       Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const DebugNotificationScreen()));
+        context,
+        MaterialPageRoute(builder: (_) => const DebugNotificationScreen()),
+      );
     }
   }
 
   // Timer slider: 0 = off, then 5–90 in steps of 5 (18 divisions)
 
   List<String> _getDayLabels(AppLocalizations l10n) => [
-        l10n.dayMon, l10n.dayTue, l10n.dayWed,
-        l10n.dayThu, l10n.dayFri, l10n.daySat, l10n.daySun,
-      ];
+    l10n.dayMon,
+    l10n.dayTue,
+    l10n.dayWed,
+    l10n.dayThu,
+    l10n.dayFri,
+    l10n.daySat,
+    l10n.daySun,
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadPrefs();
-    isMiuiDevice().then((v) { if (mounted) setState(() => _isMiui = v); });
-    isIgnoringBatteryOptimizations().then((v) { if (mounted) setState(() => _isIgnoringBattery = v); });
+    isMiuiDevice().then((v) {
+      if (mounted) setState(() => _isMiui = v);
+    });
+    isIgnoringBatteryOptimizations().then((v) {
+      if (mounted) setState(() => _isIgnoringBattery = v);
+    });
   }
 
   @override
@@ -146,11 +157,13 @@ class _NotificationScheduleScreenState
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
 
       await NotificationService.instance.scheduleNotifications();
-      AnalyticsService.instance.trackScheduleChanged(
-        frequency: _frequency,
-        randomAnytime: _randomAnytime,
-        timerSeconds: _timerSeconds,
-      ).ignore();
+      AnalyticsService.instance
+          .trackScheduleChanged(
+            frequency: _frequency,
+            randomAnytime: _randomAnytime,
+            timerSeconds: _timerSeconds,
+          )
+          .ignore();
 
       // Manually trigger a backup since settings live in SharedPreferences, not the DB
       await SyncService.instance.performBackup();
@@ -290,13 +303,19 @@ class _NotificationScheduleScreenState
                       const SizedBox(height: 10),
                       Text(
                         _timerSeconds == 0
-                            ? l10n.challengeModeOff(threshold: StreakService.challengeThreshold)
+                            ? l10n.challengeModeOff(
+                                threshold: StreakService.challengeThreshold,
+                              )
                             : _timerSeconds <= StreakService.challengeThreshold
-                                ? l10n.challengeModeActive
-                                : l10n.challengeModeRelaxed(threshold: StreakService.challengeThreshold),
+                            ? l10n.challengeModeActive
+                            : l10n.challengeModeRelaxed(
+                                threshold: StreakService.challengeThreshold,
+                              ),
                         style: TextStyle(
                           fontSize: 13,
-                          color: colorScheme.onPrimaryContainer.withOpacity(0.85),
+                          color: colorScheme.onPrimaryContainer.withOpacity(
+                            0.85,
+                          ),
                           height: 1.5,
                         ),
                       ),
@@ -318,7 +337,9 @@ class _NotificationScheduleScreenState
                               children: [
                                 Text(
                                   l10n.responseTimer,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   _timerSeconds == 0
@@ -335,7 +356,9 @@ class _NotificationScheduleScreenState
                           if (_timerSeconds > 0)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: colorScheme.errorContainer,
                                 borderRadius: BorderRadius.circular(20),
@@ -366,14 +389,20 @@ class _NotificationScheduleScreenState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(l10n.off,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
-                          Text('90s',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
+                          Text(
+                            l10n.off,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '90s',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -427,12 +456,16 @@ class _NotificationScheduleScreenState
                                 color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.wb_sunny_outlined,
-                                  size: 20),
+                              child: const Icon(
+                                Icons.wb_sunny_outlined,
+                                size: 20,
+                              ),
                             ),
                             title: Text(
                               l10n.startTime,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             trailing: _TimeChip(
                               label: _formatTime(_startTime),
@@ -462,12 +495,16 @@ class _NotificationScheduleScreenState
                                 color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.nights_stay_outlined,
-                                  size: 20),
+                              child: const Icon(
+                                Icons.nights_stay_outlined,
+                                size: 20,
+                              ),
                             ),
                             title: Text(
                               l10n.endTime,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             trailing: _TimeChip(
                               label: _formatTime(_endTime),
@@ -500,7 +537,9 @@ class _NotificationScheduleScreenState
                               children: [
                                 Text(
                                   l10n.notifPerDay,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   _frequencyLabel(_frequency, l10n),
@@ -533,14 +572,20 @@ class _NotificationScheduleScreenState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('1',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
-                          Text('10',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
+                          Text(
+                            '1',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '10',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -550,7 +595,10 @@ class _NotificationScheduleScreenState
                 const SizedBox(height: 24),
 
                 // ── Active days ───────────────────────────────────────────────
-                _SectionHeader(label: l10n.activeDaysSectionTitle, theme: theme),
+                _SectionHeader(
+                  label: l10n.activeDaysSectionTitle,
+                  theme: theme,
+                ),
                 const SizedBox(height: 12),
 
                 _SettingCard(
@@ -566,26 +614,28 @@ class _NotificationScheduleScreenState
                             isSelected: _activeDays.length == 7,
                             colorScheme: colorScheme,
                             onTap: () => setState(
-                                () => _activeDays = {1, 2, 3, 4, 5, 6, 7}),
+                              () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                            ),
                           ),
                           const SizedBox(width: 8),
                           _PresetChip(
                             label: l10n.presetWeekdays,
-                            isSelected: _activeDays.length == 5 &&
+                            isSelected:
+                                _activeDays.length == 5 &&
                                 _activeDays.every((d) => d <= 5),
                             colorScheme: colorScheme,
-                            onTap: () => setState(
-                                () => _activeDays = {1, 2, 3, 4, 5}),
+                            onTap: () =>
+                                setState(() => _activeDays = {1, 2, 3, 4, 5}),
                           ),
                           const SizedBox(width: 8),
                           _PresetChip(
                             label: l10n.presetWeekends,
-                            isSelected: _activeDays.length == 2 &&
+                            isSelected:
+                                _activeDays.length == 2 &&
                                 _activeDays.contains(6) &&
                                 _activeDays.contains(7),
                             colorScheme: colorScheme,
-                            onTap: () =>
-                                setState(() => _activeDays = {6, 7}),
+                            onTap: () => setState(() => _activeDays = {6, 7}),
                           ),
                         ],
                       ),
@@ -661,14 +711,17 @@ class _NotificationScheduleScreenState
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(Icons.check_rounded),
             label: Text(_isSaving ? l10n.saving : l10n.saveSchedule),
             style: FilledButton.styleFrom(
               minimumSize: const Size(double.infinity, 52),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),
@@ -710,10 +763,7 @@ class _ChallengeFireDisplay extends StatelessWidget {
     // Single fire: big but dimmed when off, normal when relaxed
     return Opacity(
       opacity: isOff ? 0.45 : 0.7,
-      child: Text(
-        '🔥',
-        style: TextStyle(fontSize: isOff ? 28 : 36),
-      ),
+      child: Text('🔥', style: TextStyle(fontSize: isOff ? 28 : 36)),
     );
   }
 }
@@ -750,8 +800,7 @@ class _SettingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
       ),
       child: child,
     );
@@ -759,10 +808,11 @@ class _SettingCard extends StatelessWidget {
 }
 
 class _TimeChip extends StatelessWidget {
-  const _TimeChip(
-      {required this.label,
-      required this.colorScheme,
-      required this.onTap});
+  const _TimeChip({
+    required this.label,
+    required this.colorScheme,
+    required this.onTap,
+  });
   final String label;
   final ColorScheme colorScheme;
   final VoidCallback onTap;
@@ -808,8 +858,7 @@ class _PresetChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primary
@@ -853,12 +902,17 @@ class _MiuiHelpCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.tertiaryContainer.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.tertiary.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: colorScheme.tertiary.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.battery_saver_rounded,
-                color: colorScheme.tertiary, size: 22),
+            Icon(
+              Icons.battery_saver_rounded,
+              color: colorScheme.tertiary,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -877,14 +931,19 @@ class _MiuiHelpCard extends StatelessWidget {
                     AppLocalizations.of(context)!.miuiFixSubtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onTertiaryContainer.withValues(alpha: 0.75),
+                      color: colorScheme.onTertiaryContainer.withValues(
+                        alpha: 0.75,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colorScheme.tertiary, size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.tertiary,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -913,8 +972,11 @@ class _BatteryOptimizationCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.battery_alert_rounded,
-                color: colorScheme.error, size: 22),
+            Icon(
+              Icons.battery_alert_rounded,
+              color: colorScheme.error,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -933,14 +995,19 @@ class _BatteryOptimizationCard extends StatelessWidget {
                     AppLocalizations.of(context)!.batteryOptSubtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                      color: colorScheme.onErrorContainer.withValues(
+                        alpha: 0.8,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colorScheme.error, size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.error,
+              size: 20,
+            ),
           ],
         ),
       ),

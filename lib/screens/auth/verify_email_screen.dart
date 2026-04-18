@@ -18,7 +18,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) => _checkEmailVerified());
+    _timer = Timer.periodic(
+      const Duration(seconds: 3),
+      (timer) => _checkEmailVerified(),
+    );
   }
 
   @override
@@ -42,9 +45,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     try {
       await FirebaseAuth.instance.currentUser?.sendEmailVerification();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.verificationResent)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.verificationResent)));
       }
     } finally {
       if (mounted) setState(() => _isResending = false);
@@ -63,7 +66,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32.0,
+                  vertical: 40.0,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -71,7 +77,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     const SizedBox(height: 32),
                     Text(
                       l10n.verifyEmailTitle,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -88,8 +97,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     ElevatedButton(
                       onPressed: _isResending ? null : _resendEmail,
                       child: _isResending
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(l10n.resendEmail),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(l10n.resendEmail),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
@@ -126,7 +139,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           );
                         } catch (e) {
                           if (navigator.canPop()) navigator.pop();
-                          messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
+                          messenger.showSnackBar(
+                            SnackBar(content: Text(l10n.errorUnexpected)),
+                          );
                         }
                       },
                       child: Text(l10n.cancelSignOut),
@@ -134,7 +149,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     const SizedBox(height: 32),
                     Text(
                       l10n.waitingVerification,
-                      style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.blue),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.blue,
+                      ),
                     ),
                   ],
                 ),

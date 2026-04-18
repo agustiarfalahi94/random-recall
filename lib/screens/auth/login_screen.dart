@@ -42,10 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                '🧠',
-                style: TextStyle(fontSize: 80),
-              ),
+              const Text('🧠', style: TextStyle(fontSize: 80)),
               const SizedBox(height: 24),
               Text(
                 l10n.loginWelcomeTitle,
@@ -77,7 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const EmailAuthScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const EmailAuthScreen(),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.email_outlined),

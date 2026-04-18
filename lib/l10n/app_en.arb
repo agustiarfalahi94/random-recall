@@ -46,6 +46,8 @@
   "loginSubtitle": "Sign in to sync your progress and unlock premium features.",
   "continueWithGoogle": "Continue with Google",
   "continueWithEmail": "Continue with Email",
+  "providerGoogle": "Google",
+  "providerEmail": "Email",
   "loginFailedSnack": "Login failed: {error}",
   "@loginFailedSnack": {
     "placeholders": { "error": { "type": "String" } }

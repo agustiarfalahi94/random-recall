@@ -34,7 +34,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
 
     try {
-      await AuthService.instance.sendPasswordResetEmail(_emailController.text.trim());
+      await AuthService.instance.sendPasswordResetEmail(
+        _emailController.text.trim(),
+      );
       if (mounted) setState(() => _isSuccess = true);
     } on FirebaseAuthException catch (e) {
       setState(() => _errorMessage = e.message);
@@ -57,11 +59,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('🔐', style: TextStyle(fontSize: 48), textAlign: TextAlign.center),
+              const Text(
+                '🔐',
+                style: TextStyle(fontSize: 48),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               Text(
                 l10n.forgotPasswordTitle,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -81,7 +90,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   child: Text(
                     l10n.resetSuccess,
-                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w600,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -101,14 +113,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   labelText: l10n.emailAddress,
                   prefixIcon: const Icon(Icons.email_outlined),
                 ),
-                validator: (value) => (value == null || value.isEmpty) ? l10n.enterYourEmail : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? l10n.enterYourEmail
+                    : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading || _isSuccess ? null : _submit,
                 child: _isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(l10n.sendResetLink),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(l10n.sendResetLink),
               ),
             ],
           ),
