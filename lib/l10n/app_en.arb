@@ -1,0 +1,489 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Random Recall",
+
+  "back": "Back",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "send": "Send",
+  "all": "All",
+  "off": "Off",
+  "language": "Language",
+  "languageSubtitle": "English / Bahasa Indonesia",
+
+  "dayMon": "Mon",
+  "dayTue": "Tue",
+  "dayWed": "Wed",
+  "dayThu": "Thu",
+  "dayFri": "Fri",
+  "daySat": "Sat",
+  "daySun": "Sun",
+
+  "presetDaily": "Daily",
+  "presetWeekdays": "Weekdays",
+  "presetWeekends": "Weekends",
+  "everyDay": "Every day",
+  "weekdaysOnly": "Weekdays only",
+  "weekendsOnly": "Weekends only",
+  "mustChooseDay": "You must choose at least 1!",
+  "startTime": "Start time",
+  "endTime": "End time",
+  "selectStartTime": "Select start time",
+  "selectEndTime": "Select end time",
+
+  "fieldQuestion": "Question",
+  "fieldAnswer": "Answer",
+  "fieldCategory": "Category",
+  "selectCategory": "Select a category",
+
+  "loginWelcomeTitle": "Welcome to Random Recall",
+  "loginSubtitle": "Sign in to sync your progress and unlock premium features.",
+  "continueWithGoogle": "Continue with Google",
+  "continueWithEmail": "Continue with Email",
+  "loginFailedSnack": "Login failed: {error}",
+  "@loginFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "emailAuthTitle": "Login",
+  "welcomeBack": "Welcome back!",
+  "emailAddress": "Email Address",
+  "password": "Password",
+  "loginButton": "Login",
+  "needAccount": "Need an account? Sign up",
+  "forgotPasswordLink": "Forgot Password?",
+  "validationEnterEmail": "Please enter your email",
+  "validationValidEmail": "Please enter a valid email address",
+  "validationEnterPassword": "Please enter your password",
+  "validationPasswordLength": "Password must be at least 6 characters",
+  "errorNoAccount": "No account found for this email.",
+  "errorWrongPassword": "Incorrect email or password.",
+  "errorInvalidEmail": "The email address is not valid.",
+  "errorAccountDisabled": "This account has been disabled.",
+  "errorTooManyRequests": "Too many attempts. Please try again later.",
+  "errorAuthFailed": "Authentication failed. Please try again.",
+  "errorUnexpected": "An unexpected error occurred. Please try again.",
+
+  "signupTitle": "Create Account",
+  "joinTitle": "Join Random Recall",
+  "signUpButton": "Sign Up",
+  "alreadyHaveAccount": "Already have an account? Login",
+  "accountCreatedSnack": "Account created! Please check your email inbox to verify.",
+  "validationEnterNewPassword": "Please enter a password",
+  "errorEmailInUse": "This email address is already in use. Please log in or use a different email.",
+  "errorWeakPassword": "The password is too weak. Please use at least 6 characters.",
+  "errorSignUpFailed": "Sign up failed. Please try again.",
+
+  "resetPasswordTitle": "Reset Password",
+  "forgotPasswordTitle": "Forgot Password?",
+  "forgotPasswordSubtitle": "Enter your email and we will send you a reset link if the account exists.",
+  "sendResetLink": "Send Reset Link",
+  "resetSuccess": "Success! Check your email inbox for the reset link.",
+  "enterYourEmail": "Enter your email",
+  "resetError": "An error occurred. Please try again.",
+
+  "verifyEmailTitle": "Verify your email",
+  "verifyEmailSent": "We sent a verification link to {email}.\nPlease check your inbox and click the link to continue.",
+  "@verifyEmailSent": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "iHaveClickedLink": "I have clicked the link",
+  "resendEmail": "Resend Email",
+  "cancelSignOut": "Cancel / Sign Out",
+  "waitingVerification": "Waiting for verification...",
+  "verificationResent": "Verification email resent!",
+  "signingOut": "Signing out...",
+
+  "onboardingTagline": "Quiz yourself on anything.\nRandomly.",
+  "onboardingDescription": "Add your own questions, pick when you want to be reminded, and let Random Recall keep your knowledge sharp — one random quiz at a time.",
+  "featureRandom": "Random",
+  "featureNotifications": "Notifications",
+  "featureAnalytics": "Analytics",
+  "getStarted": "Get Started →",
+
+  "firstQuestionTitle": "Your first question",
+  "firstQuestionSubtitle": "Add something you want to remember. You can add more later.",
+  "questionHintOnboarding": "e.g. What is the capital of France?",
+  "answerHintOnboarding": "e.g. Paris",
+  "validationEnterQuestion": "Please enter a question",
+  "validationQuestionTooShort": "Question is too short",
+  "validationEnterAnswer": "Please enter an answer",
+  "validationSelectCategory": "Please select a category",
+
+  "notifSetupTitle": "When should we\nremind you?",
+  "notifSetupSubtitle": "You can change these settings later in the app.",
+  "timingSection": "Timing",
+  "anytimeOption": "Anytime (fully random)",
+  "anytimeSubtitle": "Notifications at any hour of the day",
+  "setTimeRange": "Set time range",
+  "setTimeRangeSubtitle": "Only notify within your chosen window",
+  "timeWindowSection": "Time window",
+  "activeDaysSection": "Active days",
+  "howManyTimesPerDay": "How many times per day?",
+  "timePerDay": "time per day",
+  "timesPerDay": "times per day",
+  "notificationsOff": "Notifications are turned off",
+  "notifPermDeniedMsg": "Tap the button below to open Notification Settings. Enable \"Random Recall\" there, then come back here.",
+  "notifNeedsPermission": "Random Recall needs notifications to remind you. Please allow notifications when prompted.",
+  "checkingPermission": "Checking notification permission…",
+  "openNotifSettings": "Open Notification Settings ↗",
+  "tryAgain": "Try again",
+  "startRecalling": "Start Recalling! 🚀",
+  "skipForNow": "Skip for now — enable notifications later",
+  "endTimeMustBeAfter": "End time must be at least 1 hour after start time.",
+
+  "notifRequired": "Notifications Required",
+  "notifRequiredDesc": "Random Recall works by sending you random quiz notifications throughout the day. Without this permission, the app cannot function.",
+  "enableNotifications": "Enable Notifications",
+  "exitApp": "Exit App",
+  "enableInSettings": "Please enable notifications in system settings to continue.",
+
+  "settingsTitle": "Settings",
+  "settingsTooltip": "Settings",
+  "syncDataNow": "Sync Data Now",
+  "syncSubtitle": "Pull latest changes from the cloud",
+  "sendTestNotification": "Send test notification",
+  "sendTestSubtitle": "Verify notifications work on your device",
+  "notifScheduleMenuItem": "Notification schedule",
+  "notifScheduleMenuSubtitle": "Set timing, days & frequency",
+  "manageCategoriesMenuItem": "Manage categories",
+  "manageCategoriesMenuSubtitle": "Add or remove question categories",
+  "sendFeedbackMenuItem": "Send feedback",
+  "sendFeedbackMenuSubtitle": "Tell us what could be better",
+  "faqMenuItem": "FAQ",
+  "faqMenuSubtitle": "Common questions & expected behaviour",
+  "signOut": "Sign Out",
+  "syncCompleteSnack": "Sync complete! Data is up to date. 🔄",
+  "syncFailedSnack": "Sync failed: {error}",
+  "@syncFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "testNotifSentSnack": "Test notification sent! Check your notification bar 🔔",
+  "testNotifFailedSnack": "Failed to send: {error}",
+  "@testNotifFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "signOutFailedSnack": "Sign out failed: {error}",
+  "@signOutFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "signingOutSafely": "Signing out safely...",
+  "backingUpData": "Backing up your data",
+  "sendFeedbackDialogTitle": "Send feedback",
+  "feedbackHint": "What could be better?",
+  "feedbackSentSnack": "Feedback sent — thank you!",
+  "feedbackFailedSnack": "Could not send feedback. Try again later.",
+
+  "navHome": "Home",
+  "navQuestions": "Questions",
+  "navAnalytics": "Analytics",
+  "readyToRecall": "Ready to recall?",
+  "homeSubtitle": "Tap below to practice anytime,\nor wait for a random notification.",
+  "practiceNow": "Practice Now",
+  "timerChallengeTitle": "Timer Challenge",
+  "bonusCountLabel": "+{count} bonus",
+  "@bonusCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "timerChallengeActiveDesc": "Timer set to {seconds}s — challenge active! Answer daily for 7 days to earn +1 question slot.",
+  "@timerChallengeActiveDesc": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "timerChallengeRelaxedDesc": "Timer is {seconds}s — too relaxed for challenge. Set to {threshold}s or less to earn streaks.",
+  "@timerChallengeRelaxedDesc": {
+    "placeholders": {
+      "seconds": { "type": "int" },
+      "threshold": { "type": "int" }
+    }
+  },
+  "timerChallengeOffDesc": "Set a timer ({threshold}s or less) to unlock the challenge. Answer daily for 7 days → earn +1 question slot!",
+  "@timerChallengeOffDesc": {
+    "placeholders": { "threshold": { "type": "int" } }
+  },
+  "setATimer": "Set a Timer",
+  "streakStart": "Start today! Answer with the timer on.",
+  "streakProgress": "{streak} day{plural} streak — {days} more to earn a bonus!",
+  "@streakProgress": {
+    "placeholders": {
+      "streak": { "type": "int" },
+      "plural": { "type": "String" },
+      "days": { "type": "int" }
+    }
+  },
+
+  "notifScheduleTitle": "Notification Schedule",
+  "challengeModeName": "Challenge\nMode",
+  "challengeModeOff": "Set timer to {threshold}s or less → answer daily → hit a 7-day streak → earn +1 free question slot!",
+  "@challengeModeOff": {
+    "placeholders": { "threshold": { "type": "int" } }
+  },
+  "challengeModeActive": "🔥 Challenge active! Keep going daily for 7 days to earn +1 free question slot!",
+  "challengeModeRelaxed": "Timer is too relaxed. Lower it to {threshold}s or less to activate the challenge.",
+  "@challengeModeRelaxed": {
+    "placeholders": { "threshold": { "type": "int" } }
+  },
+  "responseTimer": "Response timer",
+  "noTimeLimit": "No time limit — relaxed mode",
+  "autoMarksWrong": "Auto-marks wrong if time runs out",
+  "sendAtAnyTime": "Send at any time",
+  "sendAtAnyTimeSubtitle": "Notifications arrive throughout the day",
+  "frequencySection": "Frequency",
+  "activeDaysSectionTitle": "Active Days",
+  "notifPerDay": "Notifications per day",
+  "saveSchedule": "Save Schedule",
+  "saving": "Saving...",
+  "timeWindowError": "The time window must span at least 1 hour.",
+  "selectActiveDayError": "Please select at least one active day.",
+  "scheduleSavedSnack": "Notification schedule saved! 🔔",
+  "saveFailedSnack": "Failed to save: {error}",
+  "@saveFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "batteryOptOn": "Battery optimisation is ON",
+  "batteryOptSubtitle": "Tap to allow Random Recall to always run (standard Android setting) — fixes missed notifications",
+  "miuiFixTitle": "MIUI / HyperOS: fix notification delivery",
+  "miuiFixSubtitle": "Tap to see Autostart & battery settings guide",
+  "freqOnce": "Once a day — nice and easy",
+  "freqRecommended": "{count} times a day — recommended",
+  "@freqRecommended": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "freqActive": "{count} times a day — pretty active",
+  "@freqActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "freqIntense": "{count} times a day — intense!",
+  "@freqIntense": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "freqMax": "10 times a day — maximum",
+
+  "editQuestionTitle": "Edit Question",
+  "newQuestionTitle": "New Question",
+  "questionHintAdd": "e.g. When cooking fried rice, what to add last?",
+  "answerHintAdd": "e.g. Soy sauce and sesame oil",
+  "saveChanges": "Save Changes",
+  "addQuestion": "Add Question",
+  "validationEnterQuestion2": "Please enter a question",
+  "validationQuestionTooShort2": "Question is too short",
+  "validationEnterAnswer2": "Please enter an answer",
+  "validationSelectCategory2": "Please select a category",
+
+  "questionLimitReached": "{count} / {limit} — Limit reached",
+  "@questionLimitReached": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "limit": { "type": "int" }
+    }
+  },
+  "questionCount": "{count} / {limit} questions",
+  "@questionCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "limit": { "type": "int" }
+    }
+  },
+  "upgradeButton": "Upgrade ›",
+  "noQuestionsInCategory": "No questions in this category",
+  "noQuestionsYet": "No questions yet",
+  "tapToAddFirst": "Tap the button below to add your first question.",
+  "deleteQuestionTitle": "Delete question?",
+  "newQuestionMenuTitle": "New Question",
+  "newQuestionMenuSubtitle": "Add something you want to remember",
+  "newCategoryMenuTitle": "New Category",
+  "newCategoryMenuSubtitle": "Organise questions into a new group",
+
+  "categoriesTitle": "Categories",
+  "freePlanLimitReachedBanner": "Free plan: you've used your 1 custom category slot. Upgrade to Premium for unlimited categories.",
+  "freePlanInfoBanner": "Free plan: you can add 1 custom category. Default categories (General, Work) don't count against this.",
+  "noCategoriesYet": "No custom categories yet",
+  "noCategoriesSubtitle": "General and Work are built-in. Tap the button below to create your own.",
+  "newCategorySheetTitle": "New Category",
+  "iconSectionLabel": "ICON",
+  "nameSectionLabel": "NAME",
+  "categoryNameHint": "e.g. Cooking, Travel, Finance…",
+  "validationCategoryNameEmpty": "Please enter a category name",
+  "validationCategoryNameShort": "Name is too short",
+  "premiumUnlimitedCategories": "Premium — create as many categories as you like!",
+  "freePlanCategoryNote": "Free plan: {count} custom category allowed (General & Work are built-in). Upgrade to Premium for unlimited.",
+  "@freePlanCategoryNote": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "hasQuestions": "Has questions",
+  "emptySafeToDelete": "Empty — safe to delete",
+  "cannotDeleteTooltip": "Cannot delete — has questions",
+  "deleteTooltip": "Delete",
+  "deleteCategoryTitle": "Delete category?",
+  "deleteCategoryContent": "Delete \"{icon} {name}\"? This cannot be undone.",
+  "@deleteCategoryContent": {
+    "placeholders": {
+      "icon": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "categoryHasQuestionsError": "\"{name}\" has questions. Delete or move them first.",
+  "@categoryHasQuestionsError": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "limitReachedFab": "Limit Reached",
+  "newCategoryFab": "New Category",
+  "saveCategoryFailedSnack": "Failed to save: {error}",
+  "@saveCategoryFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "questionLabel": "QUESTION",
+  "answerLabel": "ANSWER",
+  "revealAnswer": "Reveal Answer",
+  "didYouKnowIt": "Did you know it?",
+  "didntKnowIt": "Didn't know it",
+  "knewIt": "I knew it!",
+  "nextQuestion": "Next Question",
+  "backToHome": "Back to Home",
+  "nextQuestionPrompt": "Next question?",
+  "keepPracticing": "Keep practicing!",
+  "failedToSaveScore": "Failed to save score: {error}",
+  "@failedToSaveScore": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "undoSuccess": "Result undone. You can try again! ↩️",
+  "undoFailed": "Undo failed: {error}",
+  "@undoFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "undoButton": "Undo",
+  "undoOncePerDay": "Undo (only 1 use per day)",
+  "noQuestionsEmptyTitle": "No questions yet",
+  "noQuestionsEmptySubtitle": "Add some questions first from the Questions tab.",
+  "goBack": "Go back",
+  "skipToNext": "Skip to next question",
+
+  "scoreRecordedClosing": "Score recorded! Closing in a moment...",
+  "closingInMoment": "Closing in a moment...",
+  "scoreRecordedKeepPracticing": "Score recorded! Keep practicing",
+  "closeButton": "Close",
+
+  "streakDayTitle": "{streak}-Day Streak!",
+  "@streakDayTitle": {
+    "placeholders": { "streak": { "type": "int" } }
+  },
+  "streakDescription": "You've answered with the timer on for {streak} days straight. You earned +1 bonus question slot! 🎉",
+  "@streakDescription": {
+    "placeholders": { "streak": { "type": "int" } }
+  },
+  "awesome": "Awesome!",
+
+  "analyticsNoData": "No data yet",
+  "analyticsNoDataSubtitle": "Answer some questions first and your stats will appear here.",
+  "analyticsByCategory": "By Category",
+  "analyticsOutstanding": "Outstanding!",
+  "analyticsGoodProgress": "Good progress!",
+  "analyticsKeepGoing": "Keep going!",
+  "analyticsJustStarted": "Just getting started",
+  "analyticsOverallScore": "Overall Score",
+  "analyticsAnswered": "Answered",
+  "analyticsCorrect": "Correct",
+  "analyticsWrong": "Wrong",
+  "analyticsTotal": "Total",
+  "analyticsCorrectLabel": "✅ Correct",
+  "analyticsWrongLabel": "❌ Wrong",
+  "analyticsUnlockTitle": "Unlock Category Analytics",
+  "analyticsUnlockSubtitle": "See exactly which categories you struggle with.\nSubscribe to unlock full analytics.",
+  "analyticsSubscribeButton": "Subscribe to Unlock",
+  "createCategoryButton": "Create Category",
+
+  "upgradeToPremium": "Upgrade to Premium",
+  "premiumUnlockTitle": "Unlock Full Potential",
+  "premiumUnlockSubtitle": "Master your knowledge without limits.",
+  "featureUnlimitedQuestions": "Unlimited Questions",
+  "featureUnlimitedQuestionsSubtitle": "Add as many facts as you need to remember.",
+  "featureUnlimitedCategories": "Unlimited Categories",
+  "featureUnlimitedCategoriesSubtitle": "Organize your learning into specific topics.",
+  "featureUndoMistakes": "Undo Mistakes",
+  "featureUndoMistakesSubtitle": "Correct a wrong answer to keep your streak alive.",
+  "featureAdvancedAnalytics": "Advanced Analytics",
+  "featureAdvancedAnalyticsSubtitle": "Identify your weak spots with per-category scoring.",
+  "featureRealTimeSync": "Real-time Sync",
+  "featureRealTimeSyncSubtitle": "Seamless access across all your Android devices.",
+  "getPremiumButton": "Get Premium — {price}",
+  "@getPremiumButton": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "loadingPlans": "Loading available plans...",
+  "restorePurchase": "Restore Purchase",
+  "cancelAnytime": "Cancel anytime in Google Play Store. Settings > Subscriptions.",
+  "purchaseFailedSnack": "Purchase failed: {error}",
+  "@purchaseFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "premiumActiveMember": "You are a Premium Member!",
+  "premiumActiveDesc": "Thank you for supporting Random Recall. Enjoy all features unlocked.",
+  "premiumGreat": "Great!",
+  "premiumIncludes": "Premium includes:",
+  "premiumPerkUnlimitedQuestions": "✅ Unlimited questions",
+  "premiumPerkAllCategories": "✅ All categories",
+  "premiumPerkFullAnalytics": "✅ Full analytics breakdown",
+  "premiumPerkUndo": "✅ Undo wrong answer (rewarded)",
+  "questionLimitReachedTitle": "Question Limit Reached",
+  "categoryLimitReachedTitle": "Category Limit Reached",
+  "questionLimitReachedDesc": "Free accounts can store up to 20 questions (+ bonus slots from your streak). Upgrade to Premium for unlimited questions.",
+  "categoryLimitReachedDesc": "Free accounts can add questions to up to 2 categories. Upgrade to Premium to use all categories without limits.",
+  "maybeLater": "Maybe later",
+
+  "miuiDialogTitle": "Fix notifications on MIUI / HyperOS",
+  "miuiDialogSubtitle": "Xiaomi phones restrict background apps by default. Two quick changes will ensure your quiz notifications arrive reliably.",
+  "miuiStep1Title": "Enable Background Start",
+  "miuiStep1Desc": "Settings → Apps → Background Start → find Random Recall → turn ON",
+  "miuiStep2Title": "Set Power to No Restrictions",
+  "miuiStep2Desc": "Settings → Apps → Random Recall → Power → No Restrictions",
+  "openBackgroundStartBtn": "Open Background Start Settings",
+  "openAppSettingsBtn": "Open App Settings — Set Power",
+  "doneDismissBtn": "I've done this — close",
+
+  "faqTitle": "FAQ",
+  "faqSectionNotifications": "Notifications",
+  "faqSectionQuestionBank": "Question Bank & Limits",
+  "faqSectionChallengeMode": "Challenge Mode",
+  "faqSectionAccountSync": "Account & Sync",
+  "faqSectionPermissions": "Permissions",
+
+  "faqQ1": "Why do all my notifications arrive at once when I unlock my phone?",
+  "faqA1": "On Xiaomi / MIUI / HyperOS devices, the OS holds scheduled alarms while the screen is off and releases them all together when you unlock. This is Android power management — the app can't override it directly. Whitelisting the app in battery settings (Settings → Battery → No restrictions) reduces the delay significantly.",
+  "faqQ2": "Why does the badge number show fewer than the notifications in my tray?",
+  "faqA2": "The badge counts unique questions pending, not the total number of notifications. If your question bank is small (e.g. 3 questions with frequency set to 6 per day), the same question is scheduled into multiple slots — but you only need to answer it once, so it counts as 1 in the badge.",
+  "faqQ3": "Why do multiple notifications disappear when I answer just one?",
+  "faqA3": "When you answer a question, all pending reminders for that same question are cleared at once. If your question bank is small and the same question appeared in several slots, all those notifications go away together. This is correct — you've answered the question, so the reminders are no longer needed.",
+  "faqQ4": "Why did my badge count drop after I changed my notification schedule?",
+  "faqA4": "Saving new schedule settings triggers a full reschedule. In earlier versions, this could accidentally discard already-fired notifications from the badge count if their internal ID collided with a new future slot. This bug has been fixed — fired-but-unanswered notifications are now preserved through any schedule change.",
+  "faqQ5": "What does \"Send at any time\" mean?",
+  "faqA5": "When enabled, your daily notifications are spread evenly across the full 24-hour day (midnight to 11 PM). When disabled, notifications are spaced within the time window you set (e.g. 9 AM – 6 PM). Use a time window if you only want to be reminded during waking hours.",
+  "faqQ6": "Why aren't my notifications arriving on time?",
+  "faqA6": "Two common causes: (1) Battery optimisation is ON for the app — whitelist it using the prompt in Notification Schedule settings. (2) MIUI / HyperOS holds alarms while the screen is off and fires them all on unlock — see the first question above.",
+  "faqQ7": "How many questions can I add for free?",
+  "faqA7": "The free tier starts with 20 question slots. You can earn additional slots by completing the 7-day Challenge streak (+1 slot per streak). Premium removes the limit entirely.",
+  "faqQ8": "How many custom categories can I create for free?",
+  "faqA8": "Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. Premium gives unlimited categories.",
+  "faqQ9": "What is the daily Undo?",
+  "faqA9": "You can undo your last answer once per calendar day. The limit resets at midnight. This is available on both free and premium accounts.",
+  "faqQ10": "What is Challenge Mode and how does it work?",
+  "faqA10": "Set the response timer to 20 seconds or less in Notification Schedule settings to activate Challenge Mode. Answer at least one notification per day for 7 consecutive days while Challenge Mode is active, and you permanently earn +1 free question slot. The streak resets if you miss a day.",
+  "faqQ11": "Does the timer affect my score if it runs out?",
+  "faqA11": "Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. Set the timer to 0 in settings to disable it and answer at your own pace.",
+  "faqQ12": "Do my questions sync across devices?",
+  "faqA12": "Yes. Your questions, categories, and settings are backed up to your account automatically. Signing in on a new device restores everything. You can also trigger a manual sync via Settings → Sync Data Now.",
+  "faqQ13": "What happens to my data if I sign out?",
+  "faqA13": "Your data is saved to the cloud before sign-out completes. Nothing is deleted locally or remotely. Signing back in restores all your questions and settings.",
+  "faqQ14": "Why does the app ask to disable battery optimisation?",
+  "faqA14": "Android's battery optimisation can kill scheduled alarms for apps running in the background. Whitelisting the app (a standard Android setting) tells the OS to keep its alarms active — this is the single most effective fix for missed or delayed notifications on any Android device.",
+  "faqQ15": "What do I lose if I deny notification permission?",
+  "faqA15": "The app's entire purpose — timed recall prompts — stops working. You won't receive any questions. The permission screen will appear on every app open until permission is granted in your device settings.",
+
+  "onboardingSomethingWentWrong": "Something went wrong: {error}",
+  "@onboardingSomethingWentWrong": {
+    "placeholders": { "error": { "type": "String" } }
+  }
+}

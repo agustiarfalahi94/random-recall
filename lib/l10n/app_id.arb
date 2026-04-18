@@ -1,0 +1,489 @@
+{
+  "@@locale": "id",
+
+  "appTitle": "Random Recall",
+
+  "back": "Kembali",
+  "cancel": "Batal",
+  "save": "Simpan",
+  "delete": "Hapus",
+  "edit": "Edit",
+  "close": "Tutup",
+  "send": "Kirim",
+  "all": "Semua",
+  "off": "Mati",
+  "language": "Bahasa",
+  "languageSubtitle": "English / Bahasa Indonesia",
+
+  "dayMon": "Sen",
+  "dayTue": "Sel",
+  "dayWed": "Rab",
+  "dayThu": "Kam",
+  "dayFri": "Jum",
+  "daySat": "Sab",
+  "daySun": "Min",
+
+  "presetDaily": "Setiap Hari",
+  "presetWeekdays": "Hari Kerja",
+  "presetWeekends": "Akhir Pekan",
+  "everyDay": "Setiap hari",
+  "weekdaysOnly": "Hari kerja saja",
+  "weekendsOnly": "Akhir pekan saja",
+  "mustChooseDay": "Kamu harus pilih minimal 1 hari!",
+  "startTime": "Waktu mulai",
+  "endTime": "Waktu selesai",
+  "selectStartTime": "Pilih waktu mulai",
+  "selectEndTime": "Pilih waktu selesai",
+
+  "fieldQuestion": "Pertanyaan",
+  "fieldAnswer": "Jawaban",
+  "fieldCategory": "Kategori",
+  "selectCategory": "Pilih kategori",
+
+  "loginWelcomeTitle": "Selamat Datang di Random Recall",
+  "loginSubtitle": "Masuk untuk sinkronisasi progres dan membuka fitur premium.",
+  "continueWithGoogle": "Lanjutkan dengan Google",
+  "continueWithEmail": "Lanjutkan dengan Email",
+  "loginFailedSnack": "Login gagal: {error}",
+  "@loginFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "emailAuthTitle": "Masuk",
+  "welcomeBack": "Selamat datang kembali!",
+  "emailAddress": "Alamat Email",
+  "password": "Kata Sandi",
+  "loginButton": "Masuk",
+  "needAccount": "Belum punya akun? Daftar",
+  "forgotPasswordLink": "Lupa Kata Sandi?",
+  "validationEnterEmail": "Masukkan email kamu",
+  "validationValidEmail": "Masukkan alamat email yang valid",
+  "validationEnterPassword": "Masukkan kata sandi kamu",
+  "validationPasswordLength": "Kata sandi minimal 6 karakter",
+  "errorNoAccount": "Tidak ada akun untuk email ini.",
+  "errorWrongPassword": "Email atau kata sandi salah.",
+  "errorInvalidEmail": "Alamat email tidak valid.",
+  "errorAccountDisabled": "Akun ini telah dinonaktifkan.",
+  "errorTooManyRequests": "Terlalu banyak percobaan. Coba lagi nanti.",
+  "errorAuthFailed": "Autentikasi gagal. Coba lagi.",
+  "errorUnexpected": "Terjadi kesalahan tak terduga. Coba lagi.",
+
+  "signupTitle": "Buat Akun",
+  "joinTitle": "Bergabung dengan Random Recall",
+  "signUpButton": "Daftar",
+  "alreadyHaveAccount": "Sudah punya akun? Masuk",
+  "accountCreatedSnack": "Akun berhasil dibuat! Cek inbox email kamu untuk verifikasi.",
+  "validationEnterNewPassword": "Masukkan kata sandi",
+  "errorEmailInUse": "Email ini sudah digunakan. Silakan masuk atau gunakan email lain.",
+  "errorWeakPassword": "Kata sandi terlalu lemah. Gunakan minimal 6 karakter.",
+  "errorSignUpFailed": "Pendaftaran gagal. Coba lagi.",
+
+  "resetPasswordTitle": "Reset Kata Sandi",
+  "forgotPasswordTitle": "Lupa Kata Sandi?",
+  "forgotPasswordSubtitle": "Masukkan email kamu dan kami akan mengirim link reset jika akun tersebut ada.",
+  "sendResetLink": "Kirim Link Reset",
+  "resetSuccess": "Berhasil! Cek inbox email kamu untuk link reset.",
+  "enterYourEmail": "Masukkan email kamu",
+  "resetError": "Terjadi kesalahan. Coba lagi.",
+
+  "verifyEmailTitle": "Verifikasi email kamu",
+  "verifyEmailSent": "Kami telah mengirim link verifikasi ke {email}.\nCek inbox kamu dan klik link tersebut untuk melanjutkan.",
+  "@verifyEmailSent": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "iHaveClickedLink": "Saya sudah klik link-nya",
+  "resendEmail": "Kirim Ulang Email",
+  "cancelSignOut": "Batal / Keluar",
+  "waitingVerification": "Menunggu verifikasi...",
+  "verificationResent": "Email verifikasi telah dikirim ulang!",
+  "signingOut": "Keluar...",
+
+  "onboardingTagline": "Tes dirimu tentang apa saja.\nSecara acak.",
+  "onboardingDescription": "Tambahkan pertanyaanmu sendiri, pilih kapan ingin diingatkan, dan biarkan Random Recall menjaga pengetahuanmu tetap tajam — satu kuis acak setiap saat.",
+  "featureRandom": "Acak",
+  "featureNotifications": "Notifikasi",
+  "featureAnalytics": "Analitik",
+  "getStarted": "Mulai →",
+
+  "firstQuestionTitle": "Pertanyaan pertamamu",
+  "firstQuestionSubtitle": "Tambahkan sesuatu yang ingin kamu ingat. Kamu bisa tambah lebih banyak nanti.",
+  "questionHintOnboarding": "contoh: Apa ibukota Indonesia?",
+  "answerHintOnboarding": "contoh: Jakarta",
+  "validationEnterQuestion": "Masukkan pertanyaan",
+  "validationQuestionTooShort": "Pertanyaan terlalu pendek",
+  "validationEnterAnswer": "Masukkan jawaban",
+  "validationSelectCategory": "Pilih kategori",
+
+  "notifSetupTitle": "Kapan kami harus\nmengingatkanmu?",
+  "notifSetupSubtitle": "Kamu bisa ubah pengaturan ini nanti di aplikasi.",
+  "timingSection": "Waktu",
+  "anytimeOption": "Kapan saja (sepenuhnya acak)",
+  "anytimeSubtitle": "Notifikasi bisa datang di jam berapa saja",
+  "setTimeRange": "Atur rentang waktu",
+  "setTimeRangeSubtitle": "Hanya beri notifikasi dalam jendela waktu yang kamu pilih",
+  "timeWindowSection": "Jendela waktu",
+  "activeDaysSection": "Hari aktif",
+  "howManyTimesPerDay": "Berapa kali per hari?",
+  "timePerDay": "kali per hari",
+  "timesPerDay": "kali per hari",
+  "notificationsOff": "Notifikasi dimatikan",
+  "notifPermDeniedMsg": "Ketuk tombol di bawah untuk membuka Pengaturan Notifikasi. Aktifkan \"Random Recall\" di sana, lalu kembali ke sini.",
+  "notifNeedsPermission": "Random Recall butuh notifikasi untuk mengingatkanmu. Izinkan notifikasi saat diminta.",
+  "checkingPermission": "Memeriksa izin notifikasi…",
+  "openNotifSettings": "Buka Pengaturan Notifikasi ↗",
+  "tryAgain": "Coba lagi",
+  "startRecalling": "Mulai Mengingat! 🚀",
+  "skipForNow": "Lewati dulu — aktifkan notifikasi nanti",
+  "endTimeMustBeAfter": "Waktu selesai harus minimal 1 jam setelah waktu mulai.",
+
+  "notifRequired": "Notifikasi Diperlukan",
+  "notifRequiredDesc": "Random Recall bekerja dengan mengirimkan notifikasi kuis acak sepanjang hari. Tanpa izin ini, aplikasi tidak bisa berfungsi.",
+  "enableNotifications": "Aktifkan Notifikasi",
+  "exitApp": "Keluar Aplikasi",
+  "enableInSettings": "Aktifkan notifikasi di pengaturan sistem untuk melanjutkan.",
+
+  "settingsTitle": "Pengaturan",
+  "settingsTooltip": "Pengaturan",
+  "syncDataNow": "Sinkronisasi Data Sekarang",
+  "syncSubtitle": "Tarik perubahan terbaru dari cloud",
+  "sendTestNotification": "Kirim notifikasi uji coba",
+  "sendTestSubtitle": "Verifikasi notifikasi berfungsi di perangkatmu",
+  "notifScheduleMenuItem": "Jadwal notifikasi",
+  "notifScheduleMenuSubtitle": "Atur waktu, hari & frekuensi",
+  "manageCategoriesMenuItem": "Kelola kategori",
+  "manageCategoriesMenuSubtitle": "Tambah atau hapus kategori pertanyaan",
+  "sendFeedbackMenuItem": "Kirim masukan",
+  "sendFeedbackMenuSubtitle": "Beri tahu kami apa yang bisa lebih baik",
+  "faqMenuItem": "FAQ",
+  "faqMenuSubtitle": "Pertanyaan umum & perilaku yang diharapkan",
+  "signOut": "Keluar",
+  "syncCompleteSnack": "Sinkronisasi selesai! Data sudah terbaru. 🔄",
+  "syncFailedSnack": "Sinkronisasi gagal: {error}",
+  "@syncFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "testNotifSentSnack": "Notifikasi uji coba terkirim! Cek bilah notifikasimu 🔔",
+  "testNotifFailedSnack": "Gagal mengirim: {error}",
+  "@testNotifFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "signOutFailedSnack": "Keluar gagal: {error}",
+  "@signOutFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "signingOutSafely": "Keluar dengan aman...",
+  "backingUpData": "Mencadangkan datamu",
+  "sendFeedbackDialogTitle": "Kirim masukan",
+  "feedbackHint": "Apa yang bisa lebih baik?",
+  "feedbackSentSnack": "Masukan terkirim — terima kasih!",
+  "feedbackFailedSnack": "Tidak dapat mengirim masukan. Coba lagi nanti.",
+
+  "navHome": "Beranda",
+  "navQuestions": "Pertanyaan",
+  "navAnalytics": "Analitik",
+  "readyToRecall": "Siap untuk mengingat?",
+  "homeSubtitle": "Ketuk di bawah untuk berlatih kapan saja,\natau tunggu notifikasi acak.",
+  "practiceNow": "Latihan Sekarang",
+  "timerChallengeTitle": "Tantangan Timer",
+  "bonusCountLabel": "+{count} bonus",
+  "@bonusCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "timerChallengeActiveDesc": "Timer diatur ke {seconds}d — tantangan aktif! Jawab setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan.",
+  "@timerChallengeActiveDesc": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "timerChallengeRelaxedDesc": "Timer {seconds}d — terlalu santai untuk tantangan. Atur ke {threshold}d atau kurang untuk mendapatkan streak.",
+  "@timerChallengeRelaxedDesc": {
+    "placeholders": {
+      "seconds": { "type": "int" },
+      "threshold": { "type": "int" }
+    }
+  },
+  "timerChallengeOffDesc": "Atur timer ({threshold}d atau kurang) untuk membuka tantangan. Jawab setiap hari selama 7 hari → dapatkan +1 slot pertanyaan!",
+  "@timerChallengeOffDesc": {
+    "placeholders": { "threshold": { "type": "int" } }
+  },
+  "setATimer": "Atur Timer",
+  "streakStart": "Mulai hari ini! Jawab dengan timer aktif.",
+  "streakProgress": "Streak {streak} hari{plural} — {days} lagi untuk mendapatkan bonus!",
+  "@streakProgress": {
+    "placeholders": {
+      "streak": { "type": "int" },
+      "plural": { "type": "String" },
+      "days": { "type": "int" }
+    }
+  },
+
+  "notifScheduleTitle": "Jadwal Notifikasi",
+  "challengeModeName": "Mode\nTantangan",
+  "challengeModeOff": "Atur timer ke {threshold}d atau kurang → jawab setiap hari → capai streak 7 hari → dapatkan +1 slot pertanyaan gratis!",
+  "@challengeModeOff": {
+    "placeholders": { "threshold": { "type": "int" } }
+  },
+  "challengeModeActive": "🔥 Tantangan aktif! Terus lakukan setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan gratis!",
+  "challengeModeRelaxed": "Timer terlalu santai. Turunkan ke {threshold}d atau kurang untuk mengaktifkan tantangan.",
+  "@challengeModeRelaxed": {
+    "placeholders": { "threshold": { "type": "int" } }
+  },
+  "responseTimer": "Timer respons",
+  "noTimeLimit": "Tanpa batas waktu — mode santai",
+  "autoMarksWrong": "Otomatis salah jika waktu habis",
+  "sendAtAnyTime": "Kirim kapan saja",
+  "sendAtAnyTimeSubtitle": "Notifikasi tiba sepanjang hari",
+  "frequencySection": "Frekuensi",
+  "activeDaysSectionTitle": "Hari Aktif",
+  "notifPerDay": "Notifikasi per hari",
+  "saveSchedule": "Simpan Jadwal",
+  "saving": "Menyimpan...",
+  "timeWindowError": "Jendela waktu harus minimal 1 jam.",
+  "selectActiveDayError": "Pilih minimal satu hari aktif.",
+  "scheduleSavedSnack": "Jadwal notifikasi tersimpan! 🔔",
+  "saveFailedSnack": "Gagal menyimpan: {error}",
+  "@saveFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "batteryOptOn": "Optimasi baterai AKTIF",
+  "batteryOptSubtitle": "Ketuk untuk mengizinkan Random Recall selalu berjalan (pengaturan Android standar) — memperbaiki notifikasi yang terlewat",
+  "miuiFixTitle": "MIUI / HyperOS: perbaiki pengiriman notifikasi",
+  "miuiFixSubtitle": "Ketuk untuk melihat panduan pengaturan Autostart & baterai",
+  "freqOnce": "Sekali sehari — santai saja",
+  "freqRecommended": "{count} kali sehari — direkomendasikan",
+  "@freqRecommended": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "freqActive": "{count} kali sehari — cukup aktif",
+  "@freqActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "freqIntense": "{count} kali sehari — intensif!",
+  "@freqIntense": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "freqMax": "10 kali sehari — maksimum",
+
+  "editQuestionTitle": "Edit Pertanyaan",
+  "newQuestionTitle": "Pertanyaan Baru",
+  "questionHintAdd": "contoh: Saat memasak nasi goreng, apa yang ditambahkan terakhir?",
+  "answerHintAdd": "contoh: Kecap dan minyak wijen",
+  "saveChanges": "Simpan Perubahan",
+  "addQuestion": "Tambah Pertanyaan",
+  "validationEnterQuestion2": "Masukkan pertanyaan",
+  "validationQuestionTooShort2": "Pertanyaan terlalu pendek",
+  "validationEnterAnswer2": "Masukkan jawaban",
+  "validationSelectCategory2": "Pilih kategori",
+
+  "questionLimitReached": "{count} / {limit} — Batas tercapai",
+  "@questionLimitReached": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "limit": { "type": "int" }
+    }
+  },
+  "questionCount": "{count} / {limit} pertanyaan",
+  "@questionCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "limit": { "type": "int" }
+    }
+  },
+  "upgradeButton": "Upgrade ›",
+  "noQuestionsInCategory": "Tidak ada pertanyaan di kategori ini",
+  "noQuestionsYet": "Belum ada pertanyaan",
+  "tapToAddFirst": "Ketuk tombol di bawah untuk menambahkan pertanyaan pertamamu.",
+  "deleteQuestionTitle": "Hapus pertanyaan?",
+  "newQuestionMenuTitle": "Pertanyaan Baru",
+  "newQuestionMenuSubtitle": "Tambahkan sesuatu yang ingin kamu ingat",
+  "newCategoryMenuTitle": "Kategori Baru",
+  "newCategoryMenuSubtitle": "Kelompokkan pertanyaan ke dalam grup baru",
+
+  "categoriesTitle": "Kategori",
+  "freePlanLimitReachedBanner": "Paket gratis: kamu sudah menggunakan 1 slot kategori kustom. Upgrade ke Premium untuk kategori tak terbatas.",
+  "freePlanInfoBanner": "Paket gratis: kamu bisa menambahkan 1 kategori kustom. Kategori bawaan (General, Work) tidak dihitung.",
+  "noCategoriesYet": "Belum ada kategori kustom",
+  "noCategoriesSubtitle": "General dan Work sudah tersedia. Ketuk tombol di bawah untuk membuat kategorimu sendiri.",
+  "newCategorySheetTitle": "Kategori Baru",
+  "iconSectionLabel": "IKON",
+  "nameSectionLabel": "NAMA",
+  "categoryNameHint": "contoh: Memasak, Perjalanan, Keuangan…",
+  "validationCategoryNameEmpty": "Masukkan nama kategori",
+  "validationCategoryNameShort": "Nama terlalu pendek",
+  "premiumUnlimitedCategories": "Premium — buat sebanyak kategori yang kamu mau!",
+  "freePlanCategoryNote": "Paket gratis: {count} kategori kustom diizinkan (General & Work sudah tersedia). Upgrade ke Premium untuk tak terbatas.",
+  "@freePlanCategoryNote": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "hasQuestions": "Ada pertanyaan",
+  "emptySafeToDelete": "Kosong — aman dihapus",
+  "cannotDeleteTooltip": "Tidak bisa dihapus — ada pertanyaan",
+  "deleteTooltip": "Hapus",
+  "deleteCategoryTitle": "Hapus kategori?",
+  "deleteCategoryContent": "Hapus \"{icon} {name}\"? Ini tidak bisa dibatalkan.",
+  "@deleteCategoryContent": {
+    "placeholders": {
+      "icon": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "categoryHasQuestionsError": "\"{name}\" ada pertanyaannya. Hapus atau pindahkan dulu.",
+  "@categoryHasQuestionsError": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "limitReachedFab": "Batas Tercapai",
+  "newCategoryFab": "Kategori Baru",
+  "saveCategoryFailedSnack": "Gagal menyimpan: {error}",
+  "@saveCategoryFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "questionLabel": "PERTANYAAN",
+  "answerLabel": "JAWABAN",
+  "revealAnswer": "Tampilkan Jawaban",
+  "didYouKnowIt": "Apakah kamu tahu?",
+  "didntKnowIt": "Tidak tahu",
+  "knewIt": "Saya tahu!",
+  "nextQuestion": "Pertanyaan Berikutnya",
+  "backToHome": "Kembali ke Beranda",
+  "nextQuestionPrompt": "Pertanyaan berikutnya?",
+  "keepPracticing": "Terus berlatih!",
+  "failedToSaveScore": "Gagal menyimpan skor: {error}",
+  "@failedToSaveScore": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "undoSuccess": "Hasil dibatalkan. Kamu bisa coba lagi! ↩️",
+  "undoFailed": "Batal gagal: {error}",
+  "@undoFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "undoButton": "Batal",
+  "undoOncePerDay": "Batal (hanya 1 kali per hari)",
+  "noQuestionsEmptyTitle": "Belum ada pertanyaan",
+  "noQuestionsEmptySubtitle": "Tambahkan pertanyaan dulu dari tab Pertanyaan.",
+  "goBack": "Kembali",
+  "skipToNext": "Lewati ke pertanyaan berikutnya",
+
+  "scoreRecordedClosing": "Skor tersimpan! Menutup sebentar lagi...",
+  "closingInMoment": "Menutup sebentar lagi...",
+  "scoreRecordedKeepPracticing": "Skor tersimpan! Terus berlatih",
+  "closeButton": "Tutup",
+
+  "streakDayTitle": "Streak {streak} Hari!",
+  "@streakDayTitle": {
+    "placeholders": { "streak": { "type": "int" } }
+  },
+  "streakDescription": "Kamu sudah menjawab dengan timer aktif selama {streak} hari berturut-turut. Kamu mendapatkan +1 slot pertanyaan bonus! 🎉",
+  "@streakDescription": {
+    "placeholders": { "streak": { "type": "int" } }
+  },
+  "awesome": "Luar biasa!",
+
+  "analyticsNoData": "Belum ada data",
+  "analyticsNoDataSubtitle": "Jawab beberapa pertanyaan dulu dan statistikmu akan muncul di sini.",
+  "analyticsByCategory": "Per Kategori",
+  "analyticsOutstanding": "Luar biasa!",
+  "analyticsGoodProgress": "Kemajuan bagus!",
+  "analyticsKeepGoing": "Terus semangat!",
+  "analyticsJustStarted": "Baru mulai",
+  "analyticsOverallScore": "Skor Keseluruhan",
+  "analyticsAnswered": "Dijawab",
+  "analyticsCorrect": "Benar",
+  "analyticsWrong": "Salah",
+  "analyticsTotal": "Total",
+  "analyticsCorrectLabel": "✅ Benar",
+  "analyticsWrongLabel": "❌ Salah",
+  "analyticsUnlockTitle": "Buka Analitik Kategori",
+  "analyticsUnlockSubtitle": "Lihat persis kategori mana yang masih perlu dipelajari.\nBerlangganan untuk membuka analitik lengkap.",
+  "analyticsSubscribeButton": "Berlangganan untuk Membuka",
+  "createCategoryButton": "Buat Kategori",
+
+  "upgradeToPremium": "Upgrade ke Premium",
+  "premiumUnlockTitle": "Buka Potensi Penuh",
+  "premiumUnlockSubtitle": "Kuasai pengetahuanmu tanpa batas.",
+  "featureUnlimitedQuestions": "Pertanyaan Tak Terbatas",
+  "featureUnlimitedQuestionsSubtitle": "Tambahkan sebanyak fakta yang perlu kamu ingat.",
+  "featureUnlimitedCategories": "Kategori Tak Terbatas",
+  "featureUnlimitedCategoriesSubtitle": "Organisir belajarmu ke dalam topik spesifik.",
+  "featureUndoMistakes": "Batalkan Kesalahan",
+  "featureUndoMistakesSubtitle": "Koreksi jawaban salah untuk menjaga streak tetap hidup.",
+  "featureAdvancedAnalytics": "Analitik Lanjutan",
+  "featureAdvancedAnalyticsSubtitle": "Temukan titik lemahmu dengan skor per kategori.",
+  "featureRealTimeSync": "Sinkronisasi Real-time",
+  "featureRealTimeSyncSubtitle": "Akses mulus di semua perangkat Android kamu.",
+  "getPremiumButton": "Dapatkan Premium — {price}",
+  "@getPremiumButton": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "loadingPlans": "Memuat paket yang tersedia...",
+  "restorePurchase": "Pulihkan Pembelian",
+  "cancelAnytime": "Batalkan kapan saja di Google Play Store. Pengaturan > Langganan.",
+  "purchaseFailedSnack": "Pembelian gagal: {error}",
+  "@purchaseFailedSnack": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "premiumActiveMember": "Kamu adalah Anggota Premium!",
+  "premiumActiveDesc": "Terima kasih telah mendukung Random Recall. Nikmati semua fitur yang telah dibuka.",
+  "premiumGreat": "Bagus!",
+  "premiumIncludes": "Premium mencakup:",
+  "premiumPerkUnlimitedQuestions": "✅ Pertanyaan tak terbatas",
+  "premiumPerkAllCategories": "✅ Semua kategori",
+  "premiumPerkFullAnalytics": "✅ Analitik lengkap",
+  "premiumPerkUndo": "✅ Batalkan jawaban salah (hadiah)",
+  "questionLimitReachedTitle": "Batas Pertanyaan Tercapai",
+  "categoryLimitReachedTitle": "Batas Kategori Tercapai",
+  "questionLimitReachedDesc": "Akun gratis dapat menyimpan hingga 20 pertanyaan (+ slot bonus dari streakmu). Upgrade ke Premium untuk pertanyaan tak terbatas.",
+  "categoryLimitReachedDesc": "Akun gratis dapat menambahkan pertanyaan ke maksimal 2 kategori. Upgrade ke Premium untuk menggunakan semua kategori tanpa batas.",
+  "maybeLater": "Nanti saja",
+
+  "miuiDialogTitle": "Perbaiki notifikasi di MIUI / HyperOS",
+  "miuiDialogSubtitle": "HP Xiaomi membatasi aplikasi latar belakang secara default. Dua perubahan cepat ini akan memastikan notifikasi kuismu tiba dengan andal.",
+  "miuiStep1Title": "Aktifkan Background Start",
+  "miuiStep1Desc": "Pengaturan → Aplikasi → Background Start → cari Random Recall → aktifkan",
+  "miuiStep2Title": "Atur Daya ke Tanpa Pembatasan",
+  "miuiStep2Desc": "Pengaturan → Aplikasi → Random Recall → Daya → Tanpa Pembatasan",
+  "openBackgroundStartBtn": "Buka Pengaturan Background Start",
+  "openAppSettingsBtn": "Buka Pengaturan Aplikasi — Atur Daya",
+  "doneDismissBtn": "Sudah selesai — tutup",
+
+  "faqTitle": "FAQ",
+  "faqSectionNotifications": "Notifikasi",
+  "faqSectionQuestionBank": "Bank Pertanyaan & Batas",
+  "faqSectionChallengeMode": "Mode Tantangan",
+  "faqSectionAccountSync": "Akun & Sinkronisasi",
+  "faqSectionPermissions": "Izin",
+
+  "faqQ1": "Mengapa semua notifikasi saya tiba sekaligus saat membuka kunci ponsel?",
+  "faqA1": "Di perangkat Xiaomi / MIUI / HyperOS, OS menahan alarm terjadwal saat layar mati dan melepaskan semuanya bersama saat kamu membuka kunci. Ini adalah manajemen daya Android — aplikasi tidak bisa menggantinya secara langsung. Memasukkan aplikasi ke dalam daftar putih di pengaturan baterai (Pengaturan → Baterai → Tanpa pembatasan) mengurangi penundaan secara signifikan.",
+  "faqQ2": "Mengapa angka badge menampilkan lebih sedikit dari notifikasi di tray saya?",
+  "faqA2": "Badge menghitung pertanyaan unik yang tertunda, bukan jumlah total notifikasi. Jika bank pertanyaanmu kecil (misalnya 3 pertanyaan dengan frekuensi 6 per hari), pertanyaan yang sama dijadwalkan ke beberapa slot — tapi kamu hanya perlu menjawabnya sekali, jadi dihitung 1 di badge.",
+  "faqQ3": "Mengapa beberapa notifikasi menghilang saat saya menjawab hanya satu?",
+  "faqA3": "Saat kamu menjawab pertanyaan, semua pengingat yang tertunda untuk pertanyaan yang sama dihapus sekaligus. Jika bank pertanyaanmu kecil dan pertanyaan yang sama muncul di beberapa slot, semua notifikasi itu hilang bersama. Ini benar — kamu sudah menjawab pertanyaannya, jadi pengingat tidak lagi diperlukan.",
+  "faqQ4": "Mengapa jumlah badge saya berkurang setelah mengubah jadwal notifikasi?",
+  "faqA4": "Menyimpan pengaturan jadwal baru memicu penjadwalan ulang penuh. Di versi sebelumnya, ini bisa secara tidak sengaja membuang notifikasi yang sudah terpicu dari jumlah badge jika ID internalnya bertabrakan dengan slot baru. Bug ini sudah diperbaiki — notifikasi yang terpicu-tapi-belum-dijawab sekarang dipertahankan melalui perubahan jadwal apa pun.",
+  "faqQ5": "Apa maksud \"Kirim kapan saja\"?",
+  "faqA5": "Saat diaktifkan, notifikasi harianmu tersebar merata sepanjang 24 jam penuh (tengah malam hingga 11 malam). Saat dinonaktifkan, notifikasi diberi jarak dalam jendela waktu yang kamu atur (misalnya 9 pagi – 6 sore). Gunakan jendela waktu jika kamu hanya ingin diingatkan selama jam aktif.",
+  "faqQ6": "Mengapa notifikasi saya tidak tiba tepat waktu?",
+  "faqA6": "Dua penyebab umum: (1) Optimasi baterai AKTIF untuk aplikasi — masukkan ke daftar putih menggunakan prompt di pengaturan Jadwal Notifikasi. (2) MIUI / HyperOS menahan alarm saat layar mati dan menyalakannya semua saat dibuka — lihat pertanyaan pertama di atas.",
+  "faqQ7": "Berapa banyak pertanyaan yang bisa saya tambahkan secara gratis?",
+  "faqA7": "Paket gratis mulai dengan 20 slot pertanyaan. Kamu bisa mendapatkan slot tambahan dengan menyelesaikan streak Tantangan 7 hari (+1 slot per streak). Premium menghapus batas sepenuhnya.",
+  "faqQ8": "Berapa banyak kategori kustom yang bisa saya buat secara gratis?",
+  "faqA8": "Akun gratis dapat membuat 1 kategori kustom. Kategori bawaan \"General\" dan \"Work\" tidak dihitung terhadap batas ini. Premium memberikan kategori tak terbatas.",
+  "faqQ9": "Apa itu Batal harian?",
+  "faqA9": "Kamu bisa membatalkan jawaban terakhirmu sekali per hari kalender. Batas ini direset tengah malam. Ini tersedia untuk akun gratis dan premium.",
+  "faqQ10": "Apa itu Mode Tantangan dan bagaimana cara kerjanya?",
+  "faqA10": "Atur timer respons ke 20 detik atau kurang di pengaturan Jadwal Notifikasi untuk mengaktifkan Mode Tantangan. Jawab minimal satu notifikasi per hari selama 7 hari berturut-turut saat Mode Tantangan aktif, dan kamu akan mendapatkan +1 slot pertanyaan gratis secara permanen. Streak reset jika kamu melewatkan satu hari.",
+  "faqQ11": "Apakah timer mempengaruhi skor saya jika habis?",
+  "faqA11": "Ya — jika hitungan mundur mencapai nol sebelum kamu menjawab, pertanyaan secara otomatis ditandai salah. Atur timer ke 0 di pengaturan untuk menonaktifkannya dan menjawab sesuai kecepatan kamu.",
+  "faqQ12": "Apakah pertanyaan saya tersinkronisasi di berbagai perangkat?",
+  "faqA12": "Ya. Pertanyaan, kategori, dan pengaturanmu dicadangkan ke akunmu secara otomatis. Masuk di perangkat baru memulihkan semuanya. Kamu juga bisa memicu sinkronisasi manual melalui Pengaturan → Sinkronisasi Data Sekarang.",
+  "faqQ13": "Apa yang terjadi pada data saya jika saya keluar?",
+  "faqA13": "Datamu disimpan ke cloud sebelum proses keluar selesai. Tidak ada yang dihapus secara lokal maupun jarak jauh. Masuk kembali memulihkan semua pertanyaan dan pengaturanmu.",
+  "faqQ14": "Mengapa aplikasi meminta untuk menonaktifkan optimasi baterai?",
+  "faqA14": "Optimasi baterai Android dapat mematikan alarm terjadwal untuk aplikasi yang berjalan di latar belakang. Memasukkan aplikasi ke daftar putih (pengaturan Android standar) memberi tahu OS untuk menjaga alarmnya tetap aktif — ini adalah perbaikan paling efektif untuk notifikasi yang terlewat atau terlambat di perangkat Android mana pun.",
+  "faqQ15": "Apa yang saya kehilangan jika saya menolak izin notifikasi?",
+  "faqA15": "Tujuan utama aplikasi — pengingat recall berwaktu — berhenti bekerja. Kamu tidak akan menerima pertanyaan apa pun. Layar izin akan muncul setiap kali aplikasi dibuka sampai izin diberikan di pengaturan perangkatmu.",
+
+  "onboardingSomethingWentWrong": "Ada yang salah: {error}",
+  "@onboardingSomethingWentWrong": {
+    "placeholders": { "error": { "type": "String" } }
+  }
+}

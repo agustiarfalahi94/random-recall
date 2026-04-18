@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key, required this.onNext});
@@ -38,13 +39,12 @@ class _WelcomePageState extends State<WelcomePage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final size = MediaQuery.sizeOf(context);
 
     return SafeArea(
-      // Animations wrap the scroll view so they don't interfere with scroll
-      // layout constraints — SlideTransition can cause overflow inside scrollable.
       child: FadeTransition(
         opacity: _fadeAnim,
         child: SlideTransition(
@@ -75,7 +75,7 @@ class _WelcomePageState extends State<WelcomePage>
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  'Random Recall',
+                  l10n.appTitle,
                   style: theme.textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: colorScheme.onSurface,
@@ -85,7 +85,7 @@ class _WelcomePageState extends State<WelcomePage>
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Quiz yourself on anything.\nRandomly.',
+                  l10n.onboardingTagline,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -104,8 +104,7 @@ class _WelcomePageState extends State<WelcomePage>
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'Add your own questions, pick when you want to be reminded, '
-                  'and let Random Recall keep your knowledge sharp — one random quiz at a time.',
+                  l10n.onboardingDescription,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     height: 1.6,
@@ -118,15 +117,15 @@ class _WelcomePageState extends State<WelcomePage>
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _FeatureChip(icon: '⚡', label: 'Random', colorScheme: colorScheme),
-                    _FeatureChip(icon: '🔔', label: 'Notifications', colorScheme: colorScheme),
-                    _FeatureChip(icon: '📊', label: 'Analytics', colorScheme: colorScheme),
+                    _FeatureChip(icon: '⚡', label: l10n.featureRandom, colorScheme: colorScheme),
+                    _FeatureChip(icon: '🔔', label: l10n.featureNotifications, colorScheme: colorScheme),
+                    _FeatureChip(icon: '📊', label: l10n.featureAnalytics, colorScheme: colorScheme),
                   ],
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: widget.onNext,
-                  child: const Text('Get Started →'),
+                  child: Text(l10n.getStarted),
                 ),
                 const SizedBox(height: 40),
               ],
@@ -134,7 +133,7 @@ class _WelcomePageState extends State<WelcomePage>
           ),
         ),
       ),
-    ); // SafeArea
+    );
   }
 }
 

@@ -8,6 +8,7 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -87,7 +88,7 @@ Future<void> main() async {
         'phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv',
       )
         ..host = 'https://us.i.posthog.com'
-        ..flushAt = 1       // flush after every single event (good for low-volume apps)
+        ..flushAt = 5       // batch up to 5 events per network request
         ..flushInterval = const Duration(seconds: 10) // also flush every 10 s
         ..debug = kDebugMode; // log PostHog events to console in debug builds
       await Posthog().setup(postHogConfig);
@@ -219,60 +220,68 @@ class _RandomRecallAppState extends State<RandomRecallApp> with WidgetsBindingOb
       providers: [
         ChangeNotifierProvider(create: (_) => AppProvider()),
       ],
-      child: MaterialApp(
-        title: 'Random Recall',
-        debugShowCheckedModeBanner: false,
-        navigatorKey: navigatorKey,
-        navigatorObservers: [SentryNavigatorObserver()],
-        theme: _buildTheme(Brightness.light),
-        darkTheme: _buildTheme(Brightness.dark),
-        themeMode: ThemeMode.system,
-        home: _isChecking
-            ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-            : !_hasPermission
-                ? const PermissionRequiredScreen()
-                : StreamBuilder<User?>(
-                    stream: AuthService.instance.authStateChanges,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Scaffold(
-                          body: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final user = snapshot.data;
-                      if (user == null) return const LoginScreen();
+      child: Builder(
+        builder: (ctx) {
+          final locale = ctx.select<AppProvider, Locale?>((p) => p.locale);
+          return MaterialApp(
+            title: 'Random Recall',
+            debugShowCheckedModeBanner: false,
+            navigatorKey: navigatorKey,
+            navigatorObservers: [SentryNavigatorObserver()],
+            locale: locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: _buildTheme(Brightness.light),
+            darkTheme: _buildTheme(Brightness.dark),
+            themeMode: ThemeMode.system,
+            home: _isChecking
+                ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+                : !_hasPermission
+                    ? const PermissionRequiredScreen()
+                    : StreamBuilder<User?>(
+                        stream: AuthService.instance.authStateChanges,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Scaffold(
+                              body: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          final user = snapshot.data;
+                          if (user == null) return const LoginScreen();
 
-                      // ROBUST GATE: Check if user is Google or Anonymous
-                      final isGoogle = user.providerData.any((p) => p.providerId == 'google.com');
-                      final isAnonymous = user.isAnonymous;
-                      
-                      // If NOT Google and NOT Anonymous, it MUST be an Email user.
-                      // They are ONLY verified if emailVerified is strictly true.
-                      final bool isVerified = isGoogle || isAnonymous || user.emailVerified;
+                          // ROBUST GATE: Check if user is Google or Anonymous
+                          final isGoogle = user.providerData.any((p) => p.providerId == 'google.com');
+                          final isAnonymous = user.isAnonymous;
 
-                      if (!isVerified) {
-                        return const VerifyEmailScreen();
-                      }
+                          // If NOT Google and NOT Anonymous, it MUST be an Email user.
+                          // They are ONLY verified if emailVerified is strictly true.
+                          final bool isVerified = isGoogle || isAnonymous || user.emailVerified;
 
-                      return const _HomeGate();
-                    },
-                  ),
-        // Named routes for notification tap navigation
-        onGenerateRoute: (settings) {
-          if (settings.name == '/question') {
-            final questionId = settings.arguments as int?;
-            return MaterialPageRoute(
-              builder: (_) => NotificationQuestionScreen(questionId: questionId),
-            );
-          }
-          if (settings.name == '/question_practice') {
-            final questionId = settings.arguments as int?;
-            return MaterialPageRoute(
-              builder: (_) => NotificationQuestionScreen(
-                  questionId: questionId, isPractice: true),
-            );
-          }
-          return null;
+                          if (!isVerified) {
+                            return const VerifyEmailScreen();
+                          }
+
+                          return const _HomeGate();
+                        },
+                      ),
+            // Named routes for notification tap navigation
+            onGenerateRoute: (settings) {
+              if (settings.name == '/question') {
+                final questionId = settings.arguments as int?;
+                return MaterialPageRoute(
+                  builder: (_) => NotificationQuestionScreen(questionId: questionId),
+                );
+              }
+              if (settings.name == '/question_practice') {
+                final questionId = settings.arguments as int?;
+                return MaterialPageRoute(
+                  builder: (_) => NotificationQuestionScreen(
+                      questionId: questionId, isPractice: true),
+                );
+              }
+              return null;
+            },
+          );
         },
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
@@ -221,13 +222,14 @@ class _NotificationQuestionScreenState
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Result undone. You can try again! ↩️')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.undoSuccess)),
       );
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -243,7 +245,7 @@ class _NotificationQuestionScreenState
           Expanded(child: Text(_category!.name, overflow: TextOverflow.ellipsis)),
                 ],
               )
-      : const Text('Random Recall'),
+      : Text(l10n.appTitle),
     leading: IconButton(
       icon: const Icon(Icons.close_rounded),
       onPressed: _close, // Use helper to handle pop vs system pop
@@ -263,6 +265,7 @@ class _NotificationQuestionScreenState
   }
 
   Widget _buildEmptyState(ColorScheme colorScheme, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -272,14 +275,14 @@ class _NotificationQuestionScreenState
             const Text('📭', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
             Text(
-              'No questions yet',
+              l10n.noQuestionsEmptyTitle,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Add some questions first from the Questions tab.',
+              l10n.noQuestionsEmptySubtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -288,7 +291,7 @@ class _NotificationQuestionScreenState
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () => SystemNavigator.pop(),
-              child: const Text('Close'),
+              child: Text(l10n.closeButton),
             ),
           ],
         ),
@@ -323,7 +326,7 @@ class _NotificationQuestionScreenState
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'QUESTION',
+                    l10n.questionLabel,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -352,7 +355,7 @@ class _NotificationQuestionScreenState
             ElevatedButton.icon(
               onPressed: _revealAnswer,
               icon: const Icon(Icons.visibility_rounded),
-              label: const Text('Reveal Answer'),
+              label: Text(l10n.revealAnswer),
             )
           else ...[
             FadeTransition(
@@ -381,7 +384,7 @@ class _NotificationQuestionScreenState
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'ANSWER',
+                          l10n.answerLabel,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -410,7 +413,7 @@ class _NotificationQuestionScreenState
             // ── Grade buttons or result toast ────────────────────────────────
             if (!_graded) ...[
               Text(
-                'Did you know it?',
+                l10n.didYouKnowIt,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurfaceVariant,
@@ -422,7 +425,7 @@ class _NotificationQuestionScreenState
                 children: [
                   Expanded(
                     child: _GradeButton(
-                      label: "Didn't know it",
+                      label: l10n.didntKnowIt,
                       emoji: '❌',
                       color: colorScheme.errorContainer,
                       textColor: colorScheme.onErrorContainer,
@@ -432,7 +435,7 @@ class _NotificationQuestionScreenState
                   const SizedBox(width: 12),
                   Expanded(
                     child: _GradeButton(
-                      label: 'I knew it!',
+                      label: l10n.knewIt,
                       emoji: '✅',
                       color: const Color(0xFFD4EDDA),
                       textColor: const Color(0xFF155724),
@@ -463,9 +466,9 @@ class _NotificationQuestionScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isCorrect 
-                                ? (widget.isPractice ? 'Closing in a moment...' : 'Score recorded! Closing in a moment...')
-                                : (widget.isPractice ? 'Keep practicing!' : 'Score recorded! Keep practicing'),
+                            _isCorrect
+                                ? (widget.isPractice ? l10n.closingInMoment : l10n.scoreRecordedClosing)
+                                : (widget.isPractice ? l10n.keepPracticing : l10n.scoreRecordedKeepPracticing),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -490,7 +493,7 @@ class _NotificationQuestionScreenState
                       child: OutlinedButton.icon(
                         onPressed: _undoGrade,
                         icon: const Icon(Icons.undo_rounded, size: 18),
-                        label: Text(widget.isPractice ? 'Undo' : 'Undo (only 1 use per day)'),
+                        label: Text(widget.isPractice ? l10n.undoButton : l10n.undoOncePerDay),
                       ),
                     ),
                   ],
@@ -513,6 +516,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     return AlertDialog(
@@ -523,7 +527,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
           const Text('🔥', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 12),
           Text(
-            '$streak-Day Streak!',
+            l10n.streakDayTitle(streak: streak),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
             ),
@@ -531,8 +535,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'You\'ve answered with the timer on for $streak days straight. '
-            'You earned +1 bonus question slot! 🎉',
+            l10n.streakDescription(streak: streak),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
@@ -544,7 +547,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
       actions: [
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Awesome!'),
+          child: Text(l10n.awesome),
         ),
       ],
     );

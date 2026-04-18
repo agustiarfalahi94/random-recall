@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
@@ -103,7 +104,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               Row(
                 children: [
                   Text(
-                    'By Category',
+                    AppLocalizations.of(context)!.analyticsByCategory,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -129,6 +130,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildEmptyState(ThemeData theme, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -138,14 +140,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const Text('📊', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
             Text(
-              'No data yet',
+              l10n.analyticsNoData,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Answer some questions first and your stats will appear here.',
+              l10n.analyticsNoDataSubtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.5,
@@ -183,15 +185,16 @@ class _OverallScoreCard extends StatelessWidget {
     return '🌱';
   }
 
-  String get _label {
-    if (percentage >= 80) return 'Outstanding!';
-    if (percentage >= 60) return 'Good progress!';
-    if (percentage >= 40) return 'Keep going!';
-    return 'Just getting started';
+  String _label(AppLocalizations l10n) {
+    if (percentage >= 80) return l10n.analyticsOutstanding;
+    if (percentage >= 60) return l10n.analyticsGoodProgress;
+    if (percentage >= 40) return l10n.analyticsKeepGoing;
+    return l10n.analyticsJustStarted;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -223,7 +226,7 @@ class _OverallScoreCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Overall Score',
+                    l10n.analyticsOverallScore,
                     style: TextStyle(
                       color: colorScheme.onPrimary.withOpacity(0.8),
                       fontSize: 13,
@@ -231,7 +234,7 @@ class _OverallScoreCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    _label,
+                    _label(l10n),
                     style: TextStyle(
                       color: colorScheme.onPrimary,
                       fontSize: 18,
@@ -275,19 +278,19 @@ class _OverallScoreCard extends StatelessWidget {
           Row(
             children: [
               _StatPill(
-                label: 'Answered',
+                label: l10n.analyticsAnswered,
                 value: '$totalAnswered',
                 colorScheme: colorScheme,
               ),
               const SizedBox(width: 10),
               _StatPill(
-                label: 'Correct',
+                label: l10n.analyticsCorrect,
                 value: '$totalCorrect',
                 colorScheme: colorScheme,
               ),
               const SizedBox(width: 10),
               _StatPill(
-                label: 'Wrong',
+                label: l10n.analyticsWrong,
                 value: '${totalAnswered - totalCorrect}',
                 colorScheme: colorScheme,
               ),
@@ -422,22 +425,18 @@ class _CategoryScoreCard extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Stats
-          Row(
-            children: [
-              _MiniStat(
-                  label: 'Total', value: '$total', colorScheme: colorScheme),
-              const SizedBox(width: 16),
-              _MiniStat(
-                  label: '✅ Correct',
-                  value: '$correct',
-                  colorScheme: colorScheme),
-              const SizedBox(width: 16),
-              _MiniStat(
-                  label: '❌ Wrong',
-                  value: '$wrong',
-                  colorScheme: colorScheme),
-            ],
-          ),
+          Builder(builder: (context) {
+            final l10n = AppLocalizations.of(context)!;
+            return Row(
+              children: [
+                _MiniStat(label: l10n.analyticsTotal, value: '$total', colorScheme: colorScheme),
+                const SizedBox(width: 16),
+                _MiniStat(label: l10n.analyticsCorrectLabel, value: '$correct', colorScheme: colorScheme),
+                const SizedBox(width: 16),
+                _MiniStat(label: l10n.analyticsWrongLabel, value: '$wrong', colorScheme: colorScheme),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -500,7 +499,7 @@ class _LockBadge extends StatelessWidget {
               size: 12, color: colorScheme.onTertiaryContainer),
           const SizedBox(width: 4),
           Text(
-            'Premium',
+            AppLocalizations.of(context)!.upgradeToPremium,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -544,7 +543,7 @@ class _LockedCategorySection extends StatelessWidget {
               const Text('🔒', style: TextStyle(fontSize: 32)),
               const SizedBox(height: 12),
               Text(
-                'Unlock Category Analytics',
+                AppLocalizations.of(context)!.analyticsUnlockTitle,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -553,7 +552,7 @@ class _LockedCategorySection extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'See exactly which categories you struggle with.\nSubscribe to unlock full analytics.',
+                AppLocalizations.of(context)!.analyticsUnlockSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.5,
@@ -571,7 +570,7 @@ class _LockedCategorySection extends StatelessWidget {
                       ),
                     );
                   },
-                  child: const Text('Subscribe to Unlock'),
+                  child: Text(AppLocalizations.of(context)!.analyticsSubscribeButton),
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 import 'email_auth_screen.dart';
 
@@ -13,13 +14,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoggingIn = false;
 
   Future<void> _handleGoogleSignIn() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoggingIn = true);
     try {
       await AuthService.instance.signInWithGoogle();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: $e')),
+          SnackBar(content: Text(l10n.loginFailedSnack(error: e.toString()))),
         );
       }
     } finally {
@@ -29,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -45,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Welcome to Random Recall',
+                l10n.loginWelcomeTitle,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -53,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Sign in to sync your progress and unlock premium features.',
+                l10n.loginSubtitle,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -64,8 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const CircularProgressIndicator()
               else ...[
                 _SocialLoginButton(
-                  label: 'Continue with Google',
-                  icon: Icons.login, // Replace with actual Google icon if available
+                  label: l10n.continueWithGoogle,
+                  icon: Icons.login,
                   onPressed: _handleGoogleSignIn,
                   backgroundColor: colorScheme.surfaceContainerHighest,
                   foregroundColor: colorScheme.onSurfaceVariant,
@@ -78,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                   icon: const Icon(Icons.email_outlined),
-                  label: const Text('Continue with Email'),
+                  label: Text(l10n.continueWithEmail),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(

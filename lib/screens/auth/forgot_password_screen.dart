@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -37,7 +39,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } on FirebaseAuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = 'An error occurred. Please try again.');
+      setState(() => _errorMessage = AppLocalizations.of(context)!.resetError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -45,9 +47,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Reset Password')),
+      appBar: AppBar(title: Text(l10n.resetPasswordTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -57,16 +59,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             children: [
               const Text('🔐', style: TextStyle(fontSize: 48), textAlign: TextAlign.center),
               const SizedBox(height: 24),
-              const Text(
-                'Forgot Password?',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Text(
+                l10n.forgotPasswordTitle,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Enter your email and we will send you a reset link if the account exists.',
+              Text(
+                l10n.forgotPasswordSubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 32),
               if (_isSuccess) ...[
@@ -77,9 +79,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.green),
                   ),
-                  child: const Text(
-                    'Success! Check your email inbox for the reset link.',
-                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                  child: Text(
+                    l10n.resetSuccess,
+                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -95,18 +97,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  labelText: l10n.emailAddress,
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
-                validator: (value) => (value == null || value.isEmpty) ? 'Enter your email' : null,
+                validator: (value) => (value == null || value.isEmpty) ? l10n.enterYourEmail : null,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading || _isSuccess ? null : _submit,
-                child: _isLoading 
+                child: _isLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Send Reset Link'),
+                  : Text(l10n.sendResetLink),
               ),
             ],
           ),

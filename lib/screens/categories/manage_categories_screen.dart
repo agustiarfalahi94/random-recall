@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
@@ -69,13 +70,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   }
 
   Future<void> _deleteCategory(Category cat) async {
+    final l10n = AppLocalizations.of(context)!;
     // Can't delete a category that has questions — guard it
     if (_usedCategoryIds.contains(cat.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            '"${cat.name}" has questions. Delete or move them first.',
-          ),
+          content: Text(l10n.categoryHasQuestionsError(name: cat.name)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -85,21 +85,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete category?'),
-        content: Text(
-          'Delete "${cat.icon} ${cat.name}"? This cannot be undone.',
-        ),
+        title: Text(l10n.deleteCategoryTitle),
+        content: Text(l10n.deleteCategoryContent(icon: cat.icon, name: cat.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -112,14 +110,15 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Categories',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          l10n.categoriesTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: _isLoading
@@ -146,10 +145,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                       ),
                       child: Text(
                         atCreationLimit
-                            ? 'Free plan: you\'ve used your 1 custom category slot. '
-                                'Upgrade to Premium for unlimited categories.'
-                            : 'Free plan: you can add 1 custom category. '
-                                'Default categories (General, Work) don\'t count against this.',
+                            ? l10n.freePlanLimitReachedBanner
+                            : l10n.freePlanInfoBanner,
                         style: TextStyle(
                           fontSize: 13,
                           color: atCreationLimit
@@ -175,7 +172,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                                     style: const TextStyle(fontSize: 48)),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No custom categories yet',
+                                  l10n.noCategoriesYet,
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -183,8 +180,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'General and Work are built-in. '
-                                  'Tap the button below to create your own.',
+                                  l10n.noCategoriesSubtitle,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -220,7 +216,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
           return FloatingActionButton.extended(
             onPressed: _openAddSheet,
             icon: Icon(canAdd ? Icons.add_rounded : Icons.lock_rounded),
-            label: Text(canAdd ? 'New Category' : 'Limit Reached'),
+            label: Text(canAdd ? l10n.newCategoryFab : l10n.limitReachedFab),
             backgroundColor: canAdd
                 ? colorScheme.primary
                 : colorScheme.surfaceContainerHigh,
@@ -249,6 +245,7 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
@@ -284,14 +281,14 @@ class _CategoryTile extends StatelessWidget {
                   ),
                   if (hasQuestions)
                     Text(
-                      'Has questions',
+                      l10n.hasQuestions,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.primary,
                       ),
                     )
                   else
                     Text(
-                      'Empty — safe to delete',
+                      l10n.emptySafeToDelete,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -307,7 +304,7 @@ class _CategoryTile extends StatelessWidget {
                     ? colorScheme.onSurface.withOpacity(0.3)
                     : colorScheme.error,
               ),
-              tooltip: hasQuestions ? 'Cannot delete — has questions' : 'Delete',
+              tooltip: hasQuestions ? l10n.cannotDeleteTooltip : l10n.deleteTooltip,
             ),
           ],
         ),
@@ -340,6 +337,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isSaving = true);
     try {
       await DatabaseHelper.instance.insertCategory(
@@ -356,7 +354,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e')),
+        SnackBar(content: Text(l10n.saveCategoryFailedSnack(error: e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -365,6 +363,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -395,7 +394,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
             const SizedBox(height: 20),
 
             Text(
-              'New Category',
+              l10n.newCategorySheetTitle,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -404,7 +403,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
 
             // Icon picker
             Text(
-              'ICON',
+              l10n.iconSectionLabel,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -452,7 +451,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
 
             // Name field
             Text(
-              'NAME',
+              l10n.nameSectionLabel,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -465,14 +464,14 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
               controller: _nameController,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'e.g. Cooking, Travel, Finance…',
+              decoration: InputDecoration(
+                hintText: l10n.categoryNameHint,
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
-                  return 'Please enter a category name';
+                  return l10n.validationCategoryNameEmpty;
                 }
-                if (v.trim().length < 2) return 'Name is too short';
+                if (v.trim().length < 2) return l10n.validationCategoryNameShort;
                 return null;
               },
             ),
@@ -502,10 +501,8 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                       Expanded(
                         child: Text(
                           isPremium
-                              ? 'Premium — create as many categories as you like!'
-                              : 'Free plan: ${PlanService.freeMaxCustomCategories} custom '
-                                  'category allowed (General & Work are built-in). '
-                                  'Upgrade to Premium for unlimited.',
+                              ? l10n.premiumUnlimitedCategories
+                              : l10n.freePlanCategoryNote(count: PlanService.freeMaxCustomCategories),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isPremium
                                 ? colorScheme.primary
@@ -536,7 +533,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : Text('$_selectedIcon  Create Category'),
+                    : Text('$_selectedIcon  ${l10n.createCategoryButton}'),
               ),
             ),
           ],

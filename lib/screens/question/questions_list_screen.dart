@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
@@ -70,10 +71,11 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   }
 
   Future<void> _deleteQuestion(Question question) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete question?'),
+        title: Text(l10n.deleteQuestionTitle),
         content: Text(
           '"${question.question}"',
           maxLines: 2,
@@ -82,14 +84,14 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -158,8 +160,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                   icon: Icons.quiz_outlined,
                   iconColor: colorScheme.primary,
                   iconBg: colorScheme.primaryContainer,
-                  title: 'New Question',
-                  subtitle: 'Add something you want to remember',
+                  title: AppLocalizations.of(ctx)!.newQuestionMenuTitle,
+                  subtitle: AppLocalizations.of(ctx)!.newQuestionMenuSubtitle,
                   onTap: () {
                     Navigator.pop(ctx);
                     _openAddEdit();
@@ -173,8 +175,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                   icon: Icons.label_outline_rounded,
                   iconColor: colorScheme.tertiary,
                   iconBg: colorScheme.tertiaryContainer,
-                  title: 'New Category',
-                  subtitle: 'Organise questions into a new group',
+                  title: AppLocalizations.of(ctx)!.newCategoryMenuTitle,
+                  subtitle: AppLocalizations.of(ctx)!.newCategoryMenuSubtitle,
                   onTap: () async {
                     Navigator.pop(ctx);
                     await Navigator.of(context).push(
@@ -205,6 +207,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -243,8 +246,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         const SizedBox(width: 5),
                         Text(
                           atLimit
-                              ? '$_totalQuestionCount / $_questionLimit — Limit reached'
-                              : '$_totalQuestionCount / $_questionLimit questions',
+                              ? l10n.questionLimitReached(count: _totalQuestionCount, limit: _questionLimit)
+                              : l10n.questionCount(count: _totalQuestionCount, limit: _questionLimit),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: atLimit
                                 ? colorScheme.onErrorContainer
@@ -264,7 +267,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         ),
                       ),
                       child: Text(
-                        'Upgrade ›',
+                        l10n.upgradeButton,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
@@ -288,7 +291,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
-                      label: const Text('All'),
+                      label: Text(l10n.all),
                       selected: _selectedCategoryId == null,
                       showCheckmark: false,
                       onSelected: (_) {
@@ -376,18 +379,19 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   }
 
   Widget _buildEmptyState(ColorScheme colorScheme, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('📝', style: const TextStyle(fontSize: 64)),
+            const Text('📝', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
             Text(
               _selectedCategoryId != null
-                  ? 'No questions in this category'
-                  : 'No questions yet',
+                  ? l10n.noQuestionsInCategory
+                  : l10n.noQuestionsYet,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -395,7 +399,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Tap the button below to add your first question.',
+              l10n.tapToAddFirst,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -582,7 +586,7 @@ class _QuestionCard extends StatelessWidget {
                     IconButton.outlined(
                       onPressed: onEdit,
                       icon: const Icon(Icons.edit_outlined, size: 18),
-                      tooltip: 'Edit',
+                      tooltip: AppLocalizations.of(context)!.edit,
                       style: IconButton.styleFrom(
                         padding: const EdgeInsets.all(6),
                         minimumSize: const Size(32, 32),
@@ -594,7 +598,7 @@ class _QuestionCard extends StatelessWidget {
                       onPressed: onDelete,
                       icon: Icon(Icons.delete_outline_rounded,
                           size: 18, color: colorScheme.error),
-                      tooltip: 'Delete',
+                      tooltip: AppLocalizations.of(context)!.delete,
                       style: IconButton.styleFrom(
                         padding: const EdgeInsets.all(6),
                         minimumSize: const Size(32, 32),

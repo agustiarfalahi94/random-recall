@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../models/category.dart';
@@ -46,7 +47,6 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
 
   Future<void> _loadCategories() async {
     final categories = await DatabaseHelper.instance.getAllCategories();
-    // Pre-select "General" so the user doesn't have to pick manually
     final general = categories.where((c) => c.name == 'General').firstOrNull;
     setState(() {
       _categories = categories;
@@ -67,7 +67,8 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // required by AutomaticKeepAliveClientMixin
+    super.build(context);
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -81,11 +82,10 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
             children: [
               const SizedBox(height: 16),
 
-              // ── Back button ─────────────────────────────────────────────────
               TextButton.icon(
                 onPressed: widget.onBack,
                 icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
-                label: const Text('Back'),
+                label: Text(l10n.back),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   visualDensity: VisualDensity.compact,
@@ -96,7 +96,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
               _StepIndicator(currentStep: 2, totalSteps: 3, colorScheme: colorScheme),
               const SizedBox(height: 28),
               Text(
-                'Your first question',
+                l10n.firstQuestionTitle,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
@@ -104,7 +104,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
               ),
               const SizedBox(height: 8),
               Text(
-                'Add something you want to remember. You can add more later.',
+                l10n.firstQuestionSubtitle,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.5,
@@ -112,40 +112,40 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
               ),
               const SizedBox(height: 36),
 
-              _FieldLabel(label: 'Question', colorScheme: colorScheme),
+              _FieldLabel(label: l10n.fieldQuestion, colorScheme: colorScheme),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _questionController,
                 maxLines: 3,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. What is the capital of France?',
+                decoration: InputDecoration(
+                  hintText: l10n.questionHintOnboarding,
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Please enter a question';
-                  if (value.trim().length < 5) return 'Question is too short';
+                  if (value == null || value.trim().isEmpty) return l10n.validationEnterQuestion;
+                  if (value.trim().length < 5) return l10n.validationQuestionTooShort;
                   return null;
                 },
               ),
               const SizedBox(height: 20),
 
-              _FieldLabel(label: 'Answer', colorScheme: colorScheme),
+              _FieldLabel(label: l10n.fieldAnswer, colorScheme: colorScheme),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _answerController,
                 maxLines: 3,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(hintText: 'e.g. Paris'),
+                decoration: InputDecoration(hintText: l10n.answerHintOnboarding),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Please enter an answer';
+                  if (value == null || value.trim().isEmpty) return l10n.validationEnterAnswer;
                   return null;
                 },
               ),
               const SizedBox(height: 20),
 
-              _FieldLabel(label: 'Category', colorScheme: colorScheme),
+              _FieldLabel(label: l10n.fieldCategory, colorScheme: colorScheme),
               const SizedBox(height: 8),
 
               if (_isLoadingCategories)
@@ -166,7 +166,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
               else
                 DropdownButtonFormField<int>(
                   value: _selectedCategoryId,
-                  decoration: const InputDecoration(hintText: 'Select a category'),
+                  decoration: InputDecoration(hintText: l10n.selectCategory),
                   borderRadius: BorderRadius.circular(12),
                   items: _categories
                       .map((cat) => DropdownMenuItem<int>(
@@ -182,7 +182,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                       .toList(),
                   onChanged: (value) => setState(() => _selectedCategoryId = value),
                   validator: (value) {
-                    if (value == null) return 'Please select a category';
+                    if (value == null) return l10n.validationSelectCategory;
                     return null;
                   },
                 ),

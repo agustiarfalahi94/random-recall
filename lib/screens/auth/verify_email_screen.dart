@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -17,7 +18,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // Periodically check if email is verified
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) => _checkEmailVerified());
   }
 
@@ -32,18 +32,18 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.emailVerified) {
       _timer?.cancel();
-      // This triggers RevenueCat login and Cloud Restore now that we are verified
       await AuthService.instance.initializeUserSession();
     }
   }
 
   Future<void> _resendEmail() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isResending = true);
     try {
       await FirebaseAuth.instance.currentUser?.sendEmailVerification();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification email resent!')),
+          SnackBar(content: Text(l10n.verificationResent)),
         );
       }
     } finally {
@@ -53,8 +53,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = AuthService.instance.currentUser;
-    
+
     return Scaffold(
       body: SafeArea(
         child: LayoutBuilder(
@@ -68,71 +69,72 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   children: [
                     const Text('✉️', style: TextStyle(fontSize: 80)),
                     const SizedBox(height: 32),
-                    const Text(
-                      'Verify your email',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    Text(
+                      l10n.verifyEmailTitle,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'We sent a verification link to ${user?.email}.\nPlease check your inbox and click the link to continue.',
+                      l10n.verifyEmailSent(email: user?.email ?? ''),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.grey, height: 1.5),
                     ),
                     const SizedBox(height: 32),
                     OutlinedButton(
                       onPressed: _checkEmailVerified,
-                      child: const Text('I have clicked the link'),
+                      child: Text(l10n.iHaveClickedLink),
                     ),
                     const SizedBox(height: 48),
                     ElevatedButton(
                       onPressed: _isResending ? null : _resendEmail,
-                      child: _isResending 
+                      child: _isResending
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Resend Email'),
+                        : Text(l10n.resendEmail),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                final messenger = ScaffoldMessenger.of(context);
-                
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const Center(
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text('Signing out...'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
+                      onPressed: () async {
+                        final navigator = Navigator.of(context);
+                        final messenger = ScaffoldMessenger.of(context);
+                        final signingOutText = l10n.signingOut;
 
-                try {
-                  await AuthService.instance.signOut(
-                    onBeforeFinalSignOut: () async {
-                      if (navigator.canPop()) navigator.pop();
-                    },
-                  );
-                } catch (e) {
-                  if (navigator.canPop()) navigator.pop();
-                  messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
-                }
-              },
-                      child: const Text('Cancel / Sign Out'),
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => Center(
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 16),
+                                    Text(signingOutText),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+
+                        try {
+                          await AuthService.instance.signOut(
+                            onBeforeFinalSignOut: () async {
+                              if (navigator.canPop()) navigator.pop();
+                            },
+                          );
+                        } catch (e) {
+                          if (navigator.canPop()) navigator.pop();
+                          messenger.showSnackBar(SnackBar(content: Text('Error: $e')));
+                        }
+                      },
+                      child: Text(l10n.cancelSignOut),
                     ),
                     const SizedBox(height: 32),
-                    const Text(
-                      'Waiting for verification...',
-                      style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.blue),
+                    Text(
+                      l10n.waitingVerification,
+                      style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.blue),
                     ),
                   ],
                 ),

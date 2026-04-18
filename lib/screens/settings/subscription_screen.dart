@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../../core/plan/subscription_service.dart';
 import '../../core/plan/plan_service.dart';
@@ -34,6 +35,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _handleSubscribe(Package package) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
     try {
       await SubscriptionService.instance.purchasePackage(package);
@@ -43,7 +45,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Purchase failed: $e')),
+          SnackBar(content: Text(l10n.purchaseFailedSnack(error: e.toString()))),
         );
       }
     } finally {
@@ -53,11 +55,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Upgrade to Premium')),
+      appBar: AppBar(title: Text(l10n.upgradeToPremium)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _isPremium 
@@ -67,6 +70,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildPaywall(ThemeData theme, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -74,49 +78,49 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const Text('💎', style: TextStyle(fontSize: 64)),
           const SizedBox(height: 16),
           Text(
-            'Unlock Full Potential',
+            l10n.premiumUnlockTitle,
             style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            'Master your knowledge without limits.',
+            l10n.premiumUnlockSubtitle,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 32),
-          
+
           _FeatureTile(
             icon: Icons.all_inclusive_rounded,
-            title: 'Unlimited Questions',
-            subtitle: 'Add as many facts as you need to remember.',
+            title: l10n.featureUnlimitedQuestions,
+            subtitle: l10n.featureUnlimitedQuestionsSubtitle,
             color: Colors.blue,
           ),
           _FeatureTile(
             icon: Icons.category_rounded,
-            title: 'Unlimited Categories',
-            subtitle: 'Organize your learning into specific topics.',
+            title: l10n.featureUnlimitedCategories,
+            subtitle: l10n.featureUnlimitedCategoriesSubtitle,
             color: Colors.purple,
           ),
           _FeatureTile(
             icon: Icons.undo_rounded,
-            title: 'Undo Mistakes',
-            subtitle: 'Correct a wrong answer to keep your streak alive.',
+            title: l10n.featureUndoMistakes,
+            subtitle: l10n.featureUndoMistakesSubtitle,
             color: Colors.redAccent,
           ),
           _FeatureTile(
             icon: Icons.analytics_rounded,
-            title: 'Advanced Analytics',
-            subtitle: 'Identify your weak spots with per-category scoring.',
+            title: l10n.featureAdvancedAnalytics,
+            subtitle: l10n.featureAdvancedAnalyticsSubtitle,
             color: Colors.orange,
           ),
           _FeatureTile(
             icon: Icons.cloud_done_rounded,
-            title: 'Real-time Sync',
-            subtitle: 'Seamless access across all your Android devices.',
+            title: l10n.featureRealTimeSync,
+            subtitle: l10n.featureRealTimeSyncSubtitle,
             color: Colors.green,
           ),
 
           const SizedBox(height: 48),
-          
+
           Container(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -127,22 +131,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: ElevatedButton(
                         onPressed: () => _handleSubscribe(package),
-                        child: Text('Get Premium — ${package.storeProduct.priceString}'),
+                        child: Text(l10n.getPremiumButton(price: package.storeProduct.priceString)),
                       ),
                     ),
                 ] else
-                  const Text('Loading available plans...'),
+                  Text(l10n.loadingPlans),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => SubscriptionService.instance.restorePurchases(),
-                  child: const Text('Restore Purchase'),
+                  child: Text(l10n.restorePurchase),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Cancel anytime in Google Play Store. Settings > Subscriptions.',
+            l10n.cancelAnytime,
             style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
@@ -152,6 +156,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildPremiumActive(ThemeData theme, ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -160,11 +165,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             const Text('🌟', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
-            Text('You are a Premium Member!', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            Text(l10n.premiumActiveMember, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text('Thank you for supporting Random Recall. Enjoy all features unlocked.', textAlign: TextAlign.center),
+            Text(l10n.premiumActiveDesc, textAlign: TextAlign.center),
             const SizedBox(height: 32),
-            OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Great!')),
+            OutlinedButton(onPressed: () => Navigator.pop(context), child: Text(l10n.premiumGreat)),
           ],
         ),
       ),

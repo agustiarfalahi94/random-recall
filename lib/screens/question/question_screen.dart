@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/database/database_helper.dart';
@@ -163,7 +164,7 @@ class _QuestionScreenState extends State<QuestionScreen>
           isCorrect: isCorrect,
           fromNotification: false,
         ).ignore();
-        
+
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 && _timerSeconds <= StreakService.challengeThreshold) {
           final result = await StreakService.recordActivity();
@@ -174,8 +175,9 @@ class _QuestionScreenState extends State<QuestionScreen>
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save score: $e')),
+          SnackBar(content: Text(l10n.failedToSaveScore(error: e.toString()))),
         );
       }
     }
@@ -208,14 +210,16 @@ class _QuestionScreenState extends State<QuestionScreen>
       });
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Result undone. You can try again! ↩️')),
+          SnackBar(content: Text(l10n.undoSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Undo failed: $e')),
+          SnackBar(content: Text(l10n.undoFailed(error: e.toString()))),
         );
       }
     }
@@ -236,6 +240,7 @@ class _QuestionScreenState extends State<QuestionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -251,7 +256,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                   Text(_category!.name),
                 ],
               )
-            : const Text('Random Recall'),
+            : Text(l10n.appTitle),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -262,7 +267,7 @@ class _QuestionScreenState extends State<QuestionScreen>
           // Next question button
           IconButton(
             icon: const Icon(Icons.skip_next_rounded),
-            tooltip: 'Skip to next question',
+            tooltip: l10n.skipToNext,
             onPressed: _isLoading ? null : _nextQuestion,
           ),
         ],
@@ -276,23 +281,24 @@ class _QuestionScreenState extends State<QuestionScreen>
   }
 
   Widget _buildEmptyState(ColorScheme colorScheme, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('📭', style: const TextStyle(fontSize: 64)),
+            const Text('📭', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
             Text(
-              'No questions yet',
+              l10n.noQuestionsEmptyTitle,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Add some questions first from the Questions tab.',
+              l10n.noQuestionsEmptySubtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -301,7 +307,7 @@ class _QuestionScreenState extends State<QuestionScreen>
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go back'),
+              child: Text(l10n.goBack),
             ),
           ],
         ),
@@ -340,7 +346,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'QUESTION',
+                        l10n.questionLabel,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -371,7 +377,7 @@ class _QuestionScreenState extends State<QuestionScreen>
             ElevatedButton.icon(
               onPressed: _revealAnswer,
               icon: const Icon(Icons.visibility_rounded),
-              label: const Text('Reveal Answer'),
+              label: Text(l10n.revealAnswer),
             )
           else ...[
             // Answer card with fade-in animation
@@ -404,7 +410,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'ANSWER',
+                              l10n.answerLabel,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -435,7 +441,7 @@ class _QuestionScreenState extends State<QuestionScreen>
             // ── Grade buttons or result ──────────────────────────────────
             if (!_graded) ...[
               Text(
-                'Did you know it?',
+                l10n.didYouKnowIt,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurfaceVariant,
@@ -448,7 +454,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                   // ❌ Didn't know it
                   Expanded(
                     child: _GradeButton(
-                      label: "Didn't know it",
+                      label: l10n.didntKnowIt,
                       emoji: '❌',
                       color: colorScheme.errorContainer,
                       textColor: colorScheme.onErrorContainer,
@@ -459,7 +465,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                   // ✅ Knew it
                   Expanded(
                     child: _GradeButton(
-                      label: 'I knew it!',
+                      label: l10n.knewIt,
                       emoji: '✅',
                       color: const Color(0xFFD4EDDA),
                       textColor: const Color(0xFF155724),
@@ -490,7 +496,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isCorrect ? 'Next question?' : 'Keep practicing!',
+                            _isCorrect ? l10n.nextQuestionPrompt : l10n.keepPracticing,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -515,7 +521,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                       child: OutlinedButton.icon(
                         onPressed: _undoGrade,
                         icon: const Icon(Icons.undo_rounded, size: 18),
-                        label: Text(widget.isPractice ? 'Undo' : 'Undo (only 1 use per day)'),
+                        label: Text(widget.isPractice ? l10n.undoButton : l10n.undoOncePerDay),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -525,7 +531,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                     child: ElevatedButton.icon(
                       onPressed: _nextQuestion,
                       icon: const Icon(Icons.arrow_forward_rounded),
-                      label: const Text('Next Question'),
+                      label: Text(l10n.nextQuestion),
                     ),
                   ),
                 ],
@@ -536,7 +542,7 @@ class _QuestionScreenState extends State<QuestionScreen>
               // Back to home
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Back to Home'),
+                child: Text(l10n.backToHome),
               ),
             ],
           ],
@@ -556,6 +562,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     return AlertDialog(
@@ -566,7 +573,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
           const Text('🔥', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 12),
           Text(
-            '$streak-Day Streak!',
+            l10n.streakDayTitle(streak: streak),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
             ),
@@ -574,8 +581,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'You\'ve answered with the timer on for $streak days straight. '
-            'You earned +1 bonus question slot! 🎉',
+            l10n.streakDescription(streak: streak),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
@@ -587,7 +593,7 @@ class _StreakMilestoneDialog extends StatelessWidget {
       actions: [
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Awesome!'),
+          child: Text(l10n.awesome),
         ),
       ],
     );
