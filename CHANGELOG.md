@@ -5,6 +5,28 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [Unreleased]
+
+### Changed
+- **BREAKING:** Replaced multi-device real-time sync with single active device model
+  - Only one device per user can be logged in at a time
+  - Users on multiple devices will be silently logged out on next app open
+  - Cloud Firestore now acts as backup-only, not real-time sync
+  - Eliminates data loss bugs from destructive reconciliation
+  - Simplified codebase by removing ~150 lines of complex sync logic
+
+### Removed
+- `SyncService.startRealtimeSync()` method
+- `SyncService._applyRemoteChanges()` method
+- Firestore snapshot listeners for real-time category/question/score updates
+- Auto-sync debounce timer (replaced with manual backup on logout/update)
+
+### Fixed
+- Fixes issue #7: Deleted questions no longer restored on sync
+- Fixes issue #8: Data loss when clearing app data and logging in again
+
+---
+
 ## [0.7.0] — 2026-04-08
 
 ### Added
