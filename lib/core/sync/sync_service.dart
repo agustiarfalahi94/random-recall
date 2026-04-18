@@ -5,12 +5,8 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
-import '../../models/category.dart';
-import '../../models/question.dart';
-import '../../models/score_record.dart';
 import '../auth/auth_service.dart';
 import '../database/database_helper.dart';
-import '../notifications/notification_service.dart';
 
 /// Service responsible for synchronizing local SQLite data with Cloud Firestore.
 class SyncService {
