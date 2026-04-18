@@ -664,6 +664,10 @@ class NotificationService {
       // DND bypass is handled by the channel's audioAttributesUsage=alarm.
     );
 
+    // TODO(i18n): Notification text is currently hardcoded in English because the
+    // notification service is a background context without access to AppLocalizations.
+    // To fix: pass localized strings as parameters from the scheduling point, or
+    // store them in SharedPreferences keyed by the current locale.
     await _plugin.zonedSchedule(
       id,
       isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠',
@@ -706,6 +710,7 @@ class NotificationService {
     );
 
     // Use show() for absolute immediate delivery.
+    // TODO(i18n): Notification text is currently hardcoded in English (see note in scheduleNotification).
     await _plugin.show(
       9999,
       'Test Notification 🧪',

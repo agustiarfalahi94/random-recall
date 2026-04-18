@@ -533,7 +533,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
         title: Text(l10n.language),
         children: [
           RadioListTile<String>(
-            title: const Text('English'),
+            title: Text(l10n.languageEnglish),
             value: 'en',
             groupValue: currentLocale,
             onChanged: (v) {
@@ -542,7 +542,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             },
           ),
           RadioListTile<String>(
-            title: const Text('Bahasa Indonesia'),
+            title: Text(l10n.languageIndonesian),
             value: 'id',
             groupValue: currentLocale,
             onChanged: (v) {
