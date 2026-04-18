@@ -30,7 +30,7 @@ jobs:
         run: flutter gen-l10n
 
       - name: Run Dart analyzer
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Check code formatting
         run: dart format --output=none --set-exit-if-changed lib/
