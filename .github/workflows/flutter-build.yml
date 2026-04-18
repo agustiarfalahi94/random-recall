@@ -101,21 +101,21 @@ jobs:
       # STORE BUILD ARTIFACTS - For manual testing & future Play Store
       # ────────────────────────────────────────────────────────────
       - name: Upload APK (debug) as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: random-recall-debug.apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30
 
       - name: Upload APK (release) as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: random-recall-release.apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
       - name: Upload App Bundle as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: random-recall-release.aab
           path: build/app/outputs/bundle/release/app-release.aab
