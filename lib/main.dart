@@ -426,6 +426,43 @@ class _HomeGateState extends State<_HomeGate> {
     }
   }
 
+  /// Check if this device is still the active device.
+  /// If another device has logged in, silently log out.
+  Future<void> _checkActiveDevice() async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localDeviceId = prefs.getString('device_id');
+
+      if (localDeviceId == null) {
+        // Device ID wasn't generated yet (shouldn't happen, but be safe)
+        return;
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!userDoc.exists) return;
+
+      final remoteDeviceId = userDoc['last_active_device_id'] as String?;
+
+      if (remoteDeviceId != null && remoteDeviceId != localDeviceId) {
+        // Another device is now active. Silent logout.
+        debugPrint('HomeGate: Another device logged in. Signing out.');
+        if (mounted) {
+          await AuthService.instance.signOut();
+        }
+      }
+    } catch (e) {
+      debugPrint('HomeGate: Error checking active device: $e');
+      // Don't fail the init flow if the check errors
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isChecking) {
