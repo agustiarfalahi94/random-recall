@@ -446,6 +446,11 @@
   "openAppSettingsBtn": "Buka Pengaturan Aplikasi — Atur Daya",
   "doneDismissBtn": "Sudah selesai — tutup",
 
+  "notificationTitle": "Saatnya mengingat kembali! 🧠",
+  "notificationBody": "Tap untuk menjawab pertanyaan",
+  "testNotificationTitle": "Notifikasi Pengujian 🧪",
+  "testNotificationBody": "Tap untuk menjawab pertanyaan",
+
   "faqTitle": "FAQ",
   "faqSectionNotifications": "Notifikasi",
   "faqSectionQuestionBank": "Bank Pertanyaan & Batas",

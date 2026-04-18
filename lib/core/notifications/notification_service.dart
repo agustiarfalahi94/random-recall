@@ -664,14 +664,18 @@ class NotificationService {
       // DND bypass is handled by the channel's audioAttributesUsage=alarm.
     );
 
-    // TODO(i18n): Notification text is currently hardcoded in English because the
-    // notification service is a background context without access to AppLocalizations.
-    // To fix: pass localized strings as parameters from the scheduling point, or
-    // store them in SharedPreferences keyed by the current locale.
+    // Read localized notification strings from SharedPreferences
+    // (set by AppProvider when locale changes)
+    final prefs = await SharedPreferences.getInstance();
+    final title = prefs.getString(isTest ? 'test_notif_title' : 'notif_title') ??
+        (isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠');
+    final body = prefs.getString(isTest ? 'test_notif_body' : 'notif_body') ??
+        'Tap to answer the question';
+
     await _plugin.zonedSchedule(
       id,
-      isTest ? 'Test Notification 🧪' : 'Time for a quick recall! 🧠',
-      isTest ? 'Tap to reveal the test question ✨' : 'Tap to reveal the answer ✨',
+      title,
+      body,
       scheduledDate,
       const NotificationDetails(android: androidDetails),
       // alarmClock is intercepted by Xiaomi HyperOS power management for
@@ -710,11 +714,15 @@ class NotificationService {
     );
 
     // Use show() for absolute immediate delivery.
-    // TODO(i18n): Notification text is currently hardcoded in English (see note in scheduleNotification).
+    // Read localized notification strings from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final title = prefs.getString('test_notif_title') ?? 'Test Notification 🧪';
+    final body = prefs.getString('test_notif_body') ?? 'Tap to answer the question';
+
     await _plugin.show(
       9999,
-      'Test Notification 🧪',
-      'Tap to reveal the test question ✨',
+      title,
+      body,
       const NotificationDetails(android: androidDetails),
       payload: 'test:${question.id}',
     );

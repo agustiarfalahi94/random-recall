@@ -446,6 +446,11 @@
   "openAppSettingsBtn": "Open App Settings — Set Power",
   "doneDismissBtn": "I've done this — close",
 
+  "notificationTitle": "Time for a quick recall! 🧠",
+  "notificationBody": "Tap to answer the question",
+  "testNotificationTitle": "Test Notification 🧪",
+  "testNotificationBody": "Tap to answer the question",
+
   "faqTitle": "FAQ",
   "faqSectionNotifications": "Notifications",
   "faqSectionQuestionBank": "Question Bank & Limits",
