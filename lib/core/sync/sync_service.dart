@@ -25,8 +25,6 @@ class SyncService {
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
-  final List<StreamSubscription> _subscriptions = [];
-
   void _setupAutoSync() {
     Timer? debounceTimer;
     _dbHelper.onDatabaseUpdated.listen((_) {
@@ -40,93 +38,6 @@ class SyncService {
         });
       });
     });
-  }
-
-  /// Starts listening to Firestore collections for real-time changes.
-  /// Only activates for premium users.
-  void startRealtimeSync() async {
-    final user = AuthService.instance.currentUser;
-    if (user == null) return;
-
-    stopRealtimeSync(); // Clear existing listeners first
-    debugPrint('SyncService: Starting real-time listeners for ${user.uid}...');
-
-    final userDoc = _db.collection('users').doc(user.uid);
-
-    // 1. Listen to Categories
-    _subscriptions.add(
-      userDoc.collection('categories').snapshots().listen((snap) {
-        _applyRemoteChanges(snap, 'categories', (map) => Category.fromMap(map));
-      }),
-    );
-
-    // 2. Listen to Questions
-    _subscriptions.add(
-      userDoc.collection('questions').snapshots().listen((snap) {
-        _applyRemoteChanges(snap, 'questions', (map) => Question.fromMap(map));
-      }),
-    );
-
-    // 3. Listen to Score Records
-    _subscriptions.add(
-      userDoc.collection('score_records').snapshots().listen((snap) {
-        _applyRemoteChanges(
-          snap,
-          'score_records',
-          (map) => ScoreRecord.fromMap(map),
-        );
-      }),
-    );
-
-    // 4. Listen to user doc (Settings & Streak)
-    _subscriptions.add(
-      userDoc.snapshots().listen((doc) async {
-        if (!doc.exists || _isSyncing) return;
-        final data = doc.data();
-        if (data == null) return;
-
-        final prefs = await SharedPreferences.getInstance();
-
-        // Update Premium status in real-time
-        if (data.containsKey('is_premium')) {
-          await prefs.setBool('is_premium', data['is_premium'] as bool);
-        }
-
-        if (data.containsKey('settings')) {
-          final s = data['settings'] as Map<String, dynamic>;
-          if (s.containsKey('notif_frequency'))
-            await prefs.setInt('notif_frequency', s['notif_frequency']);
-          if (s.containsKey('notif_timer_seconds'))
-            await prefs.setInt('notif_timer_seconds', s['notif_timer_seconds']);
-          if (s.containsKey('notif_random_anytime'))
-            await prefs.setBool(
-              'notif_random_anytime',
-              s['notif_random_anytime'],
-            );
-          if (s.containsKey('notif_start_hour'))
-            await prefs.setInt('notif_start_hour', s['notif_start_hour']);
-          if (s.containsKey('notif_end_hour'))
-            await prefs.setInt('notif_end_hour', s['notif_end_hour']);
-          if (s.containsKey('notif_active_days'))
-            await prefs.setString('notif_active_days', s['notif_active_days']);
-          await NotificationService.instance.scheduleNotifications();
-        }
-        if (data.containsKey('streak')) {
-          final str = data['streak'] as Map<String, dynamic>;
-          if (str.containsKey('timer_streak_days'))
-            await prefs.setInt('timer_streak_days', str['timer_streak_days']);
-        }
-      }),
-    );
-  }
-
-  /// Stops all active Firestore listeners.
-  void stopRealtimeSync() {
-    for (var sub in _subscriptions) {
-      sub.cancel();
-    }
-    _subscriptions.clear();
-    debugPrint('SyncService: Real-time listeners stopped.');
   }
 
   /// Helper to process Firestore snapshots and merge them into SQLite
