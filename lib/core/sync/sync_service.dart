@@ -40,68 +40,6 @@ class SyncService {
     });
   }
 
-  /// Helper to process Firestore snapshots and merge them into SQLite
-  Future<void> _applyRemoteChanges<T>(
-    QuerySnapshot<Map<String, dynamic>> snapshot,
-    String tableName,
-    T Function(Map<String, dynamic>) fromMap,
-  ) async {
-    if (_isSyncing) return;
-    _isSyncing = true; // Prevent backup loop during remote apply
-
-    try {
-      final db = await _dbHelper.database;
-      bool localChanged = false;
-
-      // Disable foreign keys for the connection during this operation
-      await db.execute('PRAGMA foreign_keys = OFF;');
-
-      await db.transaction((txn) async {
-        for (var change in snapshot.docChanges) {
-          if (change.type == DocumentChangeType.added ||
-              change.type == DocumentChangeType.modified) {
-            final remoteData = change.doc.data();
-            if (remoteData == null) continue;
-
-            // NORMALIZE: Go through model to filter extra fields and convert types (bool -> int)
-            final model = fromMap(remoteData);
-            Map<String, dynamic>? map;
-            if (model is Category)
-              map = model.toMap();
-            else if (model is Question)
-              map = model.toMap();
-            else if (model is ScoreRecord)
-              map = model.toMap();
-
-            if (map != null) {
-              await txn.insert(
-                tableName,
-                map,
-                conflictAlgorithm: ConflictAlgorithm.replace,
-              );
-              localChanged = true;
-            }
-          } else if (change.type == DocumentChangeType.removed) {
-            // Propagate remote deletions to local SQLite.
-            final id = int.tryParse(change.doc.id);
-            if (id != null) {
-              await txn.delete(tableName, where: 'id = ?', whereArgs: [id]);
-              localChanged = true;
-            }
-          }
-        }
-      });
-
-      await db.execute('PRAGMA foreign_keys = ON;');
-
-      if (localChanged) {
-        _dbHelper.notifyUpdate(); // Refresh UI screens
-      }
-    } finally {
-      _isSyncing = false;
-    }
-  }
-
   /// Performs a full backup of local data to Firestore.
   ///
   /// This iterates through Categories, Questions, and Score Records,
