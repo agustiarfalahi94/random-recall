@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:uuid/uuid.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -31,6 +32,37 @@ import 'screens/auth/verify_email_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+/// Retrieve or generate a unique device ID for this installation.
+/// Device ID is used for sync device tracking (single active device model) and analytics.
+Future<String> _getOrCreateDeviceId() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    var deviceId = prefs.getString('device_id');
+
+    if (deviceId == null) {
+      // First run: generate and store
+      try {
+        deviceId = const Uuid().v4();
+      } catch (e) {
+        // Fallback if UUID generation fails (rare)
+        deviceId = DateTime.now().millisecondsSinceEpoch.toString();
+        debugPrint('Main: UUID generation failed, using timestamp fallback: $deviceId');
+      }
+      await prefs.setString('device_id', deviceId);
+      debugPrint('Main: Generated new device ID: $deviceId');
+    } else {
+      debugPrint('Main: Using stored device ID: $deviceId');
+    }
+
+    return deviceId;
+  } catch (e) {
+    // Critical fallback: if SharedPreferences fails entirely
+    final fallbackId = 'device_${DateTime.now().millisecondsSinceEpoch}';
+    debugPrint('Main: SharedPreferences error, using fallback device ID: $e');
+    return fallbackId;
+  }
+}
+
 Future<void> main() async {
   await SentryFlutter.init(
     (options) {
@@ -45,6 +77,7 @@ Future<void> main() async {
     },
     appRunner: () async {
       WidgetsFlutterBinding.ensureInitialized();
+      await _getOrCreateDeviceId();
       await Firebase.initializeApp();
       await FirebaseAppCheck.instance.activate(
         androidProvider: AndroidProvider.debug,
