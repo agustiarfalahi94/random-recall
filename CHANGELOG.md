@@ -5,7 +5,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [Unreleased]
+## [0.8.0] — 2026-04-19
 
 ### Changed
 - **BREAKING:** Replaced multi-device real-time sync with single active device model
