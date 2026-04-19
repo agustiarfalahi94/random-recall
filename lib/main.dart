@@ -412,24 +412,46 @@ class _HomeGateState extends State<_HomeGate> {
     final prefs = await SharedPreferences.getInstance();
     bool complete = prefs.getBool('onboarding_complete') ?? false;
 
-    // Race condition guard: after login, Firebase fires authStateChanges
-    // immediately, but initializeUserSession() (which calls performRestore
-    // and sets onboarding_complete) may still be running. Without this
-    // check, a returning user would see onboarding again and risk
-    // overwriting their cloud data.
-    //
-    // performRestore() uses a Completer internally: if a restore is
-    // already in progress (from the login flow), this call awaits it
-    // instead of silently returning. If no restore is running, it
-    // starts one. Either way, onboarding_complete is up to date after.
+    // CRITICAL GUARD: If onboarding_complete is false but the user is
+    // logged in and verified, check Firestore DIRECTLY for existing data.
+    // This bypasses all sync timing issues — we ask the source of truth.
     if (!complete) {
       final user = AuthService.instance.currentUser;
       if (user != null && user.emailVerified) {
-        await SyncService.instance.performRestore(
-          force: true,
-          isInitialLogin: true,
-        );
-        complete = prefs.getBool('onboarding_complete') ?? false;
+        debugPrint('HomeGate: Checking cloud for existing user data...');
+        try {
+          final userDoc = FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid);
+          final qSnap = await userDoc.collection('questions').limit(1).get();
+          final hasCloudData = qSnap.docs.isNotEmpty;
+          debugPrint('HomeGate: Cloud data check — hasCloudData=$hasCloudData');
+
+          if (hasCloudData) {
+            // Existing user — restore their data from cloud
+            await SyncService.instance.performRestore(
+              force: true,
+              isInitialLogin: true,
+            );
+            complete = prefs.getBool('onboarding_complete') ?? false;
+
+            // Failsafe: if performRestore didn't set the flag (e.g. due
+            // to a silent error), set it ourselves. The user has cloud
+            // data, so they are NOT a new user.
+            if (!complete) {
+              debugPrint(
+                'HomeGate: performRestore did not set onboarding_complete, '
+                'setting manually (user has cloud data)',
+              );
+              await prefs.setBool('onboarding_complete', true);
+              complete = true;
+            }
+          }
+        } catch (e) {
+          debugPrint('HomeGate: Cloud data check failed: $e');
+          // Network error — fall through to onboarding. The user can
+          // retry by restarting the app once connectivity is restored.
+        }
       }
     }
 
