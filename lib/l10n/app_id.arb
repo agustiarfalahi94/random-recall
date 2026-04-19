@@ -12,6 +12,7 @@
   "send": "Kirim",
   "all": "Semua",
   "off": "Mati",
+  "secondsUnit": " detik",
   "language": "Bahasa",
   "languageSubtitle": "English / Bahasa Indonesia",
   "languageEnglish": "English",
@@ -193,18 +194,18 @@
   "@bonusCountLabel": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "timerChallengeActiveDesc": "Timer diatur ke {seconds}d — tantangan aktif! Jawab setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan.",
+  "timerChallengeActiveDesc": "Timer diatur ke {seconds} detik — tantangan aktif! Jawab setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan.",
   "@timerChallengeActiveDesc": {
     "placeholders": { "seconds": { "type": "int" } }
   },
-  "timerChallengeRelaxedDesc": "Timer {seconds}d — terlalu santai untuk tantangan. Atur ke {threshold}d atau kurang untuk mendapatkan streak.",
+  "timerChallengeRelaxedDesc": "Timer {seconds} detik — terlalu santai untuk tantangan. Atur ke {threshold} detik atau kurang untuk mendapatkan streak.",
   "@timerChallengeRelaxedDesc": {
     "placeholders": {
       "seconds": { "type": "int" },
       "threshold": { "type": "int" }
     }
   },
-  "timerChallengeOffDesc": "Atur timer ({threshold}d atau kurang) untuk membuka tantangan. Jawab setiap hari selama 7 hari → dapatkan +1 slot pertanyaan!",
+  "timerChallengeOffDesc": "Atur timer ({threshold} detik atau kurang) untuk membuka tantangan. Jawab setiap hari selama 7 hari → dapatkan +1 slot pertanyaan!",
   "@timerChallengeOffDesc": {
     "placeholders": { "threshold": { "type": "int" } }
   },
@@ -221,12 +222,12 @@
 
   "notifScheduleTitle": "Jadwal Notifikasi",
   "challengeModeName": "Mode\nTantangan",
-  "challengeModeOff": "Atur timer ke {threshold}d atau kurang → jawab setiap hari → capai streak 7 hari → dapatkan +1 slot pertanyaan gratis!",
+  "challengeModeOff": "Atur timer ke {threshold} detik atau kurang → jawab setiap hari → capai streak 7 hari → dapatkan +1 slot pertanyaan gratis!",
   "@challengeModeOff": {
     "placeholders": { "threshold": { "type": "int" } }
   },
   "challengeModeActive": "🔥 Tantangan aktif! Terus lakukan setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan gratis!",
-  "challengeModeRelaxed": "Timer terlalu santai. Turunkan ke {threshold}d atau kurang untuk mengaktifkan tantangan.",
+  "challengeModeRelaxed": "Timer terlalu santai. Turunkan ke {threshold} detik atau kurang untuk mengaktifkan tantangan.",
   "@challengeModeRelaxed": {
     "placeholders": { "threshold": { "type": "int" } }
   },

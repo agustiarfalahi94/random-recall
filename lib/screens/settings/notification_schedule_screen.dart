@@ -192,9 +192,15 @@ class _NotificationScheduleScreenState
       context: context,
       initialTime: isStart ? _startTime : _endTime,
       helpText: isStart ? l10n.selectStartTime : l10n.selectEndTime,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-        child: child!,
+      // Force English locale inside the picker so AM/PM renders consistently
+      // across all app languages (avoids locale-specific layout differences).
+      builder: (context, child) => Localizations.override(
+        context: context,
+        locale: const Locale('en'),
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        ),
       ),
     );
     if (picked == null) return;
@@ -365,7 +371,7 @@ class _NotificationScheduleScreenState
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                '${_timerSeconds}s',
+                                '$_timerSeconds${l10n.secondsUnit}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
@@ -383,7 +389,7 @@ class _NotificationScheduleScreenState
                         divisions: 18, // 0, 5, 10 … 90
                         label: _timerSeconds == 0
                             ? l10n.off
-                            : '${_timerSeconds}s',
+                            : '$_timerSeconds${l10n.secondsUnit}',
                         onChanged: (v) =>
                             setState(() => _timerSeconds = v.round()),
                       ),
@@ -398,7 +404,7 @@ class _NotificationScheduleScreenState
                             ),
                           ),
                           Text(
-                            '90s',
+                            '90${l10n.secondsUnit}',
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
@@ -610,33 +616,39 @@ class _NotificationScheduleScreenState
                       // Quick-select presets
                       Row(
                         children: [
-                          _PresetChip(
-                            label: l10n.presetDaily,
-                            isSelected: _activeDays.length == 7,
-                            colorScheme: colorScheme,
-                            onTap: () => setState(
-                              () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                          Expanded(
+                            child: _PresetChip(
+                              label: l10n.presetDaily,
+                              isSelected: _activeDays.length == 7,
+                              colorScheme: colorScheme,
+                              onTap: () => setState(
+                                () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _PresetChip(
-                            label: l10n.presetWeekdays,
-                            isSelected:
-                                _activeDays.length == 5 &&
-                                _activeDays.every((d) => d <= 5),
-                            colorScheme: colorScheme,
-                            onTap: () =>
-                                setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                          Expanded(
+                            child: _PresetChip(
+                              label: l10n.presetWeekdays,
+                              isSelected:
+                                  _activeDays.length == 5 &&
+                                  _activeDays.every((d) => d <= 5),
+                              colorScheme: colorScheme,
+                              onTap: () =>
+                                  setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          _PresetChip(
-                            label: l10n.presetWeekends,
-                            isSelected:
-                                _activeDays.length == 2 &&
-                                _activeDays.contains(6) &&
-                                _activeDays.contains(7),
-                            colorScheme: colorScheme,
-                            onTap: () => setState(() => _activeDays = {6, 7}),
+                          Expanded(
+                            child: _PresetChip(
+                              label: l10n.presetWeekends,
+                              isSelected:
+                                  _activeDays.length == 2 &&
+                                  _activeDays.contains(6) &&
+                                  _activeDays.contains(7),
+                              colorScheme: colorScheme,
+                              onTap: () => setState(() => _activeDays = {6, 7}),
+                            ),
                           ),
                         ],
                       ),
@@ -873,6 +885,8 @@ class _PresetChip extends StatelessWidget {
         ),
         child: Text(
           label,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
