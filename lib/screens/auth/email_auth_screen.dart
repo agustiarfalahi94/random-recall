@@ -42,6 +42,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
+      // Trigger restore flow once credentials are accepted
+      // The UI will handle email verification on next navigation
+      await AuthService.instance.initializeUserSession();
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
