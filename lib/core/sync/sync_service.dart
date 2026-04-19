@@ -296,6 +296,21 @@ class SyncService {
         }
       }
 
+      // Claim this device as the active one after a login restore.
+      // This MUST happen before _checkActiveDevice() runs, otherwise
+      // a stale last_active_device_id from a previous installation
+      // will cause an immediate sign-out.
+      if (isInitialLogin) {
+        final devicePrefs = await SharedPreferences.getInstance();
+        final deviceId = devicePrefs.getString('device_id') ?? 'unknown';
+        await userDoc.set({
+          'last_active_device_id': deviceId,
+        }, SetOptions(merge: true));
+        debugPrint(
+          'SyncService: Claimed device $deviceId as active after restore',
+        );
+      }
+
       // Refresh the UI so the user sees their restored data immediately
       _dbHelper.notifyUpdate();
 

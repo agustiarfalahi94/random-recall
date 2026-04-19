@@ -110,7 +110,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _isSyncingManual = true);
     try {
-      await SyncService.instance.performRestore();
+      await SyncService.instance.performRestore(force: true);
       if (!mounted) return;
       Navigator.of(context).pop(); // Close settings sheet on success
       ScaffoldMessenger.of(
