@@ -174,57 +174,107 @@ class SyncService {
       final userDoc = _db.collection('users').doc(user.uid);
 
       // Fetch everything from cloud first to keep the transaction short
+      debugPrint('SyncService: Fetching categories from cloud...');
       final catSnap = await userDoc.collection('categories').get();
+      debugPrint('SyncService: Got ${catSnap.docs.length} categories');
+      for (var i = 0; i < catSnap.docs.length; i++) {
+        final data = catSnap.docs[i].data();
+        debugPrint('SyncService: Category[$i]: id=${data['id']}, name=${data['name']}');
+      }
+
+      debugPrint('SyncService: Fetching questions from cloud...');
       final qSnap = await userDoc.collection('questions').get();
+      debugPrint('SyncService: Got ${qSnap.docs.length} questions');
+      for (var i = 0; i < qSnap.docs.length; i++) {
+        final data = qSnap.docs[i].data();
+        debugPrint('SyncService: Question[$i]: id=${data['id']}, category_id=${data['category_id']}');
+      }
+
+      debugPrint('SyncService: Fetching score_records from cloud...');
       final sSnap = await userDoc.collection('score_records').get();
-      final userSnap = await userDoc.get();
+      debugPrint('SyncService: Got ${sSnap.docs.length} score_records');
+
+      // Read user doc separately so a permission error here doesn't
+      // block the question/category restore.
+      Map<String, dynamic>? userData;
+      try {
+        final userSnap = await userDoc.get();
+        if (userSnap.exists) userData = userSnap.data();
+      } catch (e) {
+        debugPrint('SyncService: User doc read failed (non-fatal): $e');
+      }
 
       bool dataFound = qSnap.docs.isNotEmpty;
 
       // Execute everything in a single transaction with Foreign Keys disabled
-      await db.transaction((txn) async {
-        await txn.execute('PRAGMA foreign_keys = OFF');
+      try {
+        await db.transaction((txn) async {
+          await txn.execute('PRAGMA foreign_keys = OFF');
 
-        // If it's a forced login restore, clean up local tables first to prevent ID conflicts
-        if (isInitialLogin) {
-          await txn.delete('score_records');
-          await txn.delete('questions');
-          await txn.delete('categories', where: 'is_default = 0');
-        }
+          // If it's a forced login restore, clean up local tables first to prevent ID conflicts
+          if (isInitialLogin) {
+            debugPrint('SyncService: Clearing local tables for isInitialLogin...');
+            await txn.delete('score_records');
+            debugPrint('SyncService: Cleared score_records');
+            await txn.delete('questions');
+            debugPrint('SyncService: Cleared questions');
+            await txn.delete('categories', where: 'is_default = 0');
+            debugPrint('SyncService: Cleared non-default categories');
+          }
 
-        // 1. Restore Categories
-        for (var doc in catSnap.docs) {
-          await txn.insert(
-            'categories',
-            doc.data(),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          // 1. Restore Categories
+          debugPrint('SyncService: Inserting ${catSnap.docs.length} categories...');
+          for (var doc in catSnap.docs) {
+            final data = doc.data();
+            debugPrint('SyncService: Inserting category: id=${data['id']}, name=${data['name']}, is_default=${data['is_default']}');
+            await txn.insert(
+              'categories',
+              data,
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+          debugPrint('SyncService: Categories inserted successfully');
 
-        // 2. Restore Questions
-        for (var doc in qSnap.docs) {
-          await txn.insert(
-            'questions',
-            doc.data(),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          // 2. Restore Questions
+          debugPrint('SyncService: Inserting ${qSnap.docs.length} questions...');
+          for (var doc in qSnap.docs) {
+            final data = doc.data();
+            debugPrint('SyncService: Inserting question: id=${data['id']}, category_id=${data['category_id']}');
+            await txn.insert(
+              'questions',
+              data,
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+          debugPrint('SyncService: Questions inserted successfully');
 
-        // 3. Restore Score Records
-        for (var doc in sSnap.docs) {
-          await txn.insert(
-            'score_records',
-            doc.data(),
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-        }
+          // 3. Restore Score Records
+          debugPrint('SyncService: Inserting ${sSnap.docs.length} score records...');
+          for (var doc in sSnap.docs) {
+            await txn.insert(
+              'score_records',
+              doc.data(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+          debugPrint('SyncService: Score records inserted successfully');
 
-        await txn.execute('PRAGMA foreign_keys = ON;');
-      });
+          await txn.execute('PRAGMA foreign_keys = ON;');
+        });
+        debugPrint('SyncService: Transaction completed successfully');
+      } catch (e) {
+        debugPrint('SyncService: Transaction failed: $e');
+        rethrow;
+      }
+
+      debugPrint(
+        'SyncService: SQLite insert done — '
+        '${catSnap.docs.length} cats, ${qSnap.docs.length} qs, ${sSnap.docs.length} scores',
+      );
 
       // 4. Restore SharedPreferences (Settings & Streak)
-      if (userSnap.exists && userSnap.data() != null) {
-        final data = userSnap.data()!;
+      if (userData != null) {
+        final data = userData;
         final prefs = await SharedPreferences.getInstance();
 
         // Pull Premium status directly from Firestore document root
@@ -281,19 +331,31 @@ class SyncService {
 
       // Restore onboarding_complete from Firestore if present,
       // otherwise infer it from whether the user has questions in the cloud.
-      if (userSnap.exists && userSnap.data() != null) {
-        final data = userSnap.data()!;
+      if (userData != null) {
+        final data = userData;
         if (data.containsKey('onboarding_complete')) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool(
             'onboarding_complete',
             data['onboarding_complete'] as bool,
           );
+          debugPrint(
+            'SyncService: Set onboarding_complete=${data['onboarding_complete']}',
+          );
         } else if (dataFound) {
-          // Legacy accounts that predate this field: infer from question presence
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('onboarding_complete', true);
+          debugPrint(
+            'SyncService: Set onboarding_complete=true (inferred from data)',
+          );
         }
+      } else if (dataFound) {
+        // User doc read failed but questions exist — still mark as complete
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('onboarding_complete', true);
+        debugPrint(
+          'SyncService: Set onboarding_complete=true (user doc unreadable but questions exist)',
+        );
       }
 
       // Claim this device as the active one after a login restore.

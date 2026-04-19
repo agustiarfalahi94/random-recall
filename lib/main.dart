@@ -411,12 +411,18 @@ class _HomeGateState extends State<_HomeGate> {
   Future<void> _initFlow() async {
     final prefs = await SharedPreferences.getInstance();
     bool complete = prefs.getBool('onboarding_complete') ?? false;
+    bool justRestored = false;
+
+    debugPrint('HomeGate: _initFlow start — onboarding_complete=$complete');
 
     // CRITICAL GUARD: If onboarding_complete is false but the user is
     // logged in and verified, check Firestore DIRECTLY for existing data.
     // This bypasses all sync timing issues — we ask the source of truth.
     if (!complete) {
       final user = AuthService.instance.currentUser;
+      debugPrint(
+        'HomeGate: user=${user?.uid}, emailVerified=${user?.emailVerified}',
+      );
       if (user != null && user.emailVerified) {
         debugPrint('HomeGate: Checking cloud for existing user data...');
         try {
@@ -434,6 +440,9 @@ class _HomeGateState extends State<_HomeGate> {
               isInitialLogin: true,
             );
             complete = prefs.getBool('onboarding_complete') ?? false;
+            debugPrint(
+              'HomeGate: After restore — onboarding_complete=$complete',
+            );
 
             // Failsafe: if performRestore didn't set the flag (e.g. due
             // to a silent error), set it ourselves. The user has cloud
@@ -446,19 +455,23 @@ class _HomeGateState extends State<_HomeGate> {
               await prefs.setBool('onboarding_complete', true);
               complete = true;
             }
+            justRestored = true;
           }
         } catch (e) {
           debugPrint('HomeGate: Cloud data check failed: $e');
-          // Network error — fall through to onboarding. The user can
-          // retry by restarting the app once connectivity is restored.
         }
       }
     }
 
     if (!complete) {
-      debugPrint('HomeGate: onboarding_complete not set, showing onboarding');
+      debugPrint('HomeGate: Showing onboarding (no cloud data found)');
+    } else if (justRestored) {
+      // Just logged in and restored — skip device check.
+      // The restore already claimed this device in Firestore.
+      debugPrint('HomeGate: Just restored, skipping _checkActiveDevice');
     } else {
-      // Check if another device has logged in since this device was last active
+      // Returning user on the same device — check if another device took over.
+      debugPrint('HomeGate: Checking active device...');
       await _checkActiveDevice();
     }
 
@@ -468,6 +481,9 @@ class _HomeGateState extends State<_HomeGate> {
         _isChecking = false;
       });
     }
+    debugPrint(
+      'HomeGate: _initFlow done — showing=${complete ? "home" : "onboarding"}',
+    );
   }
 
   /// Check if this device is still the active device.
@@ -493,10 +509,15 @@ class _HomeGateState extends State<_HomeGate> {
       if (!userDoc.exists) return;
 
       final remoteDeviceId = userDoc['last_active_device_id'] as String?;
+      debugPrint(
+        'HomeGate: Device check — local=$localDeviceId, remote=$remoteDeviceId',
+      );
 
       if (remoteDeviceId != null && remoteDeviceId != localDeviceId) {
         // Another device is now active. Silent logout.
-        debugPrint('HomeGate: Another device logged in. Signing out.');
+        debugPrint(
+          'HomeGate: MISMATCH — another device logged in. Signing out.',
+        );
         if (mounted) {
           await AuthService.instance.signOut();
         }

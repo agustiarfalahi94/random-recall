@@ -9,6 +9,7 @@ import '../../providers/app_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_service.dart';
+import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../main.dart' show navigatorKey;
 import '../../core/streak/streak_service.dart';
@@ -613,6 +614,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _unansweredCount = 0;
 
   StreamSubscription<void>? _answeredSub;
+  StreamSubscription<void>? _databaseUpdateSub;
   Timer? _nextNotifTimer;
   Timer? _initRetryTimer;
 
@@ -626,6 +628,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     _answeredSub = NotificationService.instance.onNotificationAnswered.listen(
       (_) => _refreshData(),
     );
+
+    // Refresh data whenever the database is updated (e.g., after sync restore)
+    _databaseUpdateSub = DatabaseHelper.instance.onDatabaseUpdated.listen(
+      (_) => _refreshData(),
+    );
+
     _refreshData();
     // The notification plugin initializes in the post-frame callback (main.dart),
     // which runs after the widget tree is built. Retry once after init is likely
@@ -639,6 +647,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   void dispose() {
     _initRetryTimer?.cancel();
     _answeredSub?.cancel();
+    _databaseUpdateSub?.cancel();
     _nextNotifTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
