@@ -3,6 +3,7 @@ name: Flutter Build & Test
 on:
   push:
     branches: [develop, main, feature/**]
+    tags: [v*]
   pull_request:
     branches: [develop, main]
 
