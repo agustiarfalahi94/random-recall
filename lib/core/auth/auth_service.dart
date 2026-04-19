@@ -19,9 +19,6 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  static bool _pendingLocalCleanup =
-      false; // Flag to trigger one-time local data cleanup
-
   /// Stream of user authentication state changes.
   /// userChanges() notifies the UI whenever the user is reloaded (e.g., email verified).
   /// Stored as a lazy field (not a getter) so StreamBuilder always gets the same
@@ -105,10 +102,12 @@ class AuthService {
   }
 
   /// Performs RevenueCat login and Cloud Restore only for verified users.
+  /// Ensures user document exists (defensive — normally created at signup).
   Future<void> initializeUserSession() async {
     final user = currentUser;
     if (user == null || !user.emailVerified) return;
 
+    await _ensureUserDocument(user);
     await SubscriptionService.instance.logIn(user.uid);
     await SyncService.instance.performRestore(
       force: true,

@@ -21,6 +21,10 @@ class SyncService {
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
 
+  /// Completer that concurrent restore callers can await instead of
+  /// silently returning when a restore is already in progress.
+  Completer<void>? _restoreCompleter;
+
   void _setupAutoSync() {
     Timer? debounceTimer;
     _dbHelper.onDatabaseUpdated.listen((_) {
@@ -129,13 +133,28 @@ class SyncService {
 
   /// Downloads all user data from Firestore and merges it into the local database.
   /// Used when logging into a new device or performing a manual refresh.
+  ///
+  /// If a restore is already running, concurrent callers will **await**
+  /// its completion instead of silently returning.
   Future<void> performRestore({
     bool force = false,
     bool isInitialLogin = false,
   }) async {
     final user = AuthService.instance.currentUser;
-    if (user == null || !user.emailVerified || _isSyncing) return;
+    if (user == null || !user.emailVerified) return;
 
+    // If a restore is already running, wait for it rather than silently
+    // dropping this call. This prevents the race condition where _HomeGate
+    // tries to restore but the login flow's restore is still in progress.
+    if (_isSyncing) {
+      if (_restoreCompleter != null) {
+        debugPrint('SyncService: Restore already running, awaiting it...');
+        await _restoreCompleter!.future;
+      }
+      return;
+    }
+
+    _restoreCompleter = Completer<void>();
     _isSyncing = true;
     debugPrint('SyncService: Starting restore for user ${user.uid}...');
 
@@ -287,6 +306,8 @@ class SyncService {
     } finally {
       await trace.stop();
       _isSyncing = false;
+      _restoreCompleter?.complete();
+      _restoreCompleter = null;
     }
   }
 }

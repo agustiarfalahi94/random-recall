@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
+import '../../core/services/analytics_service.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -32,10 +32,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Future<void> _checkEmailVerified() async {
     await AuthService.instance.reloadUser();
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.instance.currentUser;
     if (user != null && user.emailVerified) {
       _timer?.cancel();
       await AuthService.instance.initializeUserSession();
+      // Track login analytics (parity with Google and direct email login)
+      AnalyticsService.instance.trackLogin(method: 'email').ignore();
+      AnalyticsService.instance.identify(user.uid, email: user.email).ignore();
     }
   }
 
@@ -43,7 +46,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _isResending = true);
     try {
-      await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+      await AuthService.instance.currentUser?.sendEmailVerification();
       if (mounted) {
         ScaffoldMessenger.of(
           context,

@@ -412,8 +412,28 @@ class _HomeGateState extends State<_HomeGate> {
     final prefs = await SharedPreferences.getInstance();
     bool complete = prefs.getBool('onboarding_complete') ?? false;
 
+    // Race condition guard: after login, Firebase fires authStateChanges
+    // immediately, but initializeUserSession() (which calls performRestore
+    // and sets onboarding_complete) may still be running. Without this
+    // check, a returning user would see onboarding again and risk
+    // overwriting their cloud data.
+    //
+    // performRestore() uses a Completer internally: if a restore is
+    // already in progress (from the login flow), this call awaits it
+    // instead of silently returning. If no restore is running, it
+    // starts one. Either way, onboarding_complete is up to date after.
     if (!complete) {
-      // No cloud data fetched yet. Restore will happen after login in initializeUserSession()
+      final user = AuthService.instance.currentUser;
+      if (user != null && user.emailVerified) {
+        await SyncService.instance.performRestore(
+          force: true,
+          isInitialLogin: true,
+        );
+        complete = prefs.getBool('onboarding_complete') ?? false;
+      }
+    }
+
+    if (!complete) {
       debugPrint('HomeGate: onboarding_complete not set, showing onboarding');
     } else {
       // Check if another device has logged in since this device was last active
