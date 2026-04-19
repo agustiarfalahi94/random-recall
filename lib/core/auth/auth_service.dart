@@ -160,44 +160,57 @@ class AuthService {
     try {
       final user = currentUser;
 
-      // 1. Attempt final backup (swallow errors so we don't block signout)
+      // 1. Attempt final backup — timeout after 8 s so a slow connection
+      //    never blocks the sign-out flow indefinitely.
       if (user != null) {
         await SyncService.instance
             .performBackup(force: true)
+            .timeout(const Duration(seconds: 8))
             .catchError((e) => debugPrint('Signout backup failed: $e'));
       }
 
-      // 3. Subscription and Google logout
+      // 2. Subscription and Google logout
       SubscriptionService.instance.logOut().catchError(
         (e) => debugPrint('RevenueCat logout failed: $e'),
       );
       await _googleSignIn.signOut().catchError((_) => null);
 
-      // 4. CRITICAL: Clear local data so the next user starts fresh
+      // 3. Clear local data so the next user starts fresh
       await DatabaseHelper.instance.clearAllData();
 
-      // 5. Selective cleanup: Clear app-specific preferences
+      // 4. Selective cleanup: clear app-specific preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('onboarding_complete');
       await prefs.remove('timer_streak_days');
       await prefs.remove('timer_streak_last_date');
       await prefs.remove('timer_streak_bonus_questions');
-
-      // 6. UI HOOK: Allow the caller to dismiss dialogs/sheets before the
-      // root widget tree swaps, which prevents crashes on certain Android devices.
+    } catch (e) {
+      // Log errors but never let them block the critical sign-out steps below.
+      debugPrint('AuthService: Sign-out cleanup error (non-fatal): $e');
+    } finally {
+      // 5. UI HOOK — always dismiss dialogs/sheets before Firebase tears down
+      //    the session, regardless of any cleanup errors above.
       if (onBeforeFinalSignOut != null) {
-        await onBeforeFinalSignOut();
+        try {
+          await onBeforeFinalSignOut();
+        } catch (e) {
+          debugPrint('AuthService: onBeforeFinalSignOut error: $e');
+        }
       }
 
       debugPrint('AuthService: Performing Firebase signOut...');
-      // 7. Track logout and detach the user identity before Firebase tears down the session
-      await AnalyticsService.instance.trackLogout().catchError((_) {});
-      await AnalyticsService.instance.reset().catchError((_) {});
-      // 8. FINAL STEP: Sign out of Firebase to trigger the UI switch in main.dart
-      await _auth.signOut();
-    } catch (e) {
-      debugPrint('AuthService: Sign-out error: $e');
-    } finally {
+      // 6. Track logout — fire-and-forget, don't block on it.
+      AnalyticsService.instance.trackLogout().catchError((_) {});
+      AnalyticsService.instance.reset().catchError((_) {});
+
+      // 7. FINAL STEP: always sign out of Firebase so authStateChanges emits
+      //    null and the StreamBuilder switches to LoginScreen.
+      try {
+        await _auth.signOut();
+      } catch (e) {
+        debugPrint('AuthService: Firebase signOut error: $e');
+      }
+
       _isSigningOut = false;
     }
   }

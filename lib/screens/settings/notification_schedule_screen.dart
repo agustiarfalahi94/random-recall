@@ -201,8 +201,9 @@ class _NotificationScheduleScreenState
     setState(() {
       if (isStart) {
         _startTime = picked;
-        // Always set end time to start + 1 hour
-        _endTime = TimeOfDay(hour: (picked.hour + 1) % 24, minute: 0);
+        // Auto-set end time to start + 1 hour, preserving the picked minutes.
+        // e.g. start = 2:30 PM → end = 3:30 PM (not 3:00 PM).
+        _endTime = TimeOfDay(hour: (picked.hour + 1) % 24, minute: picked.minute);
       } else {
         _endTime = picked;
       }
