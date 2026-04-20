@@ -58,6 +58,8 @@
   "welcomeBack": "Welcome back!",
   "emailAddress": "Email Address",
   "password": "Password",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
   "loginButton": "Login",
   "needAccount": "Need an account? Sign up",
   "forgotPasswordLink": "Forgot Password?",

@@ -18,6 +18,7 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -144,10 +145,25 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: l10n.password,
                   prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                    tooltip: _obscurePassword
+                        ? l10n.showPassword
+                        : l10n.hidePassword,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty)

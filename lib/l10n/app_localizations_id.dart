@@ -156,6 +156,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get password => 'Kata Sandi';
 
   @override
+  String get showPassword => 'Tampilkan kata sandi';
+
+  @override
+  String get hidePassword => 'Sembunyikan kata sandi';
+
+  @override
   String get loginButton => 'Masuk';
 
   @override

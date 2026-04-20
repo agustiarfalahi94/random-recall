@@ -58,6 +58,8 @@
   "welcomeBack": "Selamat datang kembali!",
   "emailAddress": "Alamat Email",
   "password": "Kata Sandi",
+  "showPassword": "Tampilkan kata sandi",
+  "hidePassword": "Sembunyikan kata sandi",
   "loginButton": "Masuk",
   "needAccount": "Belum punya akun? Daftar",
   "forgotPasswordLink": "Lupa Kata Sandi?",
