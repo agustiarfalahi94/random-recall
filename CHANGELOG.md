@@ -16,6 +16,10 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
   - Change password button (email users only, hidden for Google sign-in users)
   - Delete account button with two-step re-authentication flow (supports both email and Google authentication methods)
 
+### Fixed
+- **Change Password dialog layout overflow** — Wrapped dialog content in `ConstrainedBox` + `SingleChildScrollView` to prevent confirm password field from becoming hidden when keyboard appears on Xiaomi devices.
+- **Profile picture discoverability** — Added "Tap to change profile picture" label below the profile avatar to indicate the element is interactive.
+
 ---
 
 ## [0.8.18] — 2026-04-20
