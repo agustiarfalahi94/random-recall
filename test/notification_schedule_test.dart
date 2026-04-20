@@ -91,11 +91,14 @@ void main() {
     });
   });
 
-  // ── Time range validation ───────────────────────────────────────────────────
+  // ── Time range validation (overnight-aware) ─────────────────────────────────
 
   group('Time range validation', () {
-    bool isTimeRangeValid(int startHour, int endHour) =>
-        startHour < endHour;
+    /// Mirrors the validation used in notification_schedule_screen _save().
+    bool isTimeRangeValid(int startHour, int endHour) {
+      final span = (endHour - startHour) % 24;
+      return span >= 1;
+    }
 
     test('8am to 8pm → valid', () {
       expect(isTimeRangeValid(8, 20), true);
@@ -105,12 +108,20 @@ void main() {
       expect(isTimeRangeValid(9, 9), false);
     });
 
-    test('end before start → invalid', () {
-      expect(isTimeRangeValid(20, 8), false);
+    test('end before start → valid overnight (e.g. 8pm to 8am)', () {
+      expect(isTimeRangeValid(20, 8), true);
     });
 
     test('midnight to 1am → valid', () {
       expect(isTimeRangeValid(0, 1), true);
+    });
+
+    test('11pm to midnight → valid overnight', () {
+      expect(isTimeRangeValid(23, 0), true);
+    });
+
+    test('10pm to 6am → valid overnight (8 hours)', () {
+      expect(isTimeRangeValid(22, 6), true);
     });
   });
 
@@ -154,11 +165,16 @@ void main() {
   // ── NotificationScheduler ───────────────────────────────────────────────────
 
   group('NotificationScheduler.computeSlots', () {
-    // Monday 2026-04-06 08:00:00 local
-    final monday8am = tz.TZDateTime(tz.local, 2026, 4, 6, 8, 0, 0);
+    // Lazily create after tz.initializeTimeZones() has run in setUpAll.
+    late final tz.TZDateTime monday8am;
     const allDays = {1, 2, 3, 4, 5, 6, 7};
     const weekdays = {1, 2, 3, 4, 5};
     const weekends = {6, 7};
+
+    setUpAll(() {
+      // Monday 2026-04-06 08:00:00 local
+      monday8am = tz.TZDateTime(tz.local, 2026, 4, 6, 8, 0, 0);
+    });
 
     test('returns empty when questionIds is empty', () {
       final slots = NotificationScheduler.computeSlots(
@@ -384,6 +400,83 @@ void main() {
       for (final entry in byDay.entries) {
         expect(entry.value, lessThanOrEqualTo(freq),
             reason: '${entry.key} has ${entry.value} slots, max is $freq');
+      }
+    });
+
+    // ── Overnight window tests ─────────────────────────────────────────────
+
+    test('overnight window 11PM–2AM produces slots', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 23,
+        endHour: 2,
+        frequency: 3,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1, 2, 3],
+        random: Random(0),
+      );
+      expect(slots, isNotEmpty,
+          reason: 'Overnight 23→2 should produce slots');
+    });
+
+    test('overnight window 11PM–midnight (1h) produces slots', () {
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 23,
+        endHour: 0,
+        frequency: 1,
+        activeDays: allDays,
+        now: monday8am,
+        questionIds: [1],
+        random: Random(0),
+      );
+      expect(slots, isNotEmpty,
+          reason: 'Overnight 23→0 should produce slots');
+      for (final slot in slots) {
+        expect(slot.scheduledAt.hour, 23,
+            reason: 'Single-hour overnight window: slot must be at hour 23');
+      }
+    });
+
+    test('overnight slot hours stay within the window bounds', () {
+      for (int seed = 0; seed < 10; seed++) {
+        final slots = NotificationScheduler.computeSlots(
+          randomAnytime: false,
+          startHour: 22,
+          endHour: 4,
+          frequency: 3,
+          activeDays: allDays,
+          now: monday8am,
+          questionIds: [1, 2, 3, 4, 5],
+          random: Random(seed),
+        );
+        for (final slot in slots) {
+          final h = slot.scheduledAt.hour;
+          // Valid hours for 22→4: 22, 23, 0, 1, 2, 3
+          final inWindow = h >= 22 || h < 4;
+          expect(inWindow, true,
+              reason: 'Seed $seed: hour $h outside overnight window 22→4 '
+                  '(${slot.scheduledAt})');
+        }
+      }
+    });
+
+    test('overnight slots are all in the future', () {
+      final lateNight = tz.TZDateTime(tz.local, 2026, 4, 6, 22, 0, 0);
+      final slots = NotificationScheduler.computeSlots(
+        randomAnytime: false,
+        startHour: 23,
+        endHour: 2,
+        frequency: 2,
+        activeDays: allDays,
+        now: lateNight,
+        questionIds: [1, 2, 3],
+        random: Random(0),
+      );
+      for (final slot in slots) {
+        expect(slot.scheduledAt.isAfter(lateNight), true,
+            reason: 'Past slot: ${slot.scheduledAt}');
       }
     });
   });

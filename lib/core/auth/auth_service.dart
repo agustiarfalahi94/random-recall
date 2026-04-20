@@ -19,8 +19,6 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  static bool _pendingLocalCleanup = false; // Flag to trigger one-time local data cleanup
-
   /// Stream of user authentication state changes.
   /// userChanges() notifies the UI whenever the user is reloaded (e.g., email verified).
   /// Stored as a lazy field (not a getter) so StreamBuilder always gets the same
@@ -36,7 +34,8 @@ class AuthService {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -47,6 +46,12 @@ class AuthService {
         await _ensureUserDocument(userCredential.user!);
         await initializeUserSession();
         AnalyticsService.instance.trackLogin(method: 'google').ignore();
+        AnalyticsService.instance
+            .identify(
+              userCredential.user!.uid,
+              email: userCredential.user!.email,
+            )
+            .ignore();
       }
       return userCredential;
     } catch (e) {
@@ -57,16 +62,25 @@ class AuthService {
 
   /// Sign in with Email and Password.
   Future<UserCredential> signInWithEmail(String email, String password) async {
-    final userCredential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+    final userCredential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
     if (userCredential.user != null) {
       // CRITICAL: Force a reload from server to catch accounts deleted in Console
       await userCredential.user!.reload();
       await _ensureUserDocument(userCredential.user!);
-      
+
       // Only initialize data if verified
       if (_auth.currentUser != null && _auth.currentUser!.emailVerified) {
         await initializeUserSession();
         AnalyticsService.instance.trackLogin(method: 'email').ignore();
+        AnalyticsService.instance
+            .identify(
+              userCredential.user!.uid,
+              email: userCredential.user!.email,
+            )
+            .ignore();
       }
     }
     return userCredential;
@@ -74,7 +88,10 @@ class AuthService {
 
   /// Sign up with Email and Password.
   Future<UserCredential> signUpWithEmail(String email, String password) async {
-    final userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+    final userCredential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
     if (userCredential.user != null) {
       // Ensure we have the latest state before sending verification
       await userCredential.user!.reload();
@@ -85,12 +102,17 @@ class AuthService {
   }
 
   /// Performs RevenueCat login and Cloud Restore only for verified users.
+  /// Ensures user document exists (defensive — normally created at signup).
   Future<void> initializeUserSession() async {
     final user = currentUser;
     if (user == null || !user.emailVerified) return;
-    
+
+    await _ensureUserDocument(user);
     await SubscriptionService.instance.logIn(user.uid);
-    await SyncService.instance.performRestore(force: true, isInitialLogin: true);
+    await SyncService.instance.performRestore(
+      force: true,
+      isInitialLogin: true,
+    );
   }
 
   /// Force-reloads the user from Firebase servers.
@@ -110,7 +132,11 @@ class AuthService {
     }
 
     // 2. Check if user document exists in Firestore database
-    final userQuery = await _db.collection('users').where('email', isEqualTo: email).limit(1).get();
+    final userQuery = await _db
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
     if (userQuery.docs.isEmpty) {
       throw FirebaseAuthException(
         code: 'user-not-found',
@@ -125,50 +151,66 @@ class AuthService {
   bool _isSigningOut = false;
 
   /// Sign out from all providers.
-  Future<void> signOut({FutureOr<void> Function()? onBeforeFinalSignOut}) async {
+  Future<void> signOut({
+    FutureOr<void> Function()? onBeforeFinalSignOut,
+  }) async {
     if (_isSigningOut) return;
     _isSigningOut = true;
 
     try {
       final user = currentUser;
-      
-      // 1. Attempt final backup (swallow errors so we don't block signout)
+
+      // 1. Attempt final backup — timeout after 8 s so a slow connection
+      //    never blocks the sign-out flow indefinitely.
       if (user != null) {
-        await SyncService.instance.performBackup(force: true).catchError((e) => debugPrint('Signout backup failed: $e'));
+        await SyncService.instance
+            .performBackup(force: true)
+            .timeout(const Duration(seconds: 8))
+            .catchError((e) => debugPrint('Signout backup failed: $e'));
       }
 
-      // 2. Stop listeners
-      SyncService.instance.stopRealtimeSync();
-      
-      // 3. Subscription and Google logout
-      SubscriptionService.instance.logOut().catchError((e) => debugPrint('RevenueCat logout failed: $e'));
+      // 2. Subscription and Google logout
+      SubscriptionService.instance.logOut().catchError(
+        (e) => debugPrint('RevenueCat logout failed: $e'),
+      );
       await _googleSignIn.signOut().catchError((_) => null);
-      
-      // 4. CRITICAL: Clear local data so the next user starts fresh
+
+      // 3. Clear local data so the next user starts fresh
       await DatabaseHelper.instance.clearAllData();
-      
-      // 5. Selective cleanup: Clear app-specific preferences
+
+      // 4. Selective cleanup: clear app-specific preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('onboarding_complete');
       await prefs.remove('timer_streak_days');
       await prefs.remove('timer_streak_last_date');
       await prefs.remove('timer_streak_bonus_questions');
-
-      // 6. UI HOOK: Allow the caller to dismiss dialogs/sheets before the 
-      // root widget tree swaps, which prevents crashes on certain Android devices.
+    } catch (e) {
+      // Log errors but never let them block the critical sign-out steps below.
+      debugPrint('AuthService: Sign-out cleanup error (non-fatal): $e');
+    } finally {
+      // 5. UI HOOK — always dismiss dialogs/sheets before Firebase tears down
+      //    the session, regardless of any cleanup errors above.
       if (onBeforeFinalSignOut != null) {
-        await onBeforeFinalSignOut();
+        try {
+          await onBeforeFinalSignOut();
+        } catch (e) {
+          debugPrint('AuthService: onBeforeFinalSignOut error: $e');
+        }
       }
 
       debugPrint('AuthService: Performing Firebase signOut...');
-      // 7. Track logout before Firebase tears down the session
-      await AnalyticsService.instance.trackLogout().catchError((_) {});
-      // 8. FINAL STEP: Sign out of Firebase to trigger the UI switch in main.dart
-      await _auth.signOut();
+      // 6. Track logout — fire-and-forget, don't block on it.
+      AnalyticsService.instance.trackLogout().catchError((_) {});
+      AnalyticsService.instance.reset().catchError((_) {});
 
-    } catch (e) {
-      debugPrint('AuthService: Sign-out error: $e');
-    } finally {
+      // 7. FINAL STEP: always sign out of Firebase so authStateChanges emits
+      //    null and the StreamBuilder switches to LoginScreen.
+      try {
+        await _auth.signOut();
+      } catch (e) {
+        debugPrint('AuthService: Firebase signOut error: $e');
+      }
+
       _isSigningOut = false;
     }
   }

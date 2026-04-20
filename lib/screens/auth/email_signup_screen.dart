@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 
 class EmailSignupScreen extends StatefulWidget {
@@ -26,6 +27,7 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -40,30 +42,33 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account created! Please check your email inbox to verify.')),
-        );
-        // Return to root to allow main.dart's Gate logic to show the VerifyEmailScreen
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.accountCreatedSnack)));
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
       String message;
       if (e.code == 'email-already-in-use') {
-        message = 'This email address is already in use. Please log in or use a different email.';
+        message = l10n.errorEmailInUse;
       } else if (e.code == 'invalid-email') {
-        message = 'The email address is not valid.';
+        message = l10n.errorInvalidEmail;
       } else if (e.code == 'weak-password') {
-        message = 'The password is too weak. Please use at least 6 characters.';
+        message = l10n.errorWeakPassword;
       } else if (e.code == 'too-many-requests') {
-        message = 'Too many attempts. Please try again later.';
+        message = l10n.errorTooManyRequests;
       } else {
-        message = e.message ?? 'Authentication error (${e.code}). Please try again.';
+        message = l10n.errorSignUpFailed;
       }
       setState(() => _errorMessage = message);
     } on FirebaseException {
-      setState(() => _errorMessage = 'Sign up failed. Please try again.');
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.errorSignUpFailed,
+      );
     } catch (e) {
-      setState(() => _errorMessage = 'An unexpected error occurred. Please try again.');
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.errorUnexpected,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -71,13 +76,12 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
+      appBar: AppBar(title: Text(l10n.signupTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -92,8 +96,10 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Join Random Recall',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                l10n.joinTitle,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -107,7 +113,10 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
+                    style: TextStyle(
+                      color: colorScheme.onErrorContainer,
+                      fontSize: 13,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -117,14 +126,17 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  labelText: l10n.emailAddress,
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email address';
+                  if (value == null || value.isEmpty)
+                    return l10n.validationEnterEmail;
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
+                    return l10n.validationValidEmail;
                   }
                   return null;
                 },
@@ -133,13 +145,14 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter a password';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value == null || value.isEmpty)
+                    return l10n.validationEnterNewPassword;
+                  if (value.length < 6) return l10n.validationPasswordLength;
                   return null;
                 },
               ),
@@ -148,18 +161,23 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
                 child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
-                    )
-                  : const Text('Sign Up'),
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(l10n.signUpButton),
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                onPressed: _isLoading
+                    ? null
+                    : () => Navigator.of(context).pop(),
                 child: Text(
-                  'Already have an account? Login',
+                  l10n.alreadyHaveAccount,
                   style: TextStyle(color: colorScheme.primary),
                 ),
               ),

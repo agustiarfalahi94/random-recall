@@ -1,16 +1,18 @@
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/utils/battery_optimization.dart';
 
-typedef OnNotificationSetupComplete = void Function({
-  required bool randomAnytime,
-  required int startHour,
-  required int endHour,
-  required int frequency,
-  required List<int> activeDays,
-});
+typedef OnNotificationSetupComplete =
+    void Function({
+      required bool randomAnytime,
+      required int startHour,
+      required int endHour,
+      required int frequency,
+      required List<int> activeDays,
+    });
 
 class NotificationSetupPage extends StatefulWidget {
   const NotificationSetupPage({
@@ -40,7 +42,15 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
   bool _permPermanentlyDenied = false;
   bool _waitingForSettingsReturn = false;
 
-  static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  List<String> _getDayLabels(AppLocalizations l10n) => [
+    l10n.dayMon,
+    l10n.dayTue,
+    l10n.dayWed,
+    l10n.dayThu,
+    l10n.dayFri,
+    l10n.daySat,
+    l10n.daySun,
+  ];
 
   @override
   void initState() {
@@ -96,10 +106,11 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
   }
 
   Future<void> _pickTime({required bool isStart}) async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showTimePicker(
       context: context,
       initialTime: isStart ? _startTime : _endTime,
-      helpText: isStart ? 'Select start time' : 'Select end time',
+      helpText: isStart ? l10n.selectStartTime : l10n.selectEndTime,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
         child: child!,
@@ -109,9 +120,11 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
     setState(() {
       if (isStart) {
         _startTime = picked;
-        // Auto-advance end if end is no longer at least 1 hour ahead
         if (_endTime.hour <= _startTime.hour) {
-          _endTime = TimeOfDay(hour: (_startTime.hour + 1).clamp(0, 23), minute: 0);
+          _endTime = TimeOfDay(
+            hour: (_startTime.hour + 1).clamp(0, 23),
+            minute: 0,
+          );
         }
       } else {
         _endTime = picked;
@@ -119,24 +132,27 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
     });
   }
 
-  String get _activeDaysLabel {
-    if (_activeDays.isEmpty) return 'You must choose at least 1!';
+  String _activeDaysLabel(AppLocalizations l10n) {
+    if (_activeDays.isEmpty) return l10n.mustChooseDay;
     final sorted = _activeDays.toList()..sort();
-    final isWeekdays = sorted.length == 5 && sorted.every((d) => d >= 1 && d <= 5);
-    final isWeekends = sorted.length == 2 && sorted.contains(6) && sorted.contains(7);
+    final isWeekdays =
+        sorted.length == 5 && sorted.every((d) => d >= 1 && d <= 5);
+    final isWeekends =
+        sorted.length == 2 && sorted.contains(6) && sorted.contains(7);
     final isDaily = sorted.length == 7;
-    if (isDaily) return 'Every day';
-    if (isWeekdays) return 'Weekdays only';
-    if (isWeekends) return 'Weekends only';
-    return sorted.map((d) => _dayLabels[d - 1]).join(', ');
+    if (isDaily) return l10n.everyDay;
+    if (isWeekdays) return l10n.weekdaysOnly;
+    if (isWeekends) return l10n.weekendsOnly;
+    final dayLabels = _getDayLabels(l10n);
+    return sorted.map((d) => dayLabels[d - 1]).join(', ');
   }
 
   Future<void> _onComplete() async {
-    // Validate time range before checking permission
+    final l10n = AppLocalizations.of(context)!;
     if (!_randomAnytime && _endTime.hour <= _startTime.hour) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End time must be at least 1 hour after start time.'),
+        SnackBar(
+          content: Text(l10n.endTimeMustBeAfter),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -172,8 +188,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
     setState(() => _checkingPermission = false);
 
-    // Request battery-optimization whitelist so Android/MIUI never blocks
-    // our exact alarms — shows a one-time system dialog if not yet granted.
     final isIgnoring = await isIgnoringBatteryOptimizations();
     if (!mounted) return;
     if (!isIgnoring) await requestIgnoreBatteryOptimizations();
@@ -190,9 +204,11 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // required by AutomaticKeepAliveClientMixin
+    super.build(context);
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final dayLabels = _getDayLabels(l10n);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -202,11 +218,10 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
           children: [
             const SizedBox(height: 16),
 
-            // ── Back button ───────────────────────────────────────────────────
             TextButton.icon(
               onPressed: widget.onBack,
               icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
-              label: const Text('Back'),
+              label: Text(l10n.back),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
@@ -217,7 +232,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
             _buildStepIndicator(colorScheme),
             const SizedBox(height: 28),
             Text(
-              'When should we\nremind you?',
+              l10n.notifSetupTitle,
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: colorScheme.onSurface,
@@ -226,32 +241,34 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
             ),
             const SizedBox(height: 8),
             Text(
-              'You can change these settings later in the app.',
+              l10n.notifSetupSubtitle,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 28),
 
-            // ── Timing toggle ────────────────────────────────────────────────
-            _SectionLabel(label: 'Timing', colorScheme: colorScheme),
+            _SectionLabel(label: l10n.timingSection, colorScheme: colorScheme),
             const SizedBox(height: 10),
             _SectionCard(
               colorScheme: colorScheme,
               child: Column(
                 children: [
                   _TimingOptionTile(
-                    title: 'Anytime (fully random)',
-                    subtitle: 'Notifications at any hour of the day',
+                    title: l10n.anytimeOption,
+                    subtitle: l10n.anytimeSubtitle,
                     icon: '🎲',
                     isSelected: _randomAnytime,
                     colorScheme: colorScheme,
                     onTap: () => setState(() => _randomAnytime = true),
                   ),
-                  Divider(height: 1, color: colorScheme.outlineVariant.withOpacity(0.4)),
+                  Divider(
+                    height: 1,
+                    color: colorScheme.outlineVariant.withOpacity(0.4),
+                  ),
                   _TimingOptionTile(
-                    title: 'Set time range',
-                    subtitle: 'Only notify within your chosen window',
+                    title: l10n.setTimeRange,
+                    subtitle: l10n.setTimeRangeSubtitle,
                     icon: '🕐',
                     isSelected: !_randomAnytime,
                     colorScheme: colorScheme,
@@ -261,16 +278,17 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
               ),
             ),
 
-            // ── Time window — matches settings screen exactly ─────────────────
             if (!_randomAnytime) ...[
               const SizedBox(height: 20),
-              _SectionLabel(label: 'Time window', colorScheme: colorScheme),
+              _SectionLabel(
+                label: l10n.timeWindowSection,
+                colorScheme: colorScheme,
+              ),
               const SizedBox(height: 10),
               _SectionCard(
                 colorScheme: colorScheme,
                 child: Column(
                   children: [
-                    // Start time row
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Container(
@@ -282,9 +300,9 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                         ),
                         child: const Icon(Icons.wb_sunny_outlined, size: 20),
                       ),
-                      title: const Text(
-                        'Start time',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      title: Text(
+                        l10n.startTime,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       trailing: _TimeChip(
                         label: _formatTime(_startTime),
@@ -292,8 +310,10 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                         onTap: () => _pickTime(isStart: true),
                       ),
                     ),
-                    Divider(height: 1, color: colorScheme.outlineVariant.withOpacity(0.4)),
-                    // End time row
+                    Divider(
+                      height: 1,
+                      color: colorScheme.outlineVariant.withOpacity(0.4),
+                    ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Container(
@@ -305,9 +325,9 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                         ),
                         child: const Icon(Icons.nights_stay_outlined, size: 20),
                       ),
-                      title: const Text(
-                        'End time',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      title: Text(
+                        l10n.endTime,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       trailing: _TimeChip(
                         label: _formatTime(_endTime),
@@ -320,9 +340,11 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
               ),
             ],
 
-            // ── Active days — always visible, matches settings screen ─────────
             const SizedBox(height: 20),
-            _SectionLabel(label: 'Active days', colorScheme: colorScheme),
+            _SectionLabel(
+              label: l10n.activeDaysSection,
+              colorScheme: colorScheme,
+            ),
             const SizedBox(height: 10),
             _SectionCard(
               colorScheme: colorScheme,
@@ -331,27 +353,31 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Preset chips
                     Row(
                       children: [
                         _PresetChip(
-                          label: 'Daily',
+                          label: l10n.presetDaily,
                           isSelected: _activeDays.length == 7,
                           colorScheme: colorScheme,
-                          onTap: () => setState(() => _activeDays = {1, 2, 3, 4, 5, 6, 7}),
+                          onTap: () => setState(
+                            () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                          ),
                         ),
                         const SizedBox(width: 8),
                         _PresetChip(
-                          label: 'Weekdays',
-                          isSelected: _activeDays.length == 5 &&
+                          label: l10n.presetWeekdays,
+                          isSelected:
+                              _activeDays.length == 5 &&
                               _activeDays.every((d) => d <= 5),
                           colorScheme: colorScheme,
-                          onTap: () => setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                          onTap: () =>
+                              setState(() => _activeDays = {1, 2, 3, 4, 5}),
                         ),
                         const SizedBox(width: 8),
                         _PresetChip(
-                          label: 'Weekends',
-                          isSelected: _activeDays.length == 2 &&
+                          label: l10n.presetWeekends,
+                          isSelected:
+                              _activeDays.length == 2 &&
                               _activeDays.contains(6) &&
                               _activeDays.contains(7),
                           colorScheme: colorScheme,
@@ -360,14 +386,13 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Individual day chips
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(7, (index) {
                         final day = index + 1;
                         final isSelected = _activeDays.contains(day);
                         return _DayChip(
-                          label: _dayLabels[index],
+                          label: dayLabels[index],
                           isSelected: isSelected,
                           colorScheme: colorScheme,
                           onTap: () {
@@ -383,9 +408,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                       }),
                     ),
                     const SizedBox(height: 12),
-                    // Dynamic label
                     Text(
-                      _activeDaysLabel,
+                      _activeDaysLabel(l10n),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -399,23 +423,31 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
               ),
             ),
 
-            // ── Frequency ────────────────────────────────────────────────────
             const SizedBox(height: 20),
-            _SectionLabel(label: 'How many times per day?', colorScheme: colorScheme),
+            _SectionLabel(
+              label: l10n.howManyTimesPerDay,
+              colorScheme: colorScheme,
+            ),
             const SizedBox(height: 10),
             _SectionCard(
               colorScheme: colorScheme,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 4.0,
+                ),
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: _frequency > 1 ? () => setState(() => _frequency--) : null,
+                      onPressed: _frequency > 1
+                          ? () => setState(() => _frequency--)
+                          : null,
                       icon: const Icon(Icons.remove_rounded),
                       style: IconButton.styleFrom(
                         backgroundColor: colorScheme.primaryContainer,
                         foregroundColor: colorScheme.onPrimaryContainer,
-                        disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+                        disabledBackgroundColor:
+                            colorScheme.surfaceContainerHighest,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -432,19 +464,27 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                             ),
                           ),
                           Text(
-                            _frequency == 1 ? 'time per day' : 'times per day',
-                            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                            _frequency == 1
+                                ? l10n.timePerDay
+                                : l10n.timesPerDay,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      onPressed: _frequency < 10 ? () => setState(() => _frequency++) : null,
+                      onPressed: _frequency < 10
+                          ? () => setState(() => _frequency++)
+                          : null,
                       icon: const Icon(Icons.add_rounded),
                       style: IconButton.styleFrom(
                         backgroundColor: colorScheme.primaryContainer,
                         foregroundColor: colorScheme.onPrimaryContainer,
-                        disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+                        disabledBackgroundColor:
+                            colorScheme.surfaceContainerHighest,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -457,7 +497,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
 
             const SizedBox(height: 40),
 
-            // ── Permission error banner ───────────────────────────────────────
             if (_showPermissionError) ...[
               Container(
                 width: double.infinity,
@@ -469,15 +508,18 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.notifications_off_rounded,
-                        color: colorScheme.onErrorContainer, size: 22),
+                    Icon(
+                      Icons.notifications_off_rounded,
+                      color: colorScheme.onErrorContainer,
+                      size: 22,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Notifications are turned off',
+                            l10n.notificationsOff,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: colorScheme.onErrorContainer,
@@ -487,10 +529,8 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                           const SizedBox(height: 4),
                           Text(
                             _permPermanentlyDenied
-                                ? 'Tap the button below to open Notification Settings. '
-                                    'Enable "Random Recall" there, then come back here.'
-                                : 'Random Recall needs notifications to remind you. '
-                                    'Please allow notifications when prompted.',
+                                ? l10n.notifPermDeniedMsg
+                                : l10n.notifNeedsPermission,
                             style: TextStyle(
                               color: colorScheme.onErrorContainer,
                               fontSize: 13,
@@ -506,7 +546,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
               const SizedBox(height: 16),
             ],
 
-            // ── Checking spinner ──────────────────────────────────────────────
             if (_checkingPermission) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -521,7 +560,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Checking notification permission…',
+                    l10n.checkingPermission,
                     style: TextStyle(
                       fontSize: 13,
                       color: colorScheme.onSurfaceVariant,
@@ -538,18 +577,20 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
-                  : Text(_permPermanentlyDenied
-                      ? 'Open Notification Settings ↗'
-                      : _showPermissionError
-                          ? 'Try again'
-                          : 'Start Recalling! 🚀'),
+                  : Text(
+                      _permPermanentlyDenied
+                          ? l10n.openNotifSettings
+                          : _showPermissionError
+                          ? l10n.tryAgain
+                          : l10n.startRecalling,
+                    ),
             ),
 
-            // Skip option — only shown when permission is denied.
-            // Lets the user proceed without notifications and enable them
-            // later from the app's settings screen.
             if (_showPermissionError && !_checkingPermission) ...[
               const SizedBox(height: 12),
               TextButton(
@@ -561,7 +602,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                   activeDays: _activeDays.toList()..sort(),
                 ),
                 child: Text(
-                  'Skip for now — enable notifications later',
+                  l10n.skipForNow,
                   style: TextStyle(
                     fontSize: 13,
                     color: colorScheme.onSurfaceVariant,
@@ -585,7 +626,9 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
             margin: EdgeInsets.only(right: index < 2 ? 6 : 0),
             height: 4,
             decoration: BoxDecoration(
-              color: index == 2 ? colorScheme.primary : colorScheme.primaryContainer,
+              color: index == 2
+                  ? colorScheme.primary
+                  : colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -594,8 +637,6 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
     );
   }
 }
-
-// ── Shared small widgets ───────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label, required this.colorScheme});
@@ -676,7 +717,10 @@ class _TimingOptionTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -694,7 +738,11 @@ class _TimingOptionTile extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? Icon(Icons.check_rounded, size: 14, color: colorScheme.onPrimary)
+                  ? Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: colorScheme.onPrimary,
+                    )
                   : null,
             ),
           ],
@@ -704,9 +752,12 @@ class _TimingOptionTile extends StatelessWidget {
   }
 }
 
-/// Tappable pill chip showing a formatted time — identical style to settings screen.
 class _TimeChip extends StatelessWidget {
-  const _TimeChip({required this.label, required this.colorScheme, required this.onTap});
+  const _TimeChip({
+    required this.label,
+    required this.colorScheme,
+    required this.onTap,
+  });
   final String label;
   final ColorScheme colorScheme;
   final VoidCallback onTap;
@@ -734,7 +785,6 @@ class _TimeChip extends StatelessWidget {
   }
 }
 
-/// Daily / Weekdays / Weekends quick-select chip — identical style to settings screen.
 class _PresetChip extends StatelessWidget {
   const _PresetChip({
     required this.label,
@@ -755,10 +805,14 @@ class _PresetChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant,
           ),
         ),
         child: Text(
@@ -766,7 +820,9 @@ class _PresetChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+            color: isSelected
+                ? colorScheme.onPrimary
+                : colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -774,7 +830,6 @@ class _PresetChip extends StatelessWidget {
   }
 }
 
-/// Individual day square chip — identical style to settings screen.
 class _DayChip extends StatelessWidget {
   const _DayChip({
     required this.label,
@@ -796,7 +851,9 @@ class _DayChip extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+          color: isSelected
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
@@ -805,7 +862,9 @@ class _DayChip extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
-              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+              color: isSelected
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
         ),

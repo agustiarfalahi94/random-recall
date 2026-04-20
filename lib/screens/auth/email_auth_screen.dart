@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 import 'email_signup_screen.dart';
 import 'forgot_password_screen.dart';
@@ -28,6 +29,7 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -41,31 +43,34 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
         _passwordController.text.trim(),
       );
       if (mounted) {
-        // Clear stack to root gate
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
       String message;
       if (e.code == 'user-not-found') {
-        message = 'No account found for this email.';
+        message = l10n.errorNoAccount;
       } else if (e.code == 'wrong-password' ||
-                 e.code == 'invalid-credential' ||
-                 e.code == 'INVALID_LOGIN_CREDENTIALS') {
-        message = 'Incorrect email or password.';
+          e.code == 'invalid-credential' ||
+          e.code == 'INVALID_LOGIN_CREDENTIALS') {
+        message = l10n.errorWrongPassword;
       } else if (e.code == 'invalid-email') {
-        message = 'The email address is not valid.';
+        message = l10n.errorInvalidEmail;
       } else if (e.code == 'user-disabled') {
-        message = 'This account has been disabled.';
+        message = l10n.errorAccountDisabled;
       } else if (e.code == 'too-many-requests') {
-        message = 'Too many attempts. Please try again later.';
+        message = l10n.errorTooManyRequests;
       } else {
-        message = 'Incorrect email or password.';
+        message = l10n.errorWrongPassword;
       }
       setState(() => _errorMessage = message);
     } on FirebaseException {
-      setState(() => _errorMessage = 'Authentication failed. Please try again.');
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.errorAuthFailed,
+      );
     } catch (e) {
-      setState(() => _errorMessage = 'An unexpected error occurred. Please try again.');
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.errorUnexpected,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -73,13 +78,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: Text(l10n.emailAuthTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -94,8 +98,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Welcome back!',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                l10n.welcomeBack,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -109,7 +115,10 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: TextStyle(color: colorScheme.onErrorContainer, fontSize: 13),
+                    style: TextStyle(
+                      color: colorScheme.onErrorContainer,
+                      fontSize: 13,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -119,14 +128,17 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  labelText: l10n.emailAddress,
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email address';
+                  if (value == null || value.isEmpty)
+                    return l10n.validationEnterEmail;
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value)) {
+                    return l10n.validationValidEmail;
                   }
                   return null;
                 },
@@ -135,13 +147,14 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your password';
-                  if (value.length < 6) return 'Password must be at least 6 characters';
+                  if (value == null || value.isEmpty)
+                    return l10n.validationEnterPassword;
+                  if (value.length < 6) return l10n.validationPasswordLength;
                   return null;
                 },
               ),
@@ -150,12 +163,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
                 child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
-                    )
-                  : const Text('Login'),
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(l10n.loginButton),
               ),
               const SizedBox(height: 16),
               TextButton(
@@ -163,11 +179,13 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     ? null
                     : () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const EmailSignupScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const EmailSignupScreen(),
+                          ),
                         );
                       },
                 child: Text(
-                  'Need an account? Sign up',
+                  l10n.needAccount,
                   style: TextStyle(color: colorScheme.primary),
                 ),
               ),
@@ -176,10 +194,15 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                     ? null
                     : () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
                         );
                       },
-                child: Text('Forgot Password?', style: TextStyle(color: colorScheme.secondary, fontSize: 13)),
+                child: Text(
+                  l10n.forgotPasswordLink,
+                  style: TextStyle(color: colorScheme.secondary, fontSize: 13),
+                ),
               ),
             ],
           ),

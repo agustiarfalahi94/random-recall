@@ -11,9 +11,11 @@ class SubscriptionService {
   SubscriptionService._internal();
   static final SubscriptionService instance = SubscriptionService._internal();
 
-  static const String _apiKeyAndroid = 'goog_abc123...'; // Use your real key from the dashboard
-  static const String _entitlementId = 'premium'; // The ID defined in RevenueCat Dashboard
-  
+  static const String _apiKeyAndroid =
+      'goog_abc123...'; // Use your real key from the dashboard
+  static const String _entitlementId =
+      'premium'; // The ID defined in RevenueCat Dashboard
+
   final _db = FirebaseFirestore.instance;
   bool _isConfigured = false;
 
@@ -23,8 +25,11 @@ class SubscriptionService {
     // 1. Configure the SDK
     if (Platform.isAndroid) {
       // Guard against placeholder keys to avoid log spam
-      if (_apiKeyAndroid.startsWith('goog_abc') || _apiKeyAndroid.contains('your_actual')) {
-        debugPrint('SubscriptionService: API Key placeholder detected. Skipping RevenueCat init.');
+      if (_apiKeyAndroid.startsWith('goog_abc') ||
+          _apiKeyAndroid.contains('your_actual')) {
+        debugPrint(
+          'SubscriptionService: API Key placeholder detected. Skipping RevenueCat init.',
+        );
         return;
       }
       await Purchases.configure(PurchasesConfiguration(_apiKeyAndroid));
@@ -99,8 +104,10 @@ class SubscriptionService {
 
   Future<void> _updatePremiumStatus(CustomerInfo customerInfo) async {
     final user = AuthService.instance.currentUser;
-    final isPremium = customerInfo.entitlements.active.containsKey(_entitlementId);
-    
+    final isPremium = customerInfo.entitlements.active.containsKey(
+      _entitlementId,
+    );
+
     // 1. Update local SharedPreferences
     await PlanService.setPremiumStatus(isPremium);
 

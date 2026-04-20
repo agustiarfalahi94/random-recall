@@ -29,6 +29,7 @@ void main() {
         name: 'Coffee',
         icon: '☕',
         createdAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
       );
       final map = category.toMap();
       expect(map['id'], 2);
@@ -42,6 +43,7 @@ void main() {
         name: 'Work',
         icon: '💼',
         createdAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
       );
       final updated = original.copyWith(name: 'Study');
       expect(updated.name, 'Study');
@@ -74,6 +76,7 @@ void main() {
         answer: 'Random Access Memory',
         categoryId: 1,
         createdAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
       );
       final map = q.toMap();
       expect(map.containsKey('id'), false);
@@ -86,6 +89,7 @@ void main() {
         answer: 'Random Access Memory',
         categoryId: 1,
         createdAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
       );
       final map = q.toMap();
       expect(map['id'], 5);
@@ -98,6 +102,7 @@ void main() {
         answer: 'Old answer',
         categoryId: 2,
         createdAt: DateTime(2024),
+        updatedAt: DateTime(2024),
       );
       final updated = original.copyWith(question: 'New question');
       expect(updated.question, 'New question');
@@ -139,6 +144,7 @@ void main() {
         categoryId: 1,
         isCorrect: true,
         answeredAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
       );
       final map = record.toMap();
       expect(map['is_correct'], 1);
@@ -150,6 +156,7 @@ void main() {
         categoryId: 1,
         isCorrect: false,
         answeredAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
       );
       final map = record.toMap();
       expect(map['is_correct'], 0);

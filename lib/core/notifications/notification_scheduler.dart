@@ -3,12 +3,12 @@ import 'package:timezone/timezone.dart' as tz;
 
 /// A single computed notification slot: when to fire and which question to show.
 class ScheduledSlot {
-  final tz.TZDateTime scheduledAt; 
+  final tz.TZDateTime scheduledAt;
   final int questionId;
   final int slotIndex;
 
   const ScheduledSlot({
-    required this.scheduledAt, 
+    required this.scheduledAt,
     required this.questionId,
     required this.slotIndex,
   });
@@ -53,6 +53,8 @@ class NotificationScheduler {
 
     final effectiveStart = randomAnytime ? 0 : startHour;
     final effectiveEnd = randomAnytime ? 23 : endHour;
+    // Overnight window (e.g. 11 PM → 2 AM) wraps around midnight.
+    final isOvernight = effectiveEnd < effectiveStart;
 
     // Allow frequency to exceed question count by repeating questions if necessary.
     final dailyFrequency = frequency;
@@ -78,22 +80,40 @@ class NotificationScheduler {
 
       weekUsedIds.addAll(dayUsedIds);
 
-      // Spread the notifications evenly across the minute-window
-      // e.g. 8:00 AM to 8:00 PM = 720 minutes. Frequency 3 = one every 240 mins.
-      final totalMinutes = (effectiveEnd - effectiveStart) * 60;
+      // Spread the notifications evenly across the minute-window.
+      // For overnight windows (e.g. 23→2), the span wraps: (24 - 23 + 2) = 3 hours.
+      final totalMinutes = isOvernight
+          ? (24 - effectiveStart + effectiveEnd) * 60
+          : (effectiveEnd - effectiveStart) * 60;
       final spacing = totalMinutes / dayQuestionIds.length;
 
+      // Window-end boundary: same day for normal, next day for overnight.
+      // Use .add(Duration) instead of day+1 for correct DST/month-boundary handling.
+      var windowEnd = tz.TZDateTime(
+        tz.local,
+        targetDate.year,
+        targetDate.month,
+        targetDate.day,
+        effectiveEnd,
+      );
+      if (isOvernight) {
+        windowEnd = tz.TZDateTime.from(
+          windowEnd.add(const Duration(days: 1)),
+          tz.local,
+        );
+      }
+
       for (int i = 0; i < dayQuestionIds.length; i++) {
-        // Use a deterministic jitter based on the question ID. This prevents the 
+        // Use a deterministic jitter based on the question ID. This prevents the
         // alarm time from "drifting" every time the app reschedules due to a sync.
         final baseOffsetMinutes = (spacing * i).toInt();
         final maxJitter = (spacing * 0.3).toInt().clamp(1, 59);
-        
+
         // Seed the random with the question ID so the jitter is consistent for this question
         final jitter = Random(dayQuestionIds[i]).nextInt(maxJitter);
-        
+
         final totalOffset = baseOffsetMinutes + jitter;
-        
+
         var slotTime = tz.TZDateTime(
           tz.local,
           targetDate.year,
@@ -102,19 +122,21 @@ class NotificationScheduler {
           effectiveStart,
         ).add(Duration(minutes: totalOffset));
 
-        // Ensure the jitter doesn't push the slot into the next calendar day
-        if (slotTime.day != targetDate.day) {
+        // Ensure jitter doesn't push the slot past the window boundary
+        if (!slotTime.isBefore(windowEnd)) {
           slotTime = slotTime.subtract(Duration(minutes: jitter + 1));
         }
 
         // Skip slots that have already passed today.
         // Buffer of 2 minutes ensures the OS has time to register the alarm.
         if (slotTime.isAfter(now.add(const Duration(minutes: 2)))) {
-          slots.add(ScheduledSlot(
-            scheduledAt: slotTime,
-            questionId: dayQuestionIds[i],
-            slotIndex: i,
-          ));
+          slots.add(
+            ScheduledSlot(
+              scheduledAt: slotTime,
+              questionId: dayQuestionIds[i],
+              slotIndex: i,
+            ),
+          );
         }
       }
     }
@@ -140,7 +162,7 @@ class NotificationScheduler {
     final dayFresh = all.where((id) => !dayUsed.contains(id)).toList();
     if (dayFresh.isNotEmpty) return dayFresh[rng.nextInt(dayFresh.length)];
 
-    // Final Fallback: Pool exhausted for today. Return any question from the 
+    // Final Fallback: Pool exhausted for today. Return any question from the
     // total pool to satisfy the requested frequency.
     return all[rng.nextInt(all.length)];
   }

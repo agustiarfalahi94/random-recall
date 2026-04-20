@@ -127,7 +127,7 @@ class DatabaseHelper {
     final batch = db.batch();
     for (final entry in [
       {'name': 'General', 'icon': '📌'},
-      {'name': 'Work',    'icon': '💼'},
+      {'name': 'Work', 'icon': '💼'},
     ]) {
       batch.insert(_tableCategories, {
         ...entry,
@@ -144,35 +144,52 @@ class DatabaseHelper {
   Future<int> insertCategory(Category c) async {
     final map = c.toMap();
     map['updated_at'] = DateTime.now().toIso8601String();
-    final id = await (await database).insert(_tableCategories, map,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    final id = await (await database).insert(
+      _tableCategories,
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
     _updateController.add(null);
     return id;
   }
 
   Future<List<Category>> getAllCategories() async {
-    final rows = await (await database).query(_tableCategories, orderBy: 'name ASC');
+    final rows = await (await database).query(
+      _tableCategories,
+      orderBy: 'name ASC',
+    );
     return rows.map(Category.fromMap).toList();
   }
 
   Future<Category?> getCategoryById(int id) async {
-    final rows = await (await database).query(_tableCategories,
-        where: 'id = ?', whereArgs: [id], limit: 1);
+    final rows = await (await database).query(
+      _tableCategories,
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
     return rows.isEmpty ? null : Category.fromMap(rows.first);
   }
 
   Future<int> updateCategory(Category c) async {
     final map = c.toMap();
     map['updated_at'] = DateTime.now().toIso8601String();
-    final count = await (await database).update(_tableCategories, map,
-        where: 'id = ?', whereArgs: [c.id]);
+    final count = await (await database).update(
+      _tableCategories,
+      map,
+      where: 'id = ?',
+      whereArgs: [c.id],
+    );
     _updateController.add(null);
     return count;
   }
 
   Future<int> deleteCategory(int id) async {
-    final count = await (await database).delete(_tableCategories, 
-        where: 'id = ?', whereArgs: [id]);
+    final count = await (await database).delete(
+      _tableCategories,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     _updateController.add(null);
     return count;
   }
@@ -182,24 +199,33 @@ class DatabaseHelper {
   Future<int> insertQuestion(Question q) async {
     final map = q.toMap();
     map['updated_at'] = DateTime.now().toIso8601String();
-    final id = await (await database).insert(_tableQuestions, map,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    final id = await (await database).insert(
+      _tableQuestions,
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
     _updateController.add(null);
     return id;
   }
 
   Future<List<Question>> getAllQuestions({int? categoryId}) async {
     final db = await database;
-    final rows = await db.query(_tableQuestions,
-        where: categoryId != null ? 'category_id = ?' : null,
-        whereArgs: categoryId != null ? [categoryId] : null,
-        orderBy: 'created_at DESC');
+    final rows = await db.query(
+      _tableQuestions,
+      where: categoryId != null ? 'category_id = ?' : null,
+      whereArgs: categoryId != null ? [categoryId] : null,
+      orderBy: 'created_at DESC',
+    );
     return rows.map(Question.fromMap).toList();
   }
 
   Future<Question?> getQuestionById(int id) async {
-    final rows = await (await database).query(_tableQuestions,
-        where: 'id = ?', whereArgs: [id], limit: 1);
+    final rows = await (await database).query(
+      _tableQuestions,
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
     return rows.isEmpty ? null : Question.fromMap(rows.first);
   }
 
@@ -211,10 +237,7 @@ class DatabaseHelper {
     final db = await database;
 
     // Merge all exclusions into one set
-    final allExcluded = <int>{
-      if (excludeId != null) excludeId,
-      ...?excludeIds,
-    };
+    final allExcluded = <int>{if (excludeId != null) excludeId, ...?excludeIds};
 
     final conditions = <String>[];
     final args = <dynamic>[];
@@ -246,8 +269,9 @@ class DatabaseHelper {
   }
 
   Future<int> getQuestionCount() async {
-    final result = await (await database)
-        .rawQuery('SELECT COUNT(*) FROM $_tableQuestions');
+    final result = await (await database).rawQuery(
+      'SELECT COUNT(*) FROM $_tableQuestions',
+    );
     return result.first.values.first as int? ?? 0;
   }
 
@@ -262,15 +286,22 @@ class DatabaseHelper {
   Future<int> updateQuestion(Question q) async {
     final map = q.toMap();
     map['updated_at'] = DateTime.now().toIso8601String();
-    final count = await (await database).update(_tableQuestions, map,
-        where: 'id = ?', whereArgs: [q.id]);
+    final count = await (await database).update(
+      _tableQuestions,
+      map,
+      where: 'id = ?',
+      whereArgs: [q.id],
+    );
     _updateController.add(null);
     return count;
   }
 
   Future<int> deleteQuestion(int id) async {
-    final count = await (await database).delete(_tableQuestions, 
-        where: 'id = ?', whereArgs: [id]);
+    final count = await (await database).delete(
+      _tableQuestions,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     _updateController.add(null);
     return count;
   }
@@ -280,24 +311,32 @@ class DatabaseHelper {
   Future<int> insertScoreRecord(ScoreRecord r) async {
     final map = r.toMap();
     map['updated_at'] = DateTime.now().toIso8601String();
-    final id = await (await database).insert(_tableScoreRecords, map,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    final id = await (await database).insert(
+      _tableScoreRecords,
+      map,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
     _updateController.add(null);
     return id;
   }
 
   Future<List<ScoreRecord>> getAllScoreRecords({int? categoryId}) async {
     final db = await database;
-    final rows = await db.query(_tableScoreRecords,
-        where: categoryId != null ? 'category_id = ?' : null,
-        whereArgs: categoryId != null ? [categoryId] : null,
-        orderBy: 'answered_at DESC');
+    final rows = await db.query(
+      _tableScoreRecords,
+      where: categoryId != null ? 'category_id = ?' : null,
+      whereArgs: categoryId != null ? [categoryId] : null,
+      orderBy: 'answered_at DESC',
+    );
     return rows.map(ScoreRecord.fromMap).toList();
   }
 
   Future<int> deleteScoreRecord(int id) async {
-    final count = await (await database).delete(_tableScoreRecords,
-          where: 'id = ?', whereArgs: [id]);
+    final count = await (await database).delete(
+      _tableScoreRecords,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     _updateController.add(null);
     return count;
   }
@@ -322,7 +361,7 @@ class DatabaseHelper {
     ''');
 
     return rows.map((row) {
-      final total   = row['total'] as int;
+      final total = row['total'] as int;
       final correct = (row['correct'] as num).toInt();
       return {
         'category': Category(
@@ -332,8 +371,8 @@ class DatabaseHelper {
           createdAt: DateTime.parse(row['cat_created_at'] as String),
           updatedAt: DateTime.parse(row['cat_updated_at'] as String),
         ),
-        'total':      total,
-        'correct':    correct,
+        'total': total,
+        'correct': correct,
         'percentage': total > 0 ? (correct / total) * 100.0 : 0.0,
       };
     }).toList();

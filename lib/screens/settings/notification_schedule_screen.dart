@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../../core/utils/battery_optimization.dart';
@@ -45,19 +47,34 @@ class _NotificationScheduleScreenState
     if (_debugTaps >= 7) {
       _debugTaps = 0;
       Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const DebugNotificationScreen()));
+        context,
+        MaterialPageRoute(builder: (_) => const DebugNotificationScreen()),
+      );
     }
   }
 
-  static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   // Timer slider: 0 = off, then 5–90 in steps of 5 (18 divisions)
+
+  List<String> _getDayLabels(AppLocalizations l10n) => [
+    l10n.dayMon,
+    l10n.dayTue,
+    l10n.dayWed,
+    l10n.dayThu,
+    l10n.dayFri,
+    l10n.daySat,
+    l10n.daySun,
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadPrefs();
-    isMiuiDevice().then((v) { if (mounted) setState(() => _isMiui = v); });
-    isIgnoringBatteryOptimizations().then((v) { if (mounted) setState(() => _isIgnoringBattery = v); });
+    isMiuiDevice().then((v) {
+      if (mounted) setState(() => _isMiui = v);
+    });
+    isIgnoringBatteryOptimizations().then((v) {
+      if (mounted) setState(() => _isIgnoringBattery = v);
+    });
   }
 
   @override
@@ -102,22 +119,26 @@ class _NotificationScheduleScreenState
   }
 
   Future<void> _save() async {
-    // Since notification slots are spaced by hour, the window must span at
-    // least 1 full hour (e.g. 1 PM start requires 2 PM or later end).
-    if (!_randomAnytime && _endTime.hour <= _startTime.hour) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End time must be at least 1 hour after start time.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
+    final l10n = AppLocalizations.of(context)!;
+    // The window must span at least 1 hour. Overnight windows (e.g. 11 PM → 2 AM)
+    // are valid — the span wraps around midnight.
+    if (!_randomAnytime) {
+      final span = (_endTime.hour - _startTime.hour) % 24;
+      if (span < 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.timeWindowError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
     }
 
     if (_activeDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one active day.'),
+        SnackBar(
+          content: Text(l10n.selectActiveDayError),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -136,14 +157,21 @@ class _NotificationScheduleScreenState
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
 
       await NotificationService.instance.scheduleNotifications();
-      
+      AnalyticsService.instance
+          .trackScheduleChanged(
+            frequency: _frequency,
+            randomAnytime: _randomAnytime,
+            timerSeconds: _timerSeconds,
+          )
+          .ignore();
+
       // Manually trigger a backup since settings live in SharedPreferences, not the DB
       await SyncService.instance.performBackup();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Notification schedule saved! 🔔'),
+        SnackBar(
+          content: Text(l10n.scheduleSavedSnack),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -151,7 +179,7 @@ class _NotificationScheduleScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e')),
+        SnackBar(content: Text(l10n.saveFailedSnack(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -159,19 +187,29 @@ class _NotificationScheduleScreenState
   }
 
   Future<void> _pickTime({required bool isStart}) async {
+    final l10n = AppLocalizations.of(context)!;
     final picked = await showTimePicker(
       context: context,
       initialTime: isStart ? _startTime : _endTime,
-      helpText: isStart ? 'Select start time' : 'Select end time',
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-        child: child!,
+      helpText: isStart ? l10n.selectStartTime : l10n.selectEndTime,
+      // Force English locale inside the picker so AM/PM renders consistently
+      // across all app languages (avoids locale-specific layout differences).
+      builder: (context, child) => Localizations.override(
+        context: context,
+        locale: const Locale('en'),
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        ),
       ),
     );
     if (picked == null) return;
     setState(() {
       if (isStart) {
         _startTime = picked;
+        // Auto-set end time to start + 1 hour, preserving the picked minutes.
+        // e.g. start = 2:30 PM → end = 3:30 PM (not 3:00 PM).
+        _endTime = TimeOfDay(hour: (picked.hour + 1) % 24, minute: picked.minute);
       } else {
         _endTime = picked;
       }
@@ -187,18 +225,19 @@ class _NotificationScheduleScreenState
 
   // ── Active days label ──────────────────────────────────────────────────────
 
-  String get _activeDaysLabel {
-    if (_activeDays.isEmpty) return 'You must choose at least 1!';
+  String _activeDaysLabel(AppLocalizations l10n) {
+    if (_activeDays.isEmpty) return l10n.mustChooseDay;
     final sorted = _activeDays.toList()..sort();
     final isWeekdays =
         sorted.length == 5 && sorted.every((d) => d >= 1 && d <= 5);
     final isWeekends =
         sorted.length == 2 && sorted.contains(6) && sorted.contains(7);
     final isDaily = sorted.length == 7;
-    if (isDaily) return 'Every day';
-    if (isWeekdays) return 'Weekdays only';
-    if (isWeekends) return 'Weekends only';
-    return sorted.map((d) => _dayLabels[d - 1]).join(', ');
+    if (isDaily) return l10n.everyDay;
+    if (isWeekdays) return l10n.weekdaysOnly;
+    if (isWeekends) return l10n.weekendsOnly;
+    final dayLabels = _getDayLabels(l10n);
+    return sorted.map((d) => dayLabels[d - 1]).join(', ');
   }
 
   Color _activeDaysLabelColor(ColorScheme cs) =>
@@ -206,16 +245,18 @@ class _NotificationScheduleScreenState
 
   // ── Frequency label ────────────────────────────────────────────────────────
 
-  String _frequencyLabel(int f) {
-    if (f == 1) return 'Once a day — nice and easy';
-    if (f <= 3) return '$f times a day — recommended';
-    if (f <= 6) return '$f times a day — pretty active';
-    if (f <= 9) return '$f times a day — intense!';
-    return '10 times a day — maximum';
+  String _frequencyLabel(int f, AppLocalizations l10n) {
+    if (f == 1) return l10n.freqOnce;
+    if (f <= 3) return l10n.freqRecommended(f);
+    if (f <= 6) return l10n.freqActive(f);
+    if (f <= 9) return l10n.freqIntense(f);
+    return l10n.freqMax;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final dayLabels = _getDayLabels(l10n);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final timeDisabled = _randomAnytime;
@@ -224,9 +265,9 @@ class _NotificationScheduleScreenState
       appBar: AppBar(
         title: GestureDetector(
           onTap: _handleDebugTap,
-          child: const Text(
-            'Notification Schedule',
-            style: TextStyle(fontWeight: FontWeight.w700),
+          child: Text(
+            l10n.notifScheduleTitle,
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
       ),
@@ -259,7 +300,7 @@ class _NotificationScheduleScreenState
                       _ChallengeFireDisplay(timerSeconds: _timerSeconds),
                       const SizedBox(height: 8),
                       Text(
-                        'Challenge\nMode',
+                        l10n.challengeModeName,
                         style: theme.textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.w900,
                           color: colorScheme.onPrimaryContainer,
@@ -269,14 +310,19 @@ class _NotificationScheduleScreenState
                       const SizedBox(height: 10),
                       Text(
                         _timerSeconds == 0
-                            ? 'Set timer to ${StreakService.challengeThreshold}s or less → '
-                                'answer daily → hit a 7-day streak → earn +1 free question slot!'
+                            ? l10n.challengeModeOff(
+                                StreakService.challengeThreshold,
+                              )
                             : _timerSeconds <= StreakService.challengeThreshold
-                                ? '🔥 Challenge active! Keep going daily for 7 days to earn +1 free question slot!'
-                                : 'Timer is too relaxed. Lower it to ${StreakService.challengeThreshold}s or less to activate the challenge.',
+                            ? l10n.challengeModeActive
+                            : l10n.challengeModeRelaxed(
+                                StreakService.challengeThreshold,
+                              ),
                         style: TextStyle(
                           fontSize: 13,
-                          color: colorScheme.onPrimaryContainer.withOpacity(0.85),
+                          color: colorScheme.onPrimaryContainer.withOpacity(
+                            0.85,
+                          ),
                           height: 1.5,
                         ),
                       ),
@@ -296,14 +342,16 @@ class _NotificationScheduleScreenState
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Response timer',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                Text(
+                                  l10n.responseTimer,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
                                   _timerSeconds == 0
-                                      ? 'No time limit — relaxed mode'
-                                      : 'Auto-marks wrong if time runs out',
+                                      ? l10n.noTimeLimit
+                                      : l10n.autoMarksWrong,
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: colorScheme.onSurfaceVariant,
@@ -315,13 +363,15 @@ class _NotificationScheduleScreenState
                           if (_timerSeconds > 0)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: colorScheme.errorContainer,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                '${_timerSeconds}s',
+                                '$_timerSeconds${l10n.secondsUnit}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
@@ -338,22 +388,28 @@ class _NotificationScheduleScreenState
                         max: 90,
                         divisions: 18, // 0, 5, 10 … 90
                         label: _timerSeconds == 0
-                            ? 'Off'
-                            : '${_timerSeconds}s',
+                            ? l10n.off
+                            : '$_timerSeconds${l10n.secondsUnit}',
                         onChanged: (v) =>
                             setState(() => _timerSeconds = v.round()),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Off',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
-                          Text('90s',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
+                          Text(
+                            l10n.off,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '90${l10n.secondsUnit}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -363,7 +419,7 @@ class _NotificationScheduleScreenState
                 const SizedBox(height: 32),
 
                 // ── Timing ───────────────────────────────────────────────────
-                _SectionHeader(label: 'Timing', theme: theme),
+                _SectionHeader(label: l10n.timingSection, theme: theme),
                 const SizedBox(height: 12),
 
                 _SettingCard(
@@ -373,12 +429,12 @@ class _NotificationScheduleScreenState
                       // Anytime switch
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'Send at any time',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                        title: Text(
+                          l10n.sendAtAnyTime,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
-                          'Notifications arrive throughout the day',
+                          l10n.sendAtAnyTimeSubtitle,
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
                             fontSize: 13,
@@ -407,12 +463,16 @@ class _NotificationScheduleScreenState
                                 color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.wb_sunny_outlined,
-                                  size: 20),
+                              child: const Icon(
+                                Icons.wb_sunny_outlined,
+                                size: 20,
+                              ),
                             ),
-                            title: const Text(
-                              'Start time',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                            title: Text(
+                              l10n.startTime,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             trailing: _TimeChip(
                               label: _formatTime(_startTime),
@@ -442,12 +502,16 @@ class _NotificationScheduleScreenState
                                 color: colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.nights_stay_outlined,
-                                  size: 20),
+                              child: const Icon(
+                                Icons.nights_stay_outlined,
+                                size: 20,
+                              ),
                             ),
-                            title: const Text(
-                              'End time',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                            title: Text(
+                              l10n.endTime,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             trailing: _TimeChip(
                               label: _formatTime(_endTime),
@@ -464,7 +528,7 @@ class _NotificationScheduleScreenState
                 const SizedBox(height: 24),
 
                 // ── Frequency ─────────────────────────────────────────────────
-                _SectionHeader(label: 'Frequency', theme: theme),
+                _SectionHeader(label: l10n.frequencySection, theme: theme),
                 const SizedBox(height: 12),
 
                 _SettingCard(
@@ -478,13 +542,14 @@ class _NotificationScheduleScreenState
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Notifications per day',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w600),
+                                Text(
+                                  l10n.notifPerDay,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(
-                                  _frequencyLabel(_frequency),
+                                  _frequencyLabel(_frequency, l10n),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: colorScheme.onSurfaceVariant,
@@ -514,14 +579,20 @@ class _NotificationScheduleScreenState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('1',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
-                          Text('10',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: colorScheme.onSurfaceVariant)),
+                          Text(
+                            '1',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '10',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -531,7 +602,10 @@ class _NotificationScheduleScreenState
                 const SizedBox(height: 24),
 
                 // ── Active days ───────────────────────────────────────────────
-                _SectionHeader(label: 'Active Days', theme: theme),
+                _SectionHeader(
+                  label: l10n.activeDaysSectionTitle,
+                  theme: theme,
+                ),
                 const SizedBox(height: 12),
 
                 _SettingCard(
@@ -542,31 +616,39 @@ class _NotificationScheduleScreenState
                       // Quick-select presets
                       Row(
                         children: [
-                          _PresetChip(
-                            label: 'Daily',
-                            isSelected: _activeDays.length == 7,
-                            colorScheme: colorScheme,
-                            onTap: () => setState(
-                                () => _activeDays = {1, 2, 3, 4, 5, 6, 7}),
+                          Expanded(
+                            child: _PresetChip(
+                              label: l10n.presetDaily,
+                              isSelected: _activeDays.length == 7,
+                              colorScheme: colorScheme,
+                              onTap: () => setState(
+                                () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          _PresetChip(
-                            label: 'Weekdays',
-                            isSelected: _activeDays.length == 5 &&
-                                _activeDays.every((d) => d <= 5),
-                            colorScheme: colorScheme,
-                            onTap: () => setState(
-                                () => _activeDays = {1, 2, 3, 4, 5}),
+                          Expanded(
+                            child: _PresetChip(
+                              label: l10n.presetWeekdays,
+                              isSelected:
+                                  _activeDays.length == 5 &&
+                                  _activeDays.every((d) => d <= 5),
+                              colorScheme: colorScheme,
+                              onTap: () =>
+                                  setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          _PresetChip(
-                            label: 'Weekends',
-                            isSelected: _activeDays.length == 2 &&
-                                _activeDays.contains(6) &&
-                                _activeDays.contains(7),
-                            colorScheme: colorScheme,
-                            onTap: () =>
-                                setState(() => _activeDays = {6, 7}),
+                          Expanded(
+                            child: _PresetChip(
+                              label: l10n.presetWeekends,
+                              isSelected:
+                                  _activeDays.length == 2 &&
+                                  _activeDays.contains(6) &&
+                                  _activeDays.contains(7),
+                              colorScheme: colorScheme,
+                              onTap: () => setState(() => _activeDays = {6, 7}),
+                            ),
                           ),
                         ],
                       ),
@@ -580,7 +662,7 @@ class _NotificationScheduleScreenState
                           final day = index + 1;
                           final isSelected = _activeDays.contains(day);
                           return _DayChip(
-                            label: _dayLabels[index],
+                            label: dayLabels[index],
                             isSelected: isSelected,
                             colorScheme: colorScheme,
                             onTap: () {
@@ -600,7 +682,7 @@ class _NotificationScheduleScreenState
 
                       // Dynamic label
                       Text(
-                        _activeDaysLabel,
+                        _activeDaysLabel(l10n),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -642,14 +724,17 @@ class _NotificationScheduleScreenState
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(Icons.check_rounded),
-            label: Text(_isSaving ? 'Saving...' : 'Save Schedule'),
+            label: Text(_isSaving ? l10n.saving : l10n.saveSchedule),
             style: FilledButton.styleFrom(
               minimumSize: const Size(double.infinity, 52),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ),
@@ -691,10 +776,7 @@ class _ChallengeFireDisplay extends StatelessWidget {
     // Single fire: big but dimmed when off, normal when relaxed
     return Opacity(
       opacity: isOff ? 0.45 : 0.7,
-      child: Text(
-        '🔥',
-        style: TextStyle(fontSize: isOff ? 28 : 36),
-      ),
+      child: Text('🔥', style: TextStyle(fontSize: isOff ? 28 : 36)),
     );
   }
 }
@@ -731,8 +813,7 @@ class _SettingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
       ),
       child: child,
     );
@@ -740,10 +821,11 @@ class _SettingCard extends StatelessWidget {
 }
 
 class _TimeChip extends StatelessWidget {
-  const _TimeChip(
-      {required this.label,
-      required this.colorScheme,
-      required this.onTap});
+  const _TimeChip({
+    required this.label,
+    required this.colorScheme,
+    required this.onTap,
+  });
   final String label;
   final ColorScheme colorScheme;
   final VoidCallback onTap;
@@ -789,8 +871,7 @@ class _PresetChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primary
@@ -804,6 +885,8 @@ class _PresetChip extends StatelessWidget {
         ),
         child: Text(
           label,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -834,19 +917,24 @@ class _MiuiHelpCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.tertiaryContainer.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.tertiary.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: colorScheme.tertiary.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.battery_saver_rounded,
-                color: colorScheme.tertiary, size: 22),
+            Icon(
+              Icons.battery_saver_rounded,
+              color: colorScheme.tertiary,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'MIUI / HyperOS: fix notification delivery',
+                    AppLocalizations.of(context)!.miuiFixTitle,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -855,17 +943,22 @@ class _MiuiHelpCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Tap to see Autostart & battery settings guide',
+                    AppLocalizations.of(context)!.miuiFixSubtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onTertiaryContainer.withValues(alpha: 0.75),
+                      color: colorScheme.onTertiaryContainer.withValues(
+                        alpha: 0.75,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colorScheme.tertiary, size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.tertiary,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -894,15 +987,18 @@ class _BatteryOptimizationCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.battery_alert_rounded,
-                color: colorScheme.error, size: 22),
+            Icon(
+              Icons.battery_alert_rounded,
+              color: colorScheme.error,
+              size: 22,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Battery optimisation is ON',
+                    AppLocalizations.of(context)!.batteryOptOn,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -911,17 +1007,22 @@ class _BatteryOptimizationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Tap to allow Random Recall to always run (standard Android setting) — fixes missed notifications',
+                    AppLocalizations.of(context)!.batteryOptSubtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onErrorContainer.withValues(alpha: 0.8),
+                      color: colorScheme.onErrorContainer.withValues(
+                        alpha: 0.8,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colorScheme.error, size: 20),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.error,
+              size: 20,
+            ),
           ],
         ),
       ),
