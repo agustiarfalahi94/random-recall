@@ -2330,6 +2330,12 @@ abstract class AppLocalizations {
   /// **'Profile Picture'**
   String get profilePictureLabel;
 
+  /// No description provided for @changeProfilePictureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change profile picture'**
+  String get changeProfilePictureHint;
+
   /// No description provided for @nameLabel.
   ///
   /// In en, this message translates to:

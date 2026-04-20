@@ -180,27 +180,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.changePasswordButton),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(hintText: 'Current Password'),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.5,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(hintText: 'Current Password'),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(hintText: 'New Password'),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(hintText: 'Confirm Password'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: newPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(hintText: 'New Password'),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(hintText: 'Confirm Password'),
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -367,17 +374,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   // Profile Picture
                   Center(
-                    child: GestureDetector(
-                      onTap: _handleProfilePictureEdit,
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage: _profilePictureUrl.isNotEmpty
-                            ? CachedNetworkImageProvider(_profilePictureUrl)
-                            : null,
-                        child: _profilePictureUrl.isEmpty
-                            ? const Icon(Icons.person, size: 60)
-                            : null,
-                      ),
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: _handleProfilePictureEdit,
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundImage: _profilePictureUrl.isNotEmpty
+                                ? CachedNetworkImageProvider(_profilePictureUrl)
+                                : null,
+                            child: _profilePictureUrl.isEmpty
+                                ? const Icon(Icons.person, size: 60)
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.changeProfilePictureHint,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
