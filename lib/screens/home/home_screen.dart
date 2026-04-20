@@ -586,7 +586,9 @@ class _SettingsSheetState extends State<_SettingsSheet> {
         }
       }
     }
-    controller.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
   }
 
   void _showLanguageDialog(BuildContext context) {
