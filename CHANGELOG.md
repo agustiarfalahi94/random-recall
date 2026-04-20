@@ -5,6 +5,30 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.8.16] — 2026-04-20
+
+### Added
+- **Bahasa Indonesia (i18n)** — Full Indonesian localization across every screen, dialog, notification, and error message. Language can be switched at runtime from Settings.
+- **GitHub Actions CI/CD** — Automated pipeline on version tags: `flutter analyze`, `flutter test`, debug APK build, Android App Bundle, and GitHub release creation.
+- **Single-device policy note** — Informational text in Settings under Sync explaining that only one device can be active at a time and that signing in elsewhere auto-signs out the current session.
+
+### Fixed
+- **Sign-out stuck on current screen** — Restructured `AuthService.signOut()` with a `finally` block so Firebase sign-out and the UI callback always execute, even if the backup or DB clear throws.
+- **Data loss on first email login** — `_HomeGate._initFlow()` now queries Firestore directly when local data is absent, so existing cloud data is restored before showing the home screen instead of redirecting to onboarding.
+- **HomeTab not refreshing after restore** — Added a `DatabaseHelper.onDatabaseUpdated` listener in `_HomeTabState` so the home screen reflects synced data immediately after `performRestore()`.
+- **Device ID not claimed after restore** — `SyncService.performRestore()` now writes `last_active_device_id` to Firestore after a successful restore, preventing the old device from retaining its claim.
+- **Email login not initializing session** — `AuthService.signInWithEmail()` now calls `initializeUserSession()` (RevenueCat login + cloud restore) for verified users, matching the behaviour of Google sign-in.
+- **Auth race condition on email login** — Force-reloads the Firebase user from the server after sign-in to catch accounts deleted in the console before proceeding.
+- **Time picker minutes resetting to :00** — Auto-computed end time now preserves the originally picked minutes instead of always rounding down to the hour.
+- **Indonesian timer unit showing "d"** — Replaced placeholder `{seconds}d` / `{threshold}d` with `{seconds} detik` / `{threshold} detik` across all five affected ARB strings.
+- **Preset chip overflow for long Indonesian labels** — Wrapped each `_PresetChip` in `Expanded` so "Akhir Pekan" and other long labels scale to fit instead of overflowing.
+- **Time picker appearance in Indonesian locale** — Forced English locale inside the `showTimePicker` builder so the AM/PM dial always renders correctly regardless of the app language.
+- **Deleted questions reappearing after restore** — Sync restore no longer re-inserts questions that were deleted by the user.
+- **Notification badge count stuck** — Badge count now updates correctly after answering a notification question.
+- **Google/email sign-in parity** — Both providers now go through the same post-login initialization path.
+
+---
+
 ## [0.8.0] — 2026-04-19
 
 ### Changed
