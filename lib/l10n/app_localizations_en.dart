@@ -1265,12 +1265,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePageTitle => 'Profile';
 
   @override
-  String get profilePictureLabel => 'Profile Picture';
-
-  @override
-  String get changeProfilePictureHint => 'Tap to change profile picture';
-
-  @override
   String get nameLabel => 'Name';
 
   @override

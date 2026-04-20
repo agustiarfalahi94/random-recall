@@ -511,8 +511,6 @@
   },
 
   "profilePageTitle": "Profile",
-  "profilePictureLabel": "Profile Picture",
-  "changeProfilePictureHint": "Tap to change profile picture",
   "nameLabel": "Name",
   "phoneLabel": "Phone Number",
   "emailLabel": "Email",

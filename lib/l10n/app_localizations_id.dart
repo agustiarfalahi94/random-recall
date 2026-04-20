@@ -1275,12 +1275,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get profilePageTitle => 'Profil';
 
   @override
-  String get profilePictureLabel => 'Foto Profil';
-
-  @override
-  String get changeProfilePictureHint => 'Ketuk untuk mengubah foto profil';
-
-  @override
   String get nameLabel => 'Nama';
 
   @override

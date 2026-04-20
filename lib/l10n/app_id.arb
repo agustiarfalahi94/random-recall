@@ -511,8 +511,6 @@
   },
 
   "profilePageTitle": "Profil",
-  "profilePictureLabel": "Foto Profil",
-  "changeProfilePictureHint": "Ketuk untuk mengubah foto profil",
   "nameLabel": "Nama",
   "phoneLabel": "Nomor Telepon",
   "emailLabel": "Email",

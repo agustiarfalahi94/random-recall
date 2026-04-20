@@ -1,11 +1,8 @@
-import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/core/services/profile_service.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,10 +15,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ProfileService _profileService = ProfileService.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  late TextEditingController _nameController;
-  late TextEditingController _phoneController;
-
-  String _profilePictureUrl = '';
   bool _isEmailUser = false;
   bool _isPremium = false;
   bool _isLoading = false;
@@ -29,8 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _phoneController = TextEditingController();
     _loadProfileData();
   }
 
@@ -39,16 +30,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Load from Firestore
-      final profile = await _profileService.getUserProfile();
       final prefs = await SharedPreferences.getInstance();
       final isPremium = prefs.getBool('is_premium') ?? false;
 
       if (mounted) {
         setState(() {
-          _nameController.text = profile?['name'] ?? '';
-          _phoneController.text = profile?['phone_number'] ?? '';
-          _profilePictureUrl = profile?['profile_picture_url'] ?? '';
           _isEmailUser = user.providerData.any((p) => p.providerId == 'password');
           _isPremium = isPremium;
         });
@@ -58,117 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _updateProfile() async {
-    if (_nameController.text.trim().isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.nameLabel)),
-        );
-      }
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await _profileService.updateUserProfile(
-        name: _nameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.profileUpdateSuccess),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.profileUpdateFailed),
-          ),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleProfilePictureEdit() async {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.camera_alt),
-            title: Text(l10n.profilePictureSourceCamera),
-            onTap: () async {
-              Navigator.pop(context);
-              await _pickAndUploadImage(source: ImageSource.camera);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.image),
-            title: Text(l10n.profilePictureSourceGallery),
-            onTap: () async {
-              Navigator.pop(context);
-              await _pickAndUploadImage(source: ImageSource.gallery);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pickAndUploadImage({required ImageSource source}) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    try {
-      setState(() => _isLoading = true);
-
-      File? imageFile;
-      if (source == ImageSource.camera) {
-        imageFile = await _profileService.pickImageFromCamera();
-      } else {
-        imageFile = await _profileService.pickImageFromGallery();
-      }
-
-      if (imageFile == null) return;
-
-      // Compress image
-      final compressedFile = await _profileService.compressImage(imageFile);
-
-      // Upload to Firebase Storage
-      final url = await _profileService.uploadProfilePicture(compressedFile);
-
-      // Update Firestore
-      await _profileService.updateUserProfile(
-        name: _nameController.text.trim(),
-        profilePictureUrl: url,
-      );
-
-      if (mounted) {
-        setState(() => _profilePictureUrl = url);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profilePictureUpdated)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.profilePictureUpdateFailed)),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
 
   Future<void> _changePassword() async {
     final l10n = AppLocalizations.of(context)!;
@@ -372,56 +247,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Profile Picture
-                  Center(
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          onTap: _handleProfilePictureEdit,
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundImage: _profilePictureUrl.isNotEmpty
-                                ? CachedNetworkImageProvider(_profilePictureUrl)
-                                : null,
-                            child: _profilePictureUrl.isEmpty
-                                ? const Icon(Icons.person, size: 60)
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.changeProfilePictureHint,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Name field
-                  TextField(
-                    controller: _nameController,
-                    maxLength: 50,
-                    decoration: InputDecoration(
-                      labelText: l10n.nameLabel,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Phone field
-                  TextField(
-                    controller: _phoneController,
-                    maxLength: 20,
-                    decoration: InputDecoration(
-                      labelText: l10n.phoneLabel,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   // Email (read-only)
                   TextField(
                     controller: TextEditingController(text: _auth.currentUser?.email ?? ''),
@@ -434,7 +259,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Subscription status
                   Container(
@@ -459,16 +284,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Update button
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _updateProfile,
-                      child: const Text('Update Profile'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
 
                   // Change password (email users only)
                   if (_isEmailUser)
@@ -496,12 +311,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
     );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 }
