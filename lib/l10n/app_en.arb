@@ -339,6 +339,18 @@
   },
   "limitReachedFab": "Limit Reached",
   "newCategoryFab": "New Category",
+  "categoryCount": "{current} / {limit}",
+  "@categoryCount": {
+    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+  },
+  "categoryWarning": "{current} / {limit}",
+  "@categoryWarning": {
+    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+  },
+  "categoryLimitReached": "{current} / {limit}",
+  "@categoryLimitReached": {
+    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+  },
   "saveCategoryFailedSnack": "Failed to save: {error}",
   "@saveCategoryFailedSnack": {
     "placeholders": { "error": { "type": "String" } }

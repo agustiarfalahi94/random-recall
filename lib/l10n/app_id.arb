@@ -339,6 +339,18 @@
   },
   "limitReachedFab": "Batas Tercapai",
   "newCategoryFab": "Kategori Baru",
+  "categoryCount": "{current} / {limit}",
+  "@categoryCount": {
+    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+  },
+  "categoryWarning": "{current} / {limit}",
+  "@categoryWarning": {
+    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+  },
+  "categoryLimitReached": "{current} / {limit}",
+  "@categoryLimitReached": {
+    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+  },
   "saveCategoryFailedSnack": "Gagal menyimpan: {error}",
   "@saveCategoryFailedSnack": {
     "placeholders": { "error": { "type": "String" } }

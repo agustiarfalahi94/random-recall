@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
+import '../../core/config/remote_config_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
 import '../../core/services/analytics_service.dart';
@@ -151,37 +152,67 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Free-tier info banner
+                // Category count pill for both free and premium users
                 FutureBuilder<bool>(
                   future: PlanService.isPremium(),
                   builder: (_, snap) {
-                    if (snap.data == true) return const SizedBox.shrink();
-                    final atCreationLimit =
-                        _customCategories.length >=
-                        PlanService.freeMaxCustomCategories;
-                    return Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: atCreationLimit
-                            ? colorScheme.errorContainer
-                            : colorScheme.primaryContainer.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        atCreationLimit
-                            ? l10n.freePlanLimitReachedBanner
-                            : l10n.freePlanInfoBanner,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: atCreationLimit
-                              ? colorScheme.onErrorContainer
-                              : colorScheme.onPrimaryContainer,
-                          height: 1.4,
+                    if (snap.connectionState != ConnectionState.done) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final isPremium = snap.data ?? false;
+                    final limit = isPremium
+                        ? RemoteConfigService.instance.premiumMaxCustomCategories
+                        : PlanService.freeMaxCustomCategories;
+                    final warningThreshold = isPremium
+                        ? RemoteConfigService.instance.categoryWarningThreshold
+                        : limit; // Free has no warning, goes straight to red at limit
+
+                    final current = _customCategories.length;
+                    final isAtLimit = current >= limit;
+                    final isWarning = current >= warningThreshold && !isAtLimit;
+
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isAtLimit
+                              ? colorScheme.errorContainer
+                              : isWarning
+                                  ? Color.lerp(
+                                      colorScheme.surfaceContainerHigh,
+                                      colorScheme.error,
+                                      0.3,
+                                    ) // Amber-ish
+                                  : colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isAtLimit ? Icons.lock_rounded : Icons.category_rounded,
+                              size: 14,
+                              color: isAtLimit
+                                  ? colorScheme.onErrorContainer
+                                  : colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isAtLimit
+                                  ? l10n.categoryLimitReached(current, limit)
+                                  : isWarning
+                                      ? l10n.categoryWarning(current, limit)
+                                      : l10n.categoryCount(current, limit),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: isAtLimit
+                                    ? colorScheme.onErrorContainer
+                                    : colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
