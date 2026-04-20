@@ -805,6 +805,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get newCategoryFab => 'Kategori Baru';
 
   @override
+  String categoryCount(int current, int limit) {
+    return '$current / $limit';
+  }
+
+  @override
+  String categoryWarning(int current, int limit) {
+    return '$current / $limit';
+  }
+
+  @override
+  String categoryLimitReached(int current, int limit) {
+    return '$current / $limit';
+  }
+
+  @override
   String saveCategoryFailedSnack(String error) {
     return 'Gagal menyimpan: $error';
   }

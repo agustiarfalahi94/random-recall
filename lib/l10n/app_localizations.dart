@@ -1538,6 +1538,24 @@ abstract class AppLocalizations {
   /// **'New Category'**
   String get newCategoryFab;
 
+  /// No description provided for @categoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {limit}'**
+  String categoryCount(int current, int limit);
+
+  /// No description provided for @categoryWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {limit}'**
+  String categoryWarning(int current, int limit);
+
+  /// No description provided for @categoryLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {limit}'**
+  String categoryLimitReached(int current, int limit);
+
   /// No description provided for @saveCategoryFailedSnack.
   ///
   /// In en, this message translates to:

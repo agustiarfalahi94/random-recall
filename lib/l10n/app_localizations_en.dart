@@ -800,6 +800,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newCategoryFab => 'New Category';
 
   @override
+  String categoryCount(int current, int limit) {
+    return '$current / $limit';
+  }
+
+  @override
+  String categoryWarning(int current, int limit) {
+    return '$current / $limit';
+  }
+
+  @override
+  String categoryLimitReached(int current, int limit) {
+    return '$current / $limit';
+  }
+
+  @override
   String saveCategoryFailedSnack(String error) {
     return 'Failed to save: $error';
   }
