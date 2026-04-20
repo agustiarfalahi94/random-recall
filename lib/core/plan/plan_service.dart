@@ -18,7 +18,9 @@ class PlanService {
 
   /// Returns the max number of questions allowed.
   static Future<int> getQuestionLimit() async {
-    if (await isPremium()) return 9999;
+    if (await isPremium()) {
+      return RemoteConfigService.instance.premiumQuestionLimit;
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final bonus = prefs.getInt('timer_streak_bonus_questions') ?? 0;
@@ -34,7 +36,10 @@ class PlanService {
   /// Checks if a user can add another custom category.
   /// [currentCustomCount] should exclude default categories (General, Work).
   static Future<bool> canAddCategory(int currentCustomCount) async {
-    if (await isPremium()) return true;
+    if (await isPremium()) {
+      return currentCustomCount <
+          RemoteConfigService.instance.premiumMaxCustomCategories;
+    }
     return currentCustomCount < freeMaxCustomCategories;
   }
 
