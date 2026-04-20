@@ -209,13 +209,17 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final atLimit = !_isPremium && _totalQuestionCount >= _questionLimit;
+    // Determine pill color: red at limit, amber at warning for premium
+    final isAtLimit = _totalQuestionCount >= _questionLimit;
+    final isAtWarning = _isPremium && _totalQuestionCount >= 195;
+    final pillIsError = isAtLimit;
+    final pillIsWarning = isAtWarning && !isAtLimit;
 
     return Scaffold(
       body: Column(
         children: [
           // ── Question count pill ────────────────────────────────────────
-          if (!_isPremium && !_isLoading)
+          if (!_isLoading)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
               child: Row(
@@ -226,26 +230,30 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: atLimit
+                      color: pillIsError
                           ? colorScheme.errorContainer
-                          : colorScheme.surfaceContainerHigh,
+                          : pillIsWarning
+                              ? colorScheme.tertiaryContainer
+                              : colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          atLimit
+                          pillIsError
                               ? Icons.lock_rounded
                               : Icons.library_books_outlined,
                           size: 13,
-                          color: atLimit
+                          color: pillIsError
                               ? colorScheme.onErrorContainer
-                              : colorScheme.onSurfaceVariant,
+                              : pillIsWarning
+                                  ? colorScheme.onTertiaryContainer
+                                  : colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          atLimit
+                          pillIsError
                               ? l10n.questionLimitReached(
                                   _totalQuestionCount,
                                   _questionLimit,
@@ -255,16 +263,18 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                                   _questionLimit,
                                 ),
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: atLimit
+                            color: pillIsError
                                 ? colorScheme.onErrorContainer
-                                : colorScheme.onSurfaceVariant,
+                                : pillIsWarning
+                                    ? colorScheme.onTertiaryContainer
+                                    : colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (atLimit) ...[
+                  if (pillIsError && !_isPremium) ...[
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => Navigator.of(context).push(
