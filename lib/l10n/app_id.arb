@@ -281,19 +281,17 @@
   "validationEnterAnswer2": "Masukkan jawaban",
   "validationSelectCategory2": "Pilih kategori",
 
-  "questionLimitReached": "{count} / {limit} — Batas tercapai",
-  "@questionLimitReached": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "limit": { "type": "int" }
-    }
-  },
-  "questionCount": "{count} / {limit} pertanyaan",
+  "questionCount": "{current, plural, =0{Tidak ada pertanyaan} =1{1 / {max} pertanyaan} other{{current} / {max} pertanyaan}}",
   "@questionCount": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "limit": { "type": "int" }
-    }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
+  },
+  "questionWarning": "Mendekati batas pertanyaan — {current} / {max}",
+  "@questionWarning": {
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
+  },
+  "questionLimitReached": "Batas pertanyaan tercapai — {max} / {max}",
+  "@questionLimitReached": {
+    "placeholders": { "max": { "type": "int" } }
   },
   "upgradeButton": "Upgrade ›",
   "noQuestionsInCategory": "Tidak ada pertanyaan di kategori ini",
@@ -339,17 +337,17 @@
   },
   "limitReachedFab": "Batas Tercapai",
   "newCategoryFab": "Kategori Baru",
-  "categoryCount": "{current} / {limit}",
+  "categoryCount": "{current, plural, =0{Tidak ada kategori} =1{1 / {max} kategori} other{{current} / {max} kategori}}",
   "@categoryCount": {
-    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "categoryWarning": "{current} / {limit}",
+  "categoryWarning": "Mendekati batas kategori — {current} / {max}",
   "@categoryWarning": {
-    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "categoryLimitReached": "{current} / {limit}",
+  "categoryLimitReached": "Batas kategori tercapai — {max} / {max}",
   "@categoryLimitReached": {
-    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+    "placeholders": { "max": { "type": "int" } }
   },
   "saveCategoryFailedSnack": "Gagal menyimpan: {error}",
   "@saveCategoryFailedSnack": {

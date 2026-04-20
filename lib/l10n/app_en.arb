@@ -281,19 +281,17 @@
   "validationEnterAnswer2": "Please enter an answer",
   "validationSelectCategory2": "Please select a category",
 
-  "questionLimitReached": "{count} / {limit} — Limit reached",
-  "@questionLimitReached": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "limit": { "type": "int" }
-    }
-  },
-  "questionCount": "{count} / {limit} questions",
+  "questionCount": "{current, plural, =0{No questions} =1{1 / {max} question} other{{current} / {max} questions}}",
   "@questionCount": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "limit": { "type": "int" }
-    }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
+  },
+  "questionWarning": "Approaching question limit — {current} / {max}",
+  "@questionWarning": {
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
+  },
+  "questionLimitReached": "Question limit reached — {max} / {max}",
+  "@questionLimitReached": {
+    "placeholders": { "max": { "type": "int" } }
   },
   "upgradeButton": "Upgrade ›",
   "noQuestionsInCategory": "No questions in this category",
@@ -339,17 +337,17 @@
   },
   "limitReachedFab": "Limit Reached",
   "newCategoryFab": "New Category",
-  "categoryCount": "{current} / {limit}",
+  "categoryCount": "{current, plural, =0{No categories} =1{1 / {max} category} other{{current} / {max} categories}}",
   "@categoryCount": {
-    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "categoryWarning": "{current} / {limit}",
+  "categoryWarning": "Approaching category limit — {current} / {max}",
   "@categoryWarning": {
-    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "categoryLimitReached": "{current} / {limit}",
+  "categoryLimitReached": "Category limit reached — {max} / {max}",
   "@categoryLimitReached": {
-    "placeholders": { "current": { "type": "int" }, "limit": { "type": "int" } }
+    "placeholders": { "max": { "type": "int" } }
   },
   "saveCategoryFailedSnack": "Failed to save: {error}",
   "@saveCategoryFailedSnack": {
