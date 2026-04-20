@@ -5,6 +5,19 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.9.0] — 2026-04-20
+
+### Added
+- **Profile Page** — New 4th tab in bottom navigation bar with comprehensive user profile management.
+  - Editable name and phone number fields (synced to Firestore)
+  - Profile picture editing with camera/gallery picker (compressed to 512×512, 80% JPEG quality, stored in Firebase Storage)
+  - View email address (read-only, sourced from login provider)
+  - Subscription status display (Free/Premium badge with color coding)
+  - Change password button (email users only, hidden for Google sign-in users)
+  - Delete account button with two-step re-authentication flow (supports both email and Google authentication methods)
+
+---
+
 ## [0.8.18] — 2026-04-20
 
 ### Fixed
