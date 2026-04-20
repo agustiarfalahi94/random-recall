@@ -151,6 +151,7 @@
   "settingsTooltip": "Settings",
   "syncDataNow": "Sync Data Now",
   "syncSubtitle": "Pull latest changes from the cloud",
+  "syncSingleDeviceNote": "Only one device can be active at a time. Signing in on a new device will automatically sign you out from this one.",
   "sendTestNotification": "Send test notification",
   "sendTestSubtitle": "Verify notifications work on your device",
   "notifScheduleMenuItem": "Notification schedule",

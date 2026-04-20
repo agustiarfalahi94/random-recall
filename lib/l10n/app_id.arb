@@ -151,6 +151,7 @@
   "settingsTooltip": "Pengaturan",
   "syncDataNow": "Sinkronisasi Data Sekarang",
   "syncSubtitle": "Tarik perubahan terbaru dari cloud",
+  "syncSingleDeviceNote": "Hanya satu perangkat yang bisa aktif sekaligus. Masuk di perangkat baru akan otomatis mengeluarkan kamu dari perangkat ini.",
   "sendTestNotification": "Kirim notifikasi uji coba",
   "sendTestSubtitle": "Verifikasi notifikasi berfungsi di perangkatmu",
   "notifScheduleMenuItem": "Jadwal notifikasi",

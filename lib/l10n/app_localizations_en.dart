@@ -39,6 +39,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get off => 'Off';
 
   @override
+  String get secondsUnit => 's';
+
+  @override
   String get language => 'Language';
 
   @override
@@ -415,6 +418,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncSubtitle => 'Pull latest changes from the cloud';
+
+  @override
+  String get syncSingleDeviceNote =>
+      'Only one device can be active at a time. Signing in on a new device will automatically sign you out from this one.';
 
   @override
   String get sendTestNotification => 'Send test notification';

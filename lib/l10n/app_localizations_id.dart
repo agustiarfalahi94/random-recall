@@ -39,6 +39,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get off => 'Mati';
 
   @override
+  String get secondsUnit => ' detik';
+
+  @override
   String get language => 'Bahasa';
 
   @override
@@ -415,6 +418,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get syncSubtitle => 'Tarik perubahan terbaru dari cloud';
 
   @override
+  String get syncSingleDeviceNote =>
+      'Hanya satu perangkat yang bisa aktif sekaligus. Masuk di perangkat baru akan otomatis mengeluarkan kamu dari perangkat ini.';
+
+  @override
   String get sendTestNotification => 'Kirim notifikasi uji coba';
 
   @override
@@ -521,17 +528,17 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String timerChallengeActiveDesc(int seconds) {
-    return 'Timer diatur ke ${seconds}d — tantangan aktif! Jawab setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan.';
+    return 'Timer diatur ke $seconds detik — tantangan aktif! Jawab setiap hari selama 7 hari untuk mendapatkan +1 slot pertanyaan.';
   }
 
   @override
   String timerChallengeRelaxedDesc(int seconds, int threshold) {
-    return 'Timer ${seconds}d — terlalu santai untuk tantangan. Atur ke ${threshold}d atau kurang untuk mendapatkan streak.';
+    return 'Timer $seconds detik — terlalu santai untuk tantangan. Atur ke $threshold detik atau kurang untuk mendapatkan streak.';
   }
 
   @override
   String timerChallengeOffDesc(int threshold) {
-    return 'Atur timer (${threshold}d atau kurang) untuk membuka tantangan. Jawab setiap hari selama 7 hari → dapatkan +1 slot pertanyaan!';
+    return 'Atur timer ($threshold detik atau kurang) untuk membuka tantangan. Jawab setiap hari selama 7 hari → dapatkan +1 slot pertanyaan!';
   }
 
   @override
@@ -553,7 +560,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String challengeModeOff(int threshold) {
-    return 'Atur timer ke ${threshold}d atau kurang → jawab setiap hari → capai streak 7 hari → dapatkan +1 slot pertanyaan gratis!';
+    return 'Atur timer ke $threshold detik atau kurang → jawab setiap hari → capai streak 7 hari → dapatkan +1 slot pertanyaan gratis!';
   }
 
   @override
@@ -562,7 +569,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String challengeModeRelaxed(int threshold) {
-    return 'Timer terlalu santai. Turunkan ke ${threshold}d atau kurang untuk mengaktifkan tantangan.';
+    return 'Timer terlalu santai. Turunkan ke $threshold detik atau kurang untuk mengaktifkan tantangan.';
   }
 
   @override

@@ -158,6 +158,12 @@ abstract class AppLocalizations {
   /// **'Off'**
   String get off;
 
+  /// No description provided for @secondsUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'s'**
+  String get secondsUnit;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
@@ -871,6 +877,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pull latest changes from the cloud'**
   String get syncSubtitle;
+
+  /// No description provided for @syncSingleDeviceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one device can be active at a time. Signing in on a new device will automatically sign you out from this one.'**
+  String get syncSingleDeviceNote;
 
   /// No description provided for @sendTestNotification.
   ///
