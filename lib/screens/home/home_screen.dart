@@ -16,6 +16,7 @@ import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
+import '../profile/profile_screen.dart';
 import '../question/notification_question_screen.dart';
 import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
@@ -55,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _HomeTab(), // Removed 'const' to ensure refresh when switching back to this tab
         const QuestionsListScreen(),
         const AnalyticsScreen(),
+        const ProfileScreen(),
       ][_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
@@ -76,6 +78,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.bar_chart_outlined),
             selectedIcon: const Icon(Icons.bar_chart_rounded),
             label: l10n.navAnalytics,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.person_outlined),
+            selectedIcon: const Icon(Icons.person_rounded),
+            label: l10n.profilePageTitle,
           ),
         ],
       ),
