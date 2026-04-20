@@ -132,6 +132,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                       controller: _questionController,
                       maxLines: 4,
                       minLines: 2,
+                      maxLength: 200,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         hintText: l10n.questionHintAdd,
@@ -159,6 +160,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                       controller: _answerController,
                       maxLines: 4,
                       minLines: 2,
+                      maxLength: 500,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(hintText: l10n.answerHintAdd),
                       validator: (value) {
