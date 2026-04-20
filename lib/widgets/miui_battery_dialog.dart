@@ -2,6 +2,7 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 /// A bottom sheet that walks Xiaomi/HyperOS users through the two settings
 /// they need to change so Random Recall can deliver notifications reliably:
@@ -44,6 +45,7 @@ class MiuiBatteryDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -69,33 +71,36 @@ class MiuiBatteryDialog extends StatelessWidget {
           // Title
           Row(
             children: [
-              Icon(Icons.battery_saver_rounded,
-                  color: colorScheme.primary, size: 26),
+              Icon(
+                Icons.battery_saver_rounded,
+                color: colorScheme.primary,
+                size: 26,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Fix notifications on MIUI / HyperOS',
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  l10n.miuiDialogTitle,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Xiaomi phones restrict background apps by default. '
-            'Two quick changes will ensure your quiz notifications arrive reliably.',
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
+            l10n.miuiDialogSubtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 24),
 
           // Step 1 — Autostart / Background start
           _Step(
             number: '1',
-            title: 'Enable Background Start',
-            description:
-                'Settings → Apps → Background Start → find Random Recall → turn ON',
+            title: l10n.miuiStep1Title,
+            description: l10n.miuiStep1Desc,
             icon: Icons.play_circle_outline_rounded,
             colorScheme: colorScheme,
             theme: theme,
@@ -106,7 +111,7 @@ class MiuiBatteryDialog extends StatelessWidget {
           FilledButton.tonalIcon(
             onPressed: _openBackgroundStart,
             icon: const Icon(Icons.open_in_new_rounded, size: 18),
-            label: const Text('Open Background Start Settings'),
+            label: Text(l10n.openBackgroundStartBtn),
             style: FilledButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
             ),
@@ -116,9 +121,8 @@ class MiuiBatteryDialog extends StatelessWidget {
           // Step 2 — Power / No Restrictions
           _Step(
             number: '2',
-            title: 'Set Power to No Restrictions',
-            description:
-                'Settings → Apps → Random Recall → Power → No Restrictions',
+            title: l10n.miuiStep2Title,
+            description: l10n.miuiStep2Desc,
             icon: Icons.battery_charging_full_rounded,
             colorScheme: colorScheme,
             theme: theme,
@@ -129,7 +133,7 @@ class MiuiBatteryDialog extends StatelessWidget {
           FilledButton.tonalIcon(
             onPressed: () => AppSettings.openAppSettings(),
             icon: const Icon(Icons.open_in_new_rounded, size: 18),
-            label: const Text('Open App Settings — Set Power'),
+            label: Text(l10n.openAppSettingsBtn),
             style: FilledButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
             ),
@@ -142,7 +146,7 @@ class MiuiBatteryDialog extends StatelessWidget {
             style: TextButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
             ),
-            child: const Text("I've done this — close"),
+            child: Text(l10n.doneDismissBtn),
           ),
         ],
       ),
@@ -201,16 +205,18 @@ class _Step extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     title,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 description,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

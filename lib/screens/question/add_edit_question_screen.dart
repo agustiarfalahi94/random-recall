@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/services/analytics_service.dart';
@@ -30,10 +31,12 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
   @override
   void initState() {
     super.initState();
-    _questionController =
-        TextEditingController(text: widget.question?.question ?? '');
-    _answerController =
-        TextEditingController(text: widget.question?.answer ?? '');
+    _questionController = TextEditingController(
+      text: widget.question?.question ?? '',
+    );
+    _answerController = TextEditingController(
+      text: widget.question?.answer ?? '',
+    );
     _selectedCategoryId = widget.question?.categoryId;
     _loadCategories();
   }
@@ -86,9 +89,10 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
       Navigator.of(context).pop(true); // true = data changed
     } catch (e) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save: $e'),
+          content: Text(l10n.saveFailedSnack(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -99,12 +103,15 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Question' : 'New Question'),
+        title: Text(
+          _isEditing ? l10n.editQuestionTitle : l10n.newQuestionTitle,
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -117,23 +124,24 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                   children: [
                     // ── Question ──────────────────────────────────────────
                     _FieldLabel(
-                        label: 'Question', colorScheme: colorScheme),
+                      label: l10n.fieldQuestion,
+                      colorScheme: colorScheme,
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _questionController,
                       maxLines: 4,
                       minLines: 2,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'e.g. When cooking fried rice, what to add last?',
+                      decoration: InputDecoration(
+                        hintText: l10n.questionHintAdd,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter a question';
+                          return l10n.validationEnterQuestion;
                         }
                         if (value.trim().length < 5) {
-                          return 'Question is too short';
+                          return l10n.validationQuestionTooShort;
                         }
                         return null;
                       },
@@ -143,19 +151,19 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
 
                     // ── Answer ────────────────────────────────────────────
                     _FieldLabel(
-                        label: 'Answer', colorScheme: colorScheme),
+                      label: l10n.fieldAnswer,
+                      colorScheme: colorScheme,
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _answerController,
                       maxLines: 4,
                       minLines: 2,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        hintText: 'e.g. Soy sauce and sesame oil',
-                      ),
+                      decoration: InputDecoration(hintText: l10n.answerHintAdd),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter an answer';
+                          return l10n.validationEnterAnswer;
                         }
                         return null;
                       },
@@ -165,12 +173,14 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
 
                     // ── Category ──────────────────────────────────────────
                     _FieldLabel(
-                        label: 'Category', colorScheme: colorScheme),
+                      label: l10n.fieldCategory,
+                      colorScheme: colorScheme,
+                    ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int>(
                       value: _selectedCategoryId,
-                      decoration: const InputDecoration(
-                        hintText: 'Select a category',
+                      decoration: InputDecoration(
+                        hintText: l10n.selectCategory,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       items: _categories.map((cat) {
@@ -178,8 +188,10 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                           value: cat.id,
                           child: Row(
                             children: [
-                              Text(cat.icon,
-                                  style: const TextStyle(fontSize: 18)),
+                              Text(
+                                cat.icon,
+                                style: const TextStyle(fontSize: 18),
+                              ),
                               const SizedBox(width: 10),
                               Text(cat.name),
                             ],
@@ -189,7 +201,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                       onChanged: (value) =>
                           setState(() => _selectedCategoryId = value),
                       validator: (value) {
-                        if (value == null) return 'Please select a category';
+                        if (value == null) return l10n.validationSelectCategory;
                         return null;
                       },
                     ),
@@ -204,11 +216,13 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : Text(_isEditing
-                              ? 'Save Changes'
-                              : 'Add Question'),
+                          : Text(
+                              _isEditing ? l10n.saveChanges : l10n.addQuestion,
+                            ),
                     ),
                   ],
                 ),

@@ -3,12 +3,12 @@ import 'package:timezone/timezone.dart' as tz;
 
 /// A single computed notification slot: when to fire and which question to show.
 class ScheduledSlot {
-  final tz.TZDateTime scheduledAt; 
+  final tz.TZDateTime scheduledAt;
   final int questionId;
   final int slotIndex;
 
   const ScheduledSlot({
-    required this.scheduledAt, 
+    required this.scheduledAt,
     required this.questionId,
     required this.slotIndex,
   });
@@ -130,11 +130,13 @@ class NotificationScheduler {
         // Skip slots that have already passed today.
         // Buffer of 2 minutes ensures the OS has time to register the alarm.
         if (slotTime.isAfter(now.add(const Duration(minutes: 2)))) {
-          slots.add(ScheduledSlot(
-            scheduledAt: slotTime,
-            questionId: dayQuestionIds[i],
-            slotIndex: i,
-          ));
+          slots.add(
+            ScheduledSlot(
+              scheduledAt: slotTime,
+              questionId: dayQuestionIds[i],
+              slotIndex: i,
+            ),
+          );
         }
       }
     }
@@ -160,7 +162,7 @@ class NotificationScheduler {
     final dayFresh = all.where((id) => !dayUsed.contains(id)).toList();
     if (dayFresh.isNotEmpty) return dayFresh[rng.nextInt(dayFresh.length)];
 
-    // Final Fallback: Pool exhausted for today. Return any question from the 
+    // Final Fallback: Pool exhausted for today. Return any question from the
     // total pool to satisfy the requested frequency.
     return all[rng.nextInt(all.length)];
   }

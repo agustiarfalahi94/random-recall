@@ -21,8 +21,12 @@ class Question {
       question: map['question'] as String,
       answer: map['answer'] as String,
       categoryId: map['category_id'] as int,
-      createdAt: DateTime.parse(map['created_at']?.toString() ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updated_at']?.toString() ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        map['created_at']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        map['updated_at']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 
@@ -38,8 +42,12 @@ class Question {
   }
 
   Question copyWith({
-    int? id, String? question, String? answer,
-    int? categoryId, DateTime? createdAt, DateTime? updatedAt,
+    int? id,
+    String? question,
+    String? answer,
+    int? categoryId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Question(
       id: id ?? this.id,

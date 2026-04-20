@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import '../screens/settings/subscription_screen.dart';
 
 enum UpgradeTrigger { questionLimit, categoryLimit }
@@ -24,19 +25,17 @@ class UpgradeBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     final title = trigger == UpgradeTrigger.questionLimit
-        ? 'Question Limit Reached'
-        : 'Category Limit Reached';
+        ? l10n.questionLimitReachedTitle
+        : l10n.categoryLimitReachedTitle;
 
     final description = trigger == UpgradeTrigger.questionLimit
-        ? 'Free accounts can store up to 20 questions '
-            '(+ bonus slots from your streak). '
-            'Upgrade to Premium for unlimited questions.'
-        : 'Free accounts can add questions to up to 2 categories. '
-            'Upgrade to Premium to use all categories without limits.';
+        ? l10n.questionLimitReachedDesc
+        : l10n.categoryLimitReachedDesc;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -104,13 +103,14 @@ class UpgradeBottomSheet extends StatelessWidget {
               color: colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: colorScheme.outlineVariant.withOpacity(0.4)),
+                color: colorScheme.outlineVariant.withOpacity(0.4),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Premium includes:',
+                  l10n.premiumIncludes,
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: colorScheme.primary,
@@ -118,10 +118,10 @@ class UpgradeBottomSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 for (final perk in [
-                  '✅ Unlimited questions',
-                  '✅ All categories',
-                  '✅ Full analytics breakdown',
-                  '✅ Undo wrong answer (rewarded)',
+                  l10n.premiumPerkUnlimitedQuestions,
+                  l10n.premiumPerkAllCategories,
+                  l10n.premiumPerkFullAnalytics,
+                  l10n.premiumPerkUndo,
                 ])
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
@@ -145,9 +145,7 @@ class UpgradeBottomSheet extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SubscriptionScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
                 );
               },
               style: FilledButton.styleFrom(
@@ -156,7 +154,7 @@ class UpgradeBottomSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text('Upgrade to Premium'),
+              child: Text(l10n.upgradeToPremium),
             ),
           ),
 
@@ -164,7 +162,7 @@ class UpgradeBottomSheet extends StatelessWidget {
 
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Maybe later'),
+            child: Text(l10n.maybeLater),
           ),
         ],
       ),

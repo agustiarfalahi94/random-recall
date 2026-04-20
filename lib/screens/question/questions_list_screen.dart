@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
@@ -70,10 +71,11 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   }
 
   Future<void> _deleteQuestion(Question question) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete question?'),
+        title: Text(l10n.deleteQuestionTitle),
         content: Text(
           '"${question.question}"',
           maxLines: 2,
@@ -82,14 +84,14 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -107,11 +109,9 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
       final canAdd = await PlanService.canAddQuestion(_totalQuestionCount);
       if (!canAdd) {
         if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const SubscriptionScreen(),
-          ),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
         return;
       }
     }
@@ -158,8 +158,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                   icon: Icons.quiz_outlined,
                   iconColor: colorScheme.primary,
                   iconBg: colorScheme.primaryContainer,
-                  title: 'New Question',
-                  subtitle: 'Add something you want to remember',
+                  title: AppLocalizations.of(ctx)!.newQuestionMenuTitle,
+                  subtitle: AppLocalizations.of(ctx)!.newQuestionMenuSubtitle,
                   onTap: () {
                     Navigator.pop(ctx);
                     _openAddEdit();
@@ -173,8 +173,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                   icon: Icons.label_outline_rounded,
                   iconColor: colorScheme.tertiary,
                   iconBg: colorScheme.tertiaryContainer,
-                  title: 'New Category',
-                  subtitle: 'Organise questions into a new group',
+                  title: AppLocalizations.of(ctx)!.newCategoryMenuTitle,
+                  subtitle: AppLocalizations.of(ctx)!.newCategoryMenuSubtitle,
                   onTap: () async {
                     Navigator.pop(ctx);
                     await Navigator.of(context).push(
@@ -205,6 +205,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -221,7 +222,9 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: atLimit
                           ? colorScheme.errorContainer
@@ -243,8 +246,14 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         const SizedBox(width: 5),
                         Text(
                           atLimit
-                              ? '$_totalQuestionCount / $_questionLimit — Limit reached'
-                              : '$_totalQuestionCount / $_questionLimit questions',
+                              ? l10n.questionLimitReached(
+                                  _totalQuestionCount,
+                                  _questionLimit,
+                                )
+                              : l10n.questionCount(
+                                  _totalQuestionCount,
+                                  _questionLimit,
+                                ),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: atLimit
                                 ? colorScheme.onErrorContainer
@@ -264,7 +273,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         ),
                       ),
                       child: Text(
-                        'Upgrade ›',
+                        l10n.upgradeButton,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
@@ -282,13 +291,16 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
               height: 56,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 children: [
                   // "All" chip
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
-                      label: const Text('All'),
+                      label: Text(l10n.all),
                       selected: _selectedCategoryId == null,
                       showCheckmark: false,
                       onSelected: (_) {
@@ -316,8 +328,11 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                         selected: isSelected,
                         showCheckmark: false,
                         onSelected: (_) {
-                          setState(() => _selectedCategoryId =
-                              isSelected ? null : cat.id);
+                          setState(
+                            () => _selectedCategoryId = isSelected
+                                ? null
+                                : cat.id,
+                          );
                           _loadData();
                         },
                         selectedColor: colorScheme.primaryContainer,
@@ -332,7 +347,6 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                       ),
                     );
                   }),
-
                 ],
               ),
             ),
@@ -342,26 +356,25 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _questions.isEmpty
-                    ? _buildEmptyState(colorScheme, theme)
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                          itemCount: _questions.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final q = _questions[index];
-                            final cat = _categoryFor(q.categoryId);
-                            return _QuestionCard(
-                              question: q,
-                              category: cat,
-                              onEdit: () => _openAddEdit(question: q),
-                              onDelete: () => _deleteQuestion(q),
-                            );
-                          },
-                        ),
-                      ),
+                ? _buildEmptyState(colorScheme, theme)
+                : RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      itemCount: _questions.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final q = _questions[index];
+                        final cat = _categoryFor(q.categoryId);
+                        return _QuestionCard(
+                          question: q,
+                          category: cat,
+                          onEdit: () => _openAddEdit(question: q),
+                          onDelete: () => _deleteQuestion(q),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -376,18 +389,19 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   }
 
   Widget _buildEmptyState(ColorScheme colorScheme, ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('📝', style: const TextStyle(fontSize: 64)),
+            const Text('📝', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 24),
             Text(
               _selectedCategoryId != null
-                  ? 'No questions in this category'
-                  : 'No questions yet',
+                  ? l10n.noQuestionsInCategory
+                  : l10n.noQuestionsYet,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -395,7 +409,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Tap the button below to add your first question.',
+              l10n.tapToAddFirst,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -441,7 +455,8 @@ class _AddMenuTile extends StatelessWidget {
           color: colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.4)),
+            color: colorScheme.outlineVariant.withOpacity(0.4),
+          ),
         ),
         child: Row(
           children: [
@@ -475,8 +490,10 @@ class _AddMenuTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -534,7 +551,9 @@ class _QuestionCard extends StatelessWidget {
                   Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(6),
@@ -582,7 +601,7 @@ class _QuestionCard extends StatelessWidget {
                     IconButton.outlined(
                       onPressed: onEdit,
                       icon: const Icon(Icons.edit_outlined, size: 18),
-                      tooltip: 'Edit',
+                      tooltip: AppLocalizations.of(context)!.edit,
                       style: IconButton.styleFrom(
                         padding: const EdgeInsets.all(6),
                         minimumSize: const Size(32, 32),
@@ -592,9 +611,12 @@ class _QuestionCard extends StatelessWidget {
                     // Delete
                     IconButton.outlined(
                       onPressed: onDelete,
-                      icon: Icon(Icons.delete_outline_rounded,
-                          size: 18, color: colorScheme.error),
-                      tooltip: 'Delete',
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: colorScheme.error,
+                      ),
+                      tooltip: AppLocalizations.of(context)!.delete,
                       style: IconButton.styleFrom(
                         padding: const EdgeInsets.all(6),
                         minimumSize: const Size(32, 32),

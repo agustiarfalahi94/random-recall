@@ -4,6 +4,7 @@ class Category {
   final String icon;
   final DateTime createdAt;
   final DateTime updatedAt;
+
   /// True for the two seeded categories (General, Work).
   /// Default categories are hidden from category management and cannot be deleted.
   final bool isDefault;
@@ -22,8 +23,12 @@ class Category {
       id: map['id'] as int?,
       name: map['name'] as String,
       icon: map['icon'] as String,
-      createdAt: DateTime.parse(map['created_at']?.toString() ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updated_at']?.toString() ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        map['created_at']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
+      updatedAt: DateTime.parse(
+        map['updated_at']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
       isDefault: (map['is_default'] as int? ?? 0) == 1,
     );
   }
