@@ -5,6 +5,13 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.8.18] — 2026-04-20
+
+### Fixed
+- **TextEditingController crash on feedback dialog cancel** — Deferred controller disposal to after frame completion to prevent "used after dispose" errors when closing the feedback dialog during animation.
+
+---
+
 ## [0.8.17] — 2026-04-20
 
 ### Added
