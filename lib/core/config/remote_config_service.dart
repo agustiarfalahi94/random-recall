@@ -20,4 +20,13 @@ class RemoteConfigService {
   // Free-tier plan limits
   int get freeQuestionBase => _rc.getInt('free_question_base');
   int get freeMaxCustomCategories => _rc.getInt('free_max_custom_categories');
+
+  // Premium-tier plan limits
+  int get premiumMaxCustomCategories =>
+      _rc.getInt('premium_max_custom_categories');
+  int get premiumQuestionLimit => _rc.getInt('premium_question_limit');
+  int get categoryWarningThreshold =>
+      _rc.getInt('category_warning_threshold');
+  int get questionWarningThreshold =>
+      _rc.getInt('question_warning_threshold');
 }

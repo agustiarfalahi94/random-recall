@@ -117,6 +117,10 @@ Future<void> main() async {
         'notif_end_hour': 20,
         'free_question_base': 20,
         'free_max_custom_categories': 1,
+        'premium_max_custom_categories': 20,
+        'premium_question_limit': 200,
+        'category_warning_threshold': 18,
+        'question_warning_threshold': 195,
       });
       rc
           .fetchAndActivate()
