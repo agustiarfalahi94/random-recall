@@ -1346,6 +1346,12 @@ abstract class AppLocalizations {
   /// **'{count} / {limit} — Limit reached'**
   String questionLimitReached(int count, int limit);
 
+  /// No description provided for @questionWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} / {limit} questions (Warning)'**
+  String questionWarning(int count, int limit);
+
   /// No description provided for @questionCount.
   ///
   /// In en, this message translates to:

@@ -258,10 +258,15 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                                   _totalQuestionCount,
                                   _questionLimit,
                                 )
-                              : l10n.questionCount(
-                                  _totalQuestionCount,
-                                  _questionLimit,
-                                ),
+                              : pillIsWarning
+                                  ? l10n.questionWarning(
+                                      _totalQuestionCount,
+                                      _questionLimit,
+                                    )
+                                  : l10n.questionCount(
+                                      _totalQuestionCount,
+                                      _questionLimit,
+                                    ),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: pillIsError
                                 ? colorScheme.onErrorContainer
@@ -389,7 +394,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddMenu,
+        onPressed: pillIsError ? null : _showAddMenu,
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         tooltip: 'Add',

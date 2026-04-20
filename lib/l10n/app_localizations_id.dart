@@ -694,6 +694,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String questionWarning(int count, int limit) {
+    return '$count / $limit pertanyaan (Peringatan)';
+  }
+
+  @override
   String questionCount(int count, int limit) {
     return '$count / $limit pertanyaan';
   }
