@@ -689,18 +689,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get validationSelectCategory2 => 'Pilih kategori';
 
   @override
-  String questionLimitReached(int count, int limit) {
-    return '$count / $limit — Batas tercapai';
+  String questionCount(int current, int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      current,
+      locale: localeName,
+      other: '$current / $max pertanyaan',
+      one: '1 / $max pertanyaan',
+      zero: 'Tidak ada pertanyaan',
+    );
+    return '$_temp0';
   }
 
   @override
-  String questionWarning(int count, int limit) {
-    return '$count / $limit pertanyaan (Peringatan)';
+  String questionWarning(int current, int max) {
+    return 'Mendekati batas pertanyaan — $current / $max';
   }
 
   @override
-  String questionCount(int count, int limit) {
-    return '$count / $limit pertanyaan';
+  String questionLimitReached(int current, int max) {
+    return 'Batas pertanyaan tercapai — $current / $max';
   }
 
   @override
@@ -810,18 +817,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get newCategoryFab => 'Kategori Baru';
 
   @override
-  String categoryCount(int current, int limit) {
-    return '$current / $limit';
+  String categoryCount(int current, int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      current,
+      locale: localeName,
+      other: '$current / $max kategori',
+      one: '1 / $max kategori',
+      zero: 'Tidak ada kategori',
+    );
+    return '$_temp0';
   }
 
   @override
-  String categoryWarning(int current, int limit) {
-    return '$current / $limit';
+  String categoryWarning(int current, int max) {
+    return 'Mendekati batas kategori — $current / $max';
   }
 
   @override
-  String categoryLimitReached(int current, int limit) {
-    return '$current / $limit';
+  String categoryLimitReached(int current, int max) {
+    return 'Batas kategori tercapai — $current / $max';
   }
 
   @override

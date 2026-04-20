@@ -1340,23 +1340,23 @@ abstract class AppLocalizations {
   /// **'Please select a category'**
   String get validationSelectCategory2;
 
-  /// No description provided for @questionLimitReached.
+  /// No description provided for @questionCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} / {limit} — Limit reached'**
-  String questionLimitReached(int count, int limit);
+  /// **'{current, plural, =0{No questions} =1{1 / {max} question} other{{current} / {max} questions}}'**
+  String questionCount(int current, int max);
 
   /// No description provided for @questionWarning.
   ///
   /// In en, this message translates to:
-  /// **'{count} / {limit} questions (Warning)'**
-  String questionWarning(int count, int limit);
+  /// **'Approaching question limit — {current} / {max}'**
+  String questionWarning(int current, int max);
 
-  /// No description provided for @questionCount.
+  /// No description provided for @questionLimitReached.
   ///
   /// In en, this message translates to:
-  /// **'{count} / {limit} questions'**
-  String questionCount(int count, int limit);
+  /// **'Question limit reached — {current} / {max}'**
+  String questionLimitReached(int current, int max);
 
   /// No description provided for @upgradeButton.
   ///
@@ -1547,20 +1547,20 @@ abstract class AppLocalizations {
   /// No description provided for @categoryCount.
   ///
   /// In en, this message translates to:
-  /// **'{current} / {limit}'**
-  String categoryCount(int current, int limit);
+  /// **'{current, plural, =0{No categories} =1{1 / {max} category} other{{current} / {max} categories}}'**
+  String categoryCount(int current, int max);
 
   /// No description provided for @categoryWarning.
   ///
   /// In en, this message translates to:
-  /// **'{current} / {limit}'**
-  String categoryWarning(int current, int limit);
+  /// **'Approaching category limit — {current} / {max}'**
+  String categoryWarning(int current, int max);
 
   /// No description provided for @categoryLimitReached.
   ///
   /// In en, this message translates to:
-  /// **'{current} / {limit}'**
-  String categoryLimitReached(int current, int limit);
+  /// **'Category limit reached — {current} / {max}'**
+  String categoryLimitReached(int current, int max);
 
   /// No description provided for @saveCategoryFailedSnack.
   ///

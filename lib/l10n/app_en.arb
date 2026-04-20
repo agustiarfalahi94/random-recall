@@ -289,9 +289,9 @@
   "@questionWarning": {
     "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "questionLimitReached": "Question limit reached — {max} / {max}",
+  "questionLimitReached": "Question limit reached — {current} / {max}",
   "@questionLimitReached": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
   "upgradeButton": "Upgrade ›",
   "noQuestionsInCategory": "No questions in this category",
@@ -345,9 +345,9 @@
   "@categoryWarning": {
     "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "categoryLimitReached": "Category limit reached — {max} / {max}",
+  "categoryLimitReached": "Category limit reached — {current} / {max}",
   "@categoryLimitReached": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
   "saveCategoryFailedSnack": "Failed to save: {error}",
   "@saveCategoryFailedSnack": {

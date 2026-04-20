@@ -289,9 +289,9 @@
   "@questionWarning": {
     "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "questionLimitReached": "Batas pertanyaan tercapai — {max} / {max}",
+  "questionLimitReached": "Batas pertanyaan tercapai — {current} / {max}",
   "@questionLimitReached": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
   "upgradeButton": "Upgrade ›",
   "noQuestionsInCategory": "Tidak ada pertanyaan di kategori ini",
@@ -345,9 +345,9 @@
   "@categoryWarning": {
     "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
-  "categoryLimitReached": "Batas kategori tercapai — {max} / {max}",
+  "categoryLimitReached": "Batas kategori tercapai — {current} / {max}",
   "@categoryLimitReached": {
-    "placeholders": { "max": { "type": "int" } }
+    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
   },
   "saveCategoryFailedSnack": "Gagal menyimpan: {error}",
   "@saveCategoryFailedSnack": {
