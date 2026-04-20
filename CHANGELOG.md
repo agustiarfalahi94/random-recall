@@ -8,17 +8,19 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 ## [0.9.0] — 2026-04-20
 
 ### Added
-- **Profile Page** — New 4th tab in bottom navigation bar with comprehensive user profile management.
-  - Editable name and phone number fields (synced to Firestore)
-  - Profile picture editing with camera/gallery picker (compressed to 512×512, 80% JPEG quality, stored in Firebase Storage)
+- **Profile Page** — New 4th tab in bottom navigation bar with essential account management features.
   - View email address (read-only, sourced from login provider)
   - Subscription status display (Free/Premium badge with color coding)
   - Change password button (email users only, hidden for Google sign-in users)
   - Delete account button with two-step re-authentication flow (supports both email and Google authentication methods)
+- **Welcome message on home screen** — Personalized greeting using user's display name from Firebase Auth (e.g., "Welcome to Agustiar").
+
+### Changed
+- **Simplified profile page** — Removed editable name/phone fields (not used in the app) to reduce unnecessary complexity and Firestore writes.
+- **Removed profile picture feature** — Profile picture upload removed to avoid Firebase Storage paid tier requirement. Email and subscription features still available.
 
 ### Fixed
 - **Change Password dialog layout overflow** — Wrapped dialog content in `ConstrainedBox` + `SingleChildScrollView` to prevent confirm password field from becoming hidden when keyboard appears on Xiaomi devices.
-- **Profile picture discoverability** — Added "Tap to change profile picture" label below the profile avatar to indicate the element is interactive.
 
 ---
 
