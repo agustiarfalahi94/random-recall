@@ -2318,6 +2318,12 @@ abstract class AppLocalizations {
   /// **'Something went wrong: {error}'**
   String onboardingSomethingWentWrong(String error);
 
+  /// Welcome message on home screen with user's name
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String welcomeMessage(String name);
+
   /// No description provided for @profilePageTitle.
   ///
   /// In en, this message translates to:

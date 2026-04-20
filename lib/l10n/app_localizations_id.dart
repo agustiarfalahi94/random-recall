@@ -1272,6 +1272,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String welcomeMessage(String name) {
+    return 'Selamat datang, $name';
+  }
+
+  @override
   String get profilePageTitle => 'Profil';
 
   @override

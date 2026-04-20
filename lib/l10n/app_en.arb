@@ -510,6 +510,11 @@
     "placeholders": { "error": { "type": "String" } }
   },
 
+  "welcomeMessage": "Welcome, {name}",
+  "@welcomeMessage": {
+    "description": "Welcome message on home screen with user's name",
+    "placeholders": { "name": { "type": "String" } }
+  },
   "profilePageTitle": "Profile",
   "nameLabel": "Name",
   "phoneLabel": "Phone Number",

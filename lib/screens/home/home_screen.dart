@@ -750,7 +750,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         children: [
           // ── Welcome message ──────────────────────────────────────────────
           Text(
-            'Welcome to $displayName',
+            l10n.welcomeMessage(displayName),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),

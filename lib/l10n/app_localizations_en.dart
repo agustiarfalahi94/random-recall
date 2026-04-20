@@ -1262,6 +1262,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String welcomeMessage(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
   String get profilePageTitle => 'Profile';
 
   @override
