@@ -123,6 +123,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                 controller: _questionController,
                 maxLines: 3,
                 minLines: 1,
+                maxLength: 200,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   hintText: l10n.questionHintOnboarding,
@@ -143,6 +144,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                 controller: _answerController,
                 maxLines: 3,
                 minLines: 1,
+                maxLength: 500,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   hintText: l10n.answerHintOnboarding,
