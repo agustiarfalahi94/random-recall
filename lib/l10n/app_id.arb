@@ -508,5 +508,31 @@
   "onboardingSomethingWentWrong": "Ada yang salah: {error}",
   "@onboardingSomethingWentWrong": {
     "placeholders": { "error": { "type": "String" } }
-  }
+  },
+
+  "profilePageTitle": "Profil",
+  "profilePictureLabel": "Foto Profil",
+  "nameLabel": "Nama",
+  "phoneLabel": "Nomor Telepon",
+  "emailLabel": "Email",
+  "subscriptionStatusLabel": "Status Langganan",
+  "subscriptionStatusPremium": "Premium",
+  "subscriptionStatusFree": "Gratis",
+  "changePasswordButton": "Ubah Kata Sandi",
+  "deleteAccountButton": "Hapus Akun",
+  "deleteAccountWarning": "Apakah Anda yakin? Penghapusan akun bersifat permanen. Semua data Anda akan dihapus.",
+  "deleteAccountConfirm": "Hapus Akun",
+  "deleteAccountCancel": "Batal",
+  "profilePictureSourceCamera": "Ambil Foto",
+  "profilePictureSourceGallery": "Pilih dari Galeri",
+  "profilePictureUpdated": "Foto profil diperbarui",
+  "profilePictureUpdateFailed": "Gagal memperbarui foto profil",
+  "profileUpdateSuccess": "Profil berhasil diperbarui",
+  "profileUpdateFailed": "Gagal memperbarui profil",
+  "passwordChangedSuccess": "Kata sandi berhasil diubah",
+  "passwordChangedFailed": "Gagal mengubah kata sandi",
+  "accountDeletedSuccess": "Akun berhasil dihapus",
+  "accountDeleteFailed": "Gagal menghapus akun",
+  "googleAccountLabel": "Akun Google",
+  "emailAccountLabel": "Email"
 }
