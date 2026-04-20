@@ -1260,4 +1260,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String onboardingSomethingWentWrong(String error) {
     return 'Something went wrong: $error';
   }
+
+  @override
+  String get profilePageTitle => 'Profile';
+
+  @override
+  String get profilePictureLabel => 'Profile Picture';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get phoneLabel => 'Phone Number';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get subscriptionStatusLabel => 'Subscription Status';
+
+  @override
+  String get subscriptionStatusPremium => 'Premium';
+
+  @override
+  String get subscriptionStatusFree => 'Free';
+
+  @override
+  String get changePasswordButton => 'Change Password';
+
+  @override
+  String get deleteAccountButton => 'Delete Account';
+
+  @override
+  String get deleteAccountWarning =>
+      'Are you sure? Account deletion is permanent. All your data will be deleted.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete Account';
+
+  @override
+  String get deleteAccountCancel => 'Cancel';
+
+  @override
+  String get profilePictureSourceCamera => 'Take Photo';
+
+  @override
+  String get profilePictureSourceGallery => 'Choose from Gallery';
+
+  @override
+  String get profilePictureUpdated => 'Profile picture updated';
+
+  @override
+  String get profilePictureUpdateFailed => 'Failed to update profile picture';
+
+  @override
+  String get profileUpdateSuccess => 'Profile updated successfully';
+
+  @override
+  String get profileUpdateFailed => 'Failed to update profile';
+
+  @override
+  String get passwordChangedSuccess => 'Password changed successfully';
+
+  @override
+  String get passwordChangedFailed => 'Failed to change password';
+
+  @override
+  String get accountDeletedSuccess => 'Account deleted successfully';
+
+  @override
+  String get accountDeleteFailed => 'Failed to delete account';
+
+  @override
+  String get googleAccountLabel => 'Google Account';
+
+  @override
+  String get emailAccountLabel => 'Email';
 }

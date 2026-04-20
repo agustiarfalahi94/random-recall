@@ -2317,6 +2317,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong: {error}'**
   String onboardingSomethingWentWrong(String error);
+
+  /// No description provided for @profilePageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profilePageTitle;
+
+  /// No description provided for @profilePictureLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Picture'**
+  String get profilePictureLabel;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @phoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneLabel;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// No description provided for @subscriptionStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription Status'**
+  String get subscriptionStatusLabel;
+
+  /// No description provided for @subscriptionStatusPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get subscriptionStatusPremium;
+
+  /// No description provided for @subscriptionStatusFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get subscriptionStatusFree;
+
+  /// No description provided for @changePasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePasswordButton;
+
+  /// No description provided for @deleteAccountButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccountButton;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure? Account deletion is permanent. All your data will be deleted.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get deleteAccountCancel;
+
+  /// No description provided for @profilePictureSourceCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get profilePictureSourceCamera;
+
+  /// No description provided for @profilePictureSourceGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get profilePictureSourceGallery;
+
+  /// No description provided for @profilePictureUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile picture updated'**
+  String get profilePictureUpdated;
+
+  /// No description provided for @profilePictureUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile picture'**
+  String get profilePictureUpdateFailed;
+
+  /// No description provided for @profileUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully'**
+  String get profileUpdateSuccess;
+
+  /// No description provided for @profileUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile'**
+  String get profileUpdateFailed;
+
+  /// No description provided for @passwordChangedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully'**
+  String get passwordChangedSuccess;
+
+  /// No description provided for @passwordChangedFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change password'**
+  String get passwordChangedFailed;
+
+  /// No description provided for @accountDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully'**
+  String get accountDeletedSuccess;
+
+  /// No description provided for @accountDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account'**
+  String get accountDeleteFailed;
+
+  /// No description provided for @googleAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Account'**
+  String get googleAccountLabel;
+
+  /// No description provided for @emailAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailAccountLabel;
 }
 
 class _AppLocalizationsDelegate

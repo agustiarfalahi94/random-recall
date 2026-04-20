@@ -1270,4 +1270,80 @@ class AppLocalizationsId extends AppLocalizations {
   String onboardingSomethingWentWrong(String error) {
     return 'Ada yang salah: $error';
   }
+
+  @override
+  String get profilePageTitle => 'Profil';
+
+  @override
+  String get profilePictureLabel => 'Foto Profil';
+
+  @override
+  String get nameLabel => 'Nama';
+
+  @override
+  String get phoneLabel => 'Nomor Telepon';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get subscriptionStatusLabel => 'Status Langganan';
+
+  @override
+  String get subscriptionStatusPremium => 'Premium';
+
+  @override
+  String get subscriptionStatusFree => 'Gratis';
+
+  @override
+  String get changePasswordButton => 'Ubah Kata Sandi';
+
+  @override
+  String get deleteAccountButton => 'Hapus Akun';
+
+  @override
+  String get deleteAccountWarning =>
+      'Apakah Anda yakin? Penghapusan akun bersifat permanen. Semua data Anda akan dihapus.';
+
+  @override
+  String get deleteAccountConfirm => 'Hapus Akun';
+
+  @override
+  String get deleteAccountCancel => 'Batal';
+
+  @override
+  String get profilePictureSourceCamera => 'Ambil Foto';
+
+  @override
+  String get profilePictureSourceGallery => 'Pilih dari Galeri';
+
+  @override
+  String get profilePictureUpdated => 'Foto profil diperbarui';
+
+  @override
+  String get profilePictureUpdateFailed => 'Gagal memperbarui foto profil';
+
+  @override
+  String get profileUpdateSuccess => 'Profil berhasil diperbarui';
+
+  @override
+  String get profileUpdateFailed => 'Gagal memperbarui profil';
+
+  @override
+  String get passwordChangedSuccess => 'Kata sandi berhasil diubah';
+
+  @override
+  String get passwordChangedFailed => 'Gagal mengubah kata sandi';
+
+  @override
+  String get accountDeletedSuccess => 'Akun berhasil dihapus';
+
+  @override
+  String get accountDeleteFailed => 'Gagal menghapus akun';
+
+  @override
+  String get googleAccountLabel => 'Akun Google';
+
+  @override
+  String get emailAccountLabel => 'Email';
 }
