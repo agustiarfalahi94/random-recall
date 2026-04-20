@@ -5,6 +5,22 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.8.17] — 2026-04-20
+
+### Added
+- **Configurable category limits** — Free users limited to 1 custom category, premium users to 20. All limits tunable via Firebase Remote Config.
+- **Configurable question limits** — Free users limited to 20 questions, premium users to 200 (changed from unlimited). All limits tunable via Firebase Remote Config.
+- **Warning thresholds with color coding** — Category limits show amber warning at 18/20 (90%), question limits show amber at 195/200 (97.5%). Count pills transition gray → amber → red as users approach and reach limits.
+- **Character limits on question and answer fields** — Questions limited to 200 characters, answers to 500 characters. Flutter renders live character counters below each field.
+- **Show/hide password toggles** — Eye icon button on login and signup screens allows users to reveal password before submission.
+- **Count pill displays for all users** — Both free and premium users now see question count with appropriate limits and thresholds. Premium users see category count in Manage Categories screen; free users see count showing 1/1 at limit.
+- **Remote Config integration** — All limits (free_question_base, premium_question_limit, free_max_custom_categories, premium_max_custom_categories, category_warning_threshold, question_warning_threshold) now live in Firebase Remote Config with sensible defaults, allowing server-side tuning without app updates.
+
+### Changed
+- **Premium question limit** — Changed from unlimited (9999) to 200 questions max. This is a breaking change but intentional to prevent abuse and ensure fair limits for all premium users.
+
+---
+
 ## [0.8.16] — 2026-04-20
 
 ### Added
