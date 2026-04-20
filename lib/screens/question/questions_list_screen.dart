@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
+import '../../core/config/remote_config_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
@@ -211,7 +212,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
 
     // Determine pill color: red at limit, amber at warning for premium
     final isAtLimit = _totalQuestionCount >= _questionLimit;
-    final isAtWarning = _isPremium && _totalQuestionCount >= 195;
+    final isAtWarning = _isPremium && _totalQuestionCount >= RemoteConfigService.instance.questionWarningThreshold;
     final pillIsError = isAtLimit;
     final pillIsWarning = isAtWarning && !isAtLimit;
 
