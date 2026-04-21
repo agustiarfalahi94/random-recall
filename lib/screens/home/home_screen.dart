@@ -677,6 +677,9 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
       if (mounted) _refreshData();
     });
 
+    // Check if challenge daily requirement is met
+    StreakService.instance.checkChallengeDailyRequirement().ignore();
+
     // Check if user has set a display name, prompt if not
     _checkAndShowDisplayNamePrompt();
   }

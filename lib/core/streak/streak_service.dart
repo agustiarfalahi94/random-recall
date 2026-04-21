@@ -48,6 +48,8 @@ class StreakService {
     return _instance;
   }
 
+  static StreakService get instance => _instance;
+
   StreakService._internal();
 
   late SharedPreferences _prefs;
