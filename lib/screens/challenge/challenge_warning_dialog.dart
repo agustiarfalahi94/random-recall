@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:random_recall/core/streak/streak_service.dart';
+import 'existing_streak_dialog.dart';
 
 class ChallengeWarningDialog extends StatefulWidget {
   final int duration; // 7 or 14
@@ -46,6 +47,32 @@ class _ChallengeWarningDialogState extends State<ChallengeWarningDialog> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if there's an existing streak and show dialog if so
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentStreak = StreakService.instance.currentStreak;
+      if (currentStreak > 0) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => ExistingStreakDialog(
+            currentStreak: currentStreak,
+            onKeepStreak: () {
+              // User chose to keep streak - just close this dialog, don't start challenge
+              Navigator.pop(context);
+            },
+            onStartChallenge: () {
+              // User chose to start challenge - proceed normally
+              // This dialog will continue to show the warning
+            },
+          ),
+        );
+      }
+    });
   }
 
   @override
