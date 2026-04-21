@@ -1052,6 +1052,12 @@ abstract class AppLocalizations {
   /// **'Ready to recall?'**
   String get readyToRecall;
 
+  /// No description provided for @welcomeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String welcomeMessage(String name);
+
   /// No description provided for @homeSubtitle.
   ///
   /// In en, this message translates to:

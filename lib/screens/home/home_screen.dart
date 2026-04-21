@@ -861,22 +861,13 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             ),
           ),
           const SizedBox(height: 24),
-          if (_displayName.isNotEmpty)
-            Text(
-              'Welcome, $_displayName',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            )
-          else
-            Text(
-              l10n.readyToRecall,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
+          Text(
+            l10n.readyToRecall,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
             ),
+          ),
           const SizedBox(height: 8),
           Text(
             l10n.homeSubtitle,
