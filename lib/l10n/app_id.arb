@@ -534,5 +534,13 @@
   "accountDeletedSuccess": "Akun berhasil dihapus",
   "accountDeleteFailed": "Gagal menghapus akun",
   "googleAccountLabel": "Akun Google",
-  "emailAccountLabel": "Email"
+  "emailAccountLabel": "Email",
+
+  "displayNameInputHint": "Masukkan nama Anda",
+  "displayNameLabel": "Nama Tampilan",
+  "displayNameMaxLength": "Maksimal 50 karakter",
+  "displayNameInvalidCharacters": "Hanya huruf, angka, spasi, tanda hubung, dan garis bawah yang diperbolehkan.",
+  "displayNameEmpty": "Silakan masukkan nama.",
+  "displayNameSubmit": "Lanjutkan",
+  "displayNameCancel": "Batal"
 }

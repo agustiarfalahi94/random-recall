@@ -1336,4 +1336,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailAccountLabel => 'Email';
+
+  @override
+  String get displayNameInputHint => 'Enter your name';
+
+  @override
+  String get displayNameLabel => 'Display Name';
+
+  @override
+  String get displayNameMaxLength => '50 characters maximum';
+
+  @override
+  String get displayNameInvalidCharacters =>
+      'Only letters, numbers, spaces, hyphens, and underscores allowed.';
+
+  @override
+  String get displayNameEmpty => 'Please enter a name.';
+
+  @override
+  String get displayNameSubmit => 'Continue';
+
+  @override
+  String get displayNameCancel => 'Cancel';
 }

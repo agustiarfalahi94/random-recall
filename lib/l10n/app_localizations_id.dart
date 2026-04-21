@@ -1346,4 +1346,26 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get emailAccountLabel => 'Email';
+
+  @override
+  String get displayNameInputHint => 'Masukkan nama Anda';
+
+  @override
+  String get displayNameLabel => 'Nama Tampilan';
+
+  @override
+  String get displayNameMaxLength => 'Maksimal 50 karakter';
+
+  @override
+  String get displayNameInvalidCharacters =>
+      'Hanya huruf, angka, spasi, tanda hubung, dan garis bawah yang diperbolehkan.';
+
+  @override
+  String get displayNameEmpty => 'Silakan masukkan nama.';
+
+  @override
+  String get displayNameSubmit => 'Lanjutkan';
+
+  @override
+  String get displayNameCancel => 'Batal';
 }

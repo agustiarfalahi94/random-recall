@@ -534,5 +534,13 @@
   "accountDeletedSuccess": "Account deleted successfully",
   "accountDeleteFailed": "Failed to delete account",
   "googleAccountLabel": "Google Account",
-  "emailAccountLabel": "Email"
+  "emailAccountLabel": "Email",
+
+  "displayNameInputHint": "Enter your name",
+  "displayNameLabel": "Display Name",
+  "displayNameMaxLength": "50 characters maximum",
+  "displayNameInvalidCharacters": "Only letters, numbers, spaces, hyphens, and underscores allowed.",
+  "displayNameEmpty": "Please enter a name.",
+  "displayNameSubmit": "Continue",
+  "displayNameCancel": "Cancel"
 }

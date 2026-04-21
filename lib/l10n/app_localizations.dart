@@ -2467,6 +2467,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Email'**
   String get emailAccountLabel;
+
+  /// No description provided for @displayNameInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name'**
+  String get displayNameInputHint;
+
+  /// No description provided for @displayNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Display Name'**
+  String get displayNameLabel;
+
+  /// No description provided for @displayNameMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'50 characters maximum'**
+  String get displayNameMaxLength;
+
+  /// No description provided for @displayNameInvalidCharacters.
+  ///
+  /// In en, this message translates to:
+  /// **'Only letters, numbers, spaces, hyphens, and underscores allowed.'**
+  String get displayNameInvalidCharacters;
+
+  /// No description provided for @displayNameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a name.'**
+  String get displayNameEmpty;
+
+  /// No description provided for @displayNameSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get displayNameSubmit;
+
+  /// No description provided for @displayNameCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get displayNameCancel;
 }
 
 class _AppLocalizationsDelegate
