@@ -259,7 +259,8 @@ class _NotificationScheduleScreenState
     final dayLabels = _getDayLabels(l10n);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final timeDisabled = _randomAnytime;
+    // Disable time picker when: (1) random anytime is selected, OR (2) challenge mode is active
+    final timeDisabled = _randomAnytime || StreakService.instance.isChallengeActive;
 
     return Scaffold(
       appBar: AppBar(
@@ -453,22 +454,28 @@ class _NotificationScheduleScreenState
                   colorScheme: colorScheme,
                   child: Column(
                     children: [
-                      // Anytime switch
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          l10n.sendAtAnyTime,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          l10n.sendAtAnyTimeSubtitle,
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 13,
+                      // Anytime switch — disabled during challenge mode
+                      Opacity(
+                        opacity: timeDisabled ? 0.35 : 1.0,
+                        child: IgnorePointer(
+                          ignoring: timeDisabled,
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              l10n.sendAtAnyTime,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              l10n.sendAtAnyTimeSubtitle,
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
+                            ),
+                            value: _randomAnytime,
+                            onChanged: (v) => setState(() => _randomAnytime = v),
                           ),
                         ),
-                        value: _randomAnytime,
-                        onChanged: (v) => setState(() => _randomAnytime = v),
                       ),
 
                       Divider(

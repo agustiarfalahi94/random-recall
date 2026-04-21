@@ -730,17 +730,23 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
 
     // Check for REGULAR active streak (not challenge mode)
-    // A streak is active if currentStreak > 0
     final currentStreak = StreakService.instance.currentStreak;
     final isChallengeActive = StreakService.instance.isChallengeActive;
 
-    debugPrint('HomeTab: Checking existing streak dialog. RegularStreak: $currentStreak, ChallengeActive: $isChallengeActive');
+    // Check if user has already been asked about THIS streak
+    final lastStreakAsked = prefs.getInt('last_streak_asked_for_challenge') ?? 0;
+    final hasAlreadyBeenAsked = lastStreakAsked == currentStreak && currentStreak > 0;
 
-    // Show dialog if:
+    debugPrint('HomeTab: Checking existing streak dialog. RegularStreak: $currentStreak, ChallengeActive: $isChallengeActive, AlreadyAsked: $hasAlreadyBeenAsked');
+
+    // Show dialog ONCE per streak if:
     // 1. User has a regular streak (not in challenge mode)
-    // 2. They haven't started a challenge yet (once they start, isChallengeActive will be true)
-    if (currentStreak > 0 && !isChallengeActive) {
+    // 2. We haven't already asked them about THIS specific streak
+    if (currentStreak > 0 && !isChallengeActive && !hasAlreadyBeenAsked) {
       debugPrint('HomeTab: Showing existing streak dialog for $currentStreak-day streak');
+
+      // Mark this streak as asked so we don't show dialog again on next app open
+      await prefs.setInt('last_streak_asked_for_challenge', currentStreak);
 
       if (mounted) {
         showDialog(
@@ -750,20 +756,17 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             currentStreak: currentStreak,
             onKeepStreak: () {
               debugPrint('HomeTab: User chose to keep existing streak');
-              // User wants to keep the existing streak - mark as seen for this session
-              // so we don't show it on every home screen reload
-              unawaited(prefs.setBool('has_seen_existing_streak_dialog_session', true));
+              // Dialog closes, user keeps their regular streak
               if (mounted) Navigator.pop(context);
             },
             onStartChallenge: () {
               debugPrint('HomeTab: User chose to start fresh challenge, navigating to settings');
-              // User wants to start a fresh challenge
               // Navigate to notification schedule screen where they can start challenge
               if (mounted) {
                 Navigator.pop(context);
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const NotificationScheduleScreen(),
+                    builder: (_) => const NotificationScheduleScreen(scrollToTimer: true),
                   ),
                 );
               }
@@ -774,7 +777,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         debugPrint('HomeTab: Widget not mounted, skipping existing streak dialog');
       }
     } else {
-      debugPrint('HomeTab: No active regular streak, skipping');
+      debugPrint('HomeTab: No active regular streak or already asked, skipping');
     }
   }
 
