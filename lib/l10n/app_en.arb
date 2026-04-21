@@ -542,6 +542,7 @@
   "displayNameInvalidCharacters": "Only letters, numbers, spaces, hyphens, and underscores allowed.",
   "displayNameEmpty": "Please enter a name.",
   "displayNameProfanity": "This name contains inappropriate content. Please choose another.",
+  "displayNameError": "Error saving name. Please try again.",
   "displayNameSubmit": "Continue",
   "displayNameCancel": "Cancel"
 }

@@ -69,10 +69,19 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
 
       // Update Firebase Auth displayName
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
+      if (user == null) {
+        setState(() {
+          _errorMessage = 'No user logged in.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      try {
+        // Update Auth displayName
         await user.updateDisplayName(name);
 
-        // Also save to Firestore for backup
+        // Verify save to Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -80,6 +89,14 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
               {'name': name, 'updatedAt': FieldValue.serverTimestamp()},
               SetOptions(merge: true),
             );
+      } catch (firestoreError) {
+        // Firestore write failed - revert Auth changes if possible
+        await user.reload(); // Refresh user data from server
+        setState(() {
+          _errorMessage = l10n.displayNameError;
+          _isLoading = false;
+        });
+        return;
       }
 
       widget.onComplete?.call();
@@ -88,7 +105,7 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error saving name. Please try again.';
+        _errorMessage = l10n.displayNameError;
         _isLoading = false;
       });
     }
