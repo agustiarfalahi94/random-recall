@@ -516,6 +516,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readyToRecall => 'Ready to recall?';
 
   @override
+  String welcomeMessage(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
   String get homeSubtitle =>
       'Tap below to practice anytime,\nor wait for a random notification.';
 
