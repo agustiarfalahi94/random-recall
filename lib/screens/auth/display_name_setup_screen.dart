@@ -71,7 +71,7 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         setState(() {
-          _errorMessage = 'No user logged in.';
+          _errorMessage = l10n.displayNameError;
           _isLoading = false;
         });
         return;
