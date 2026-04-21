@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -647,7 +646,6 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _timerSeconds = 0;
   int _bonusQuestions = 0;
   int _unansweredCount = 0;
-  String _displayName = '';
 
   StreamSubscription<void>? _answeredSub;
   StreamSubscription<void>? _databaseUpdateSub;
@@ -728,8 +726,6 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     final streak = await StreakService.getStreak();
     final bonus = await StreakService.getBonusQuestions();
     final unanswered = await NotificationService.instance.getUnansweredCount();
-    final user = FirebaseAuth.instance.currentUser;
-    final displayName = user?.displayName ?? '';
 
     if (mounted) {
       setState(() {
@@ -737,7 +733,6 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
         _bonusQuestions = bonus;
         _unansweredCount = unanswered;
-        _displayName = displayName;
       });
     }
 
