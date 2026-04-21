@@ -518,11 +518,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get readyToRecall => 'Siap untuk mengingat?';
 
   @override
-  String welcomeMessage(String name) {
-    return 'Selamat datang, $name';
-  }
-
-  @override
   String get homeSubtitle =>
       'Ketuk di bawah untuk berlatih kapan saja,\natau tunggu notifikasi acak.';
 

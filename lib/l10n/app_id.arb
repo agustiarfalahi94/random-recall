@@ -190,10 +190,6 @@
   "navQuestions": "Pertanyaan",
   "navAnalytics": "Analitik",
   "readyToRecall": "Siap untuk mengingat?",
-  "welcomeMessage": "Selamat datang, {name}",
-  "@welcomeMessage": {
-    "placeholders": { "name": { "type": "String" } }
-  },
   "homeSubtitle": "Ketuk di bawah untuk berlatih kapan saja,\natau tunggu notifikasi acak.",
   "practiceNow": "Latihan Sekarang",
   "timerChallengeTitle": "Tantangan Timer",

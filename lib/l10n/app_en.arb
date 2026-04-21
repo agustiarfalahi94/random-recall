@@ -190,10 +190,6 @@
   "navQuestions": "Questions",
   "navAnalytics": "Analytics",
   "readyToRecall": "Ready to recall?",
-  "welcomeMessage": "Welcome, {name}",
-  "@welcomeMessage": {
-    "placeholders": { "name": { "type": "String" } }
-  },
   "homeSubtitle": "Tap below to practice anytime,\nor wait for a random notification.",
   "practiceNow": "Practice Now",
   "timerChallengeTitle": "Timer Challenge",
