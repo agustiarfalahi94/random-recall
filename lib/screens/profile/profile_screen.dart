@@ -96,6 +96,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         phoneNumber: _phoneController.text.trim(),
       );
 
+      // Reload Firebase Auth user to ensure displayName is synced
+      await _auth.currentUser?.reload();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

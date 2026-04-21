@@ -16,15 +16,20 @@ class ProfileService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Update user profile in Firestore
+  /// Update user profile in Firestore and Firebase Auth displayName
   Future<void> updateUserProfile({
     required String name,
     String? phoneNumber,
   }) async {
     try {
-      final userId = _auth.currentUser?.uid;
+      final user = _auth.currentUser;
+      final userId = user?.uid;
       if (userId == null) throw Exception('User not authenticated');
 
+      // Update Firebase Auth displayName
+      await user!.updateDisplayName(name);
+
+      // Update Firestore
       final updateData = {
         'name': name,
         'phone_number': phoneNumber,
