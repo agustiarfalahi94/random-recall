@@ -2627,19 +2627,19 @@ abstract class AppLocalizations {
   /// No description provided for @existingStreakWarning.
   ///
   /// In en, this message translates to:
-  /// **'If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to keep your streak or start a fresh challenge?'**
+  /// **'Your streak will be reset if you start Challenge Mode. Challenge Mode requires answering ALL questions correctly within a strict timer (5-10 seconds only) for 7 or 14 consecutive days to earn rewards.'**
   String get existingStreakWarning;
 
   /// No description provided for @existingStreakKeep.
   ///
   /// In en, this message translates to:
-  /// **'Keep Streak'**
+  /// **'Keep Current Streak'**
   String get existingStreakKeep;
 
   /// No description provided for @existingStreakStart.
   ///
   /// In en, this message translates to:
-  /// **'Start Challenge'**
+  /// **'Start Challenge Mode'**
   String get existingStreakStart;
 }
 

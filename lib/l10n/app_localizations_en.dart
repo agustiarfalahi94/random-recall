@@ -1442,11 +1442,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get existingStreakWarning =>
-      'If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to keep your streak or start a fresh challenge?';
+      'Your streak will be reset if you start Challenge Mode. Challenge Mode requires answering ALL questions correctly within a strict timer (5-10 seconds only) for 7 or 14 consecutive days to earn rewards.';
 
   @override
-  String get existingStreakKeep => 'Keep Streak';
+  String get existingStreakKeep => 'Keep Current Streak';
 
   @override
-  String get existingStreakStart => 'Start Challenge';
+  String get existingStreakStart => 'Start Challenge Mode';
 }

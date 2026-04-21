@@ -608,7 +608,7 @@
       "streak": { "type": "int" }
     }
   },
-  "existingStreakWarning": "If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to keep your streak or start a fresh challenge?",
-  "existingStreakKeep": "Keep Streak",
-  "existingStreakStart": "Start Challenge"
+  "existingStreakWarning": "Your streak will be reset if you start Challenge Mode. Challenge Mode requires answering ALL questions correctly within a strict timer (5-10 seconds only) for 7 or 14 consecutive days to earn rewards.",
+  "existingStreakKeep": "Keep Current Streak",
+  "existingStreakStart": "Start Challenge Mode"
 }

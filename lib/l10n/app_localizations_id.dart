@@ -1453,11 +1453,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get existingStreakWarning =>
-      'Jika Anda memulai Mode Tantangan sekarang, streak Anda saat ini akan direset ke hari 1. Apakah Anda ingin mempertahankan streak atau memulai tantangan baru?';
+      'Streak Anda akan direset jika Anda memulai Mode Tantangan. Mode Tantangan memerlukan menjawab SEMUA pertanyaan dengan benar dengan timer ketat (5-10 detik saja) selama 7 atau 14 hari berturut-turut untuk mendapatkan hadiah.';
 
   @override
-  String get existingStreakKeep => 'Pertahankan Streak';
+  String get existingStreakKeep => 'Pertahankan Streak Saat Ini';
 
   @override
-  String get existingStreakStart => 'Mulai Tantangan';
+  String get existingStreakStart => 'Mulai Mode Tantangan';
 }
