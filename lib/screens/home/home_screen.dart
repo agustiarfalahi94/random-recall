@@ -647,6 +647,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _timerSeconds = 0;
   int _bonusQuestions = 0;
   int _unansweredCount = 0;
+  String _displayName = '';
 
   StreamSubscription<void>? _answeredSub;
   StreamSubscription<void>? _databaseUpdateSub;
@@ -727,12 +728,16 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     final streak = await StreakService.getStreak();
     final bonus = await StreakService.getBonusQuestions();
     final unanswered = await NotificationService.instance.getUnansweredCount();
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName ?? '';
+
     if (mounted) {
       setState(() {
         _streak = streak;
         _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
         _bonusQuestions = bonus;
         _unansweredCount = unanswered;
+        _displayName = displayName;
       });
     }
 
@@ -847,13 +852,22 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             ),
           ),
           const SizedBox(height: 24),
-          Text(
-            l10n.readyToRecall,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
+          if (_displayName.isNotEmpty)
+            Text(
+              'Welcome, $_displayName',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            )
+          else
+            Text(
+              l10n.readyToRecall,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
             ),
-          ),
           const SizedBox(height: 8),
           Text(
             l10n.homeSubtitle,

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/core/services/profile_service.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
+import 'package:random_recall/services/display_name_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -54,10 +55,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
-    if (_nameController.text.trim().isEmpty) {
+    final l10n = AppLocalizations.of(context)!;
+    final trimmedName = _nameController.text.trim();
+
+    if (trimmedName.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.nameLabel)),
+          SnackBar(content: Text(l10n.nameLabel)),
+        );
+      }
+      return;
+    }
+
+    // Validate characters
+    if (!DisplayNameService.isValidCharacters(trimmedName)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Display name contains invalid characters')),
+        );
+      }
+      return;
+    }
+
+    // Check for profanity
+    final hasProfanity = await DisplayNameService.checkProfanity(trimmedName);
+    if (hasProfanity) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Display name contains inappropriate content')),
         );
       }
       return;
@@ -67,14 +92,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       await _profileService.updateUserProfile(
-        name: _nameController.text.trim(),
+        name: trimmedName,
         phoneNumber: _phoneController.text.trim(),
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.profileUpdateSuccess),
+            content: Text(l10n.profileUpdateSuccess),
           ),
         );
       }
@@ -82,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.profileUpdateFailed),
+            content: Text(l10n.profileUpdateFailed),
           ),
         );
       }
