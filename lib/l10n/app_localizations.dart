@@ -2324,12 +2324,6 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get profilePageTitle;
 
-  /// No description provided for @profilePictureLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile Picture'**
-  String get profilePictureLabel;
-
   /// No description provided for @nameLabel.
   ///
   /// In en, this message translates to:
@@ -2395,30 +2389,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get deleteAccountCancel;
-
-  /// No description provided for @profilePictureSourceCamera.
-  ///
-  /// In en, this message translates to:
-  /// **'Take Photo'**
-  String get profilePictureSourceCamera;
-
-  /// No description provided for @profilePictureSourceGallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose from Gallery'**
-  String get profilePictureSourceGallery;
-
-  /// No description provided for @profilePictureUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile picture updated'**
-  String get profilePictureUpdated;
-
-  /// No description provided for @profilePictureUpdateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to update profile picture'**
-  String get profilePictureUpdateFailed;
 
   /// No description provided for @profileUpdateSuccess.
   ///

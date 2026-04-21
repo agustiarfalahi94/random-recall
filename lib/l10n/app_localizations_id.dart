@@ -1275,9 +1275,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get profilePageTitle => 'Profil';
 
   @override
-  String get profilePictureLabel => 'Foto Profil';
-
-  @override
   String get nameLabel => 'Nama';
 
   @override
@@ -1310,18 +1307,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deleteAccountCancel => 'Batal';
-
-  @override
-  String get profilePictureSourceCamera => 'Ambil Foto';
-
-  @override
-  String get profilePictureSourceGallery => 'Pilih dari Galeri';
-
-  @override
-  String get profilePictureUpdated => 'Foto profil diperbarui';
-
-  @override
-  String get profilePictureUpdateFailed => 'Gagal memperbarui foto profil';
 
   @override
   String get profileUpdateSuccess => 'Profil berhasil diperbarui';

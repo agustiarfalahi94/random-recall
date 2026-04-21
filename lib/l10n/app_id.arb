@@ -511,7 +511,6 @@
   },
 
   "profilePageTitle": "Profil",
-  "profilePictureLabel": "Foto Profil",
   "nameLabel": "Nama",
   "phoneLabel": "Nomor Telepon",
   "emailLabel": "Email",
@@ -523,10 +522,6 @@
   "deleteAccountWarning": "Apakah Anda yakin? Penghapusan akun bersifat permanen. Semua data Anda akan dihapus.",
   "deleteAccountConfirm": "Hapus Akun",
   "deleteAccountCancel": "Batal",
-  "profilePictureSourceCamera": "Ambil Foto",
-  "profilePictureSourceGallery": "Pilih dari Galeri",
-  "profilePictureUpdated": "Foto profil diperbarui",
-  "profilePictureUpdateFailed": "Gagal memperbarui foto profil",
   "profileUpdateSuccess": "Profil berhasil diperbarui",
   "profileUpdateFailed": "Gagal memperbarui profil",
   "passwordChangedSuccess": "Kata sandi berhasil diubah",

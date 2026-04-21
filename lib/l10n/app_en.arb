@@ -511,7 +511,6 @@
   },
 
   "profilePageTitle": "Profile",
-  "profilePictureLabel": "Profile Picture",
   "nameLabel": "Name",
   "phoneLabel": "Phone Number",
   "emailLabel": "Email",
@@ -523,10 +522,6 @@
   "deleteAccountWarning": "Are you sure? Account deletion is permanent. All your data will be deleted.",
   "deleteAccountConfirm": "Delete Account",
   "deleteAccountCancel": "Cancel",
-  "profilePictureSourceCamera": "Take Photo",
-  "profilePictureSourceGallery": "Choose from Gallery",
-  "profilePictureUpdated": "Profile picture updated",
-  "profilePictureUpdateFailed": "Failed to update profile picture",
   "profileUpdateSuccess": "Profile updated successfully",
   "profileUpdateFailed": "Failed to update profile",
   "passwordChangedSuccess": "Password changed successfully",
