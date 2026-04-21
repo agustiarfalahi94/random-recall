@@ -15,6 +15,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ProfileService _profileService = ProfileService.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+
   bool _isEmailUser = false;
   bool _isPremium = false;
   bool _isLoading = false;
@@ -22,6 +25,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
+    _phoneController = TextEditingController();
     _loadProfileData();
   }
 
@@ -30,17 +35,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = _auth.currentUser;
       if (user == null) return;
 
+      // Load from Firestore
+      final profile = await _profileService.getUserProfile();
       final prefs = await SharedPreferences.getInstance();
       final isPremium = prefs.getBool('is_premium') ?? false;
 
       if (mounted) {
         setState(() {
+          _nameController.text = profile?['name'] ?? '';
+          _phoneController.text = profile?['phone_number'] ?? '';
           _isEmailUser = user.providerData.any((p) => p.providerId == 'password');
           _isPremium = isPremium;
         });
       }
     } catch (e) {
       debugPrint('ProfileScreen: Load profile failed: $e');
+    }
+  }
+
+  Future<void> _updateProfile() async {
+    if (_nameController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.nameLabel)),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _profileService.updateUserProfile(
+        name: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.profileUpdateSuccess),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.profileUpdateFailed),
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -55,34 +102,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.changePasswordButton),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.5,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: currentPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(hintText: 'Current Password'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: newPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(hintText: 'New Password'),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(hintText: 'Confirm Password'),
-                ),
-              ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(hintText: 'Current Password'),
             ),
-          ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: newPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(hintText: 'New Password'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(hintText: 'Confirm Password'),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -247,6 +287,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // Profile Picture
+                  Center(
+                    child: GestureDetector(
+                      onTap: _handleProfilePictureEdit,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: _profilePictureUrl.isNotEmpty
+                            ? CachedNetworkImageProvider(_profilePictureUrl)
+                            : null,
+                        child: _profilePictureUrl.isEmpty
+                            ? const Icon(Icons.person, size: 60)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Name field
+                  TextField(
+                    controller: _nameController,
+                    maxLength: 50,
+                    decoration: InputDecoration(
+                      labelText: l10n.nameLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Phone field
+                  TextField(
+                    controller: _phoneController,
+                    maxLength: 20,
+                    decoration: InputDecoration(
+                      labelText: l10n.phoneLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
                   // Email (read-only)
                   TextField(
                     controller: TextEditingController(text: _auth.currentUser?.email ?? ''),
@@ -259,7 +338,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
                   // Subscription status
                   Container(
@@ -284,6 +363,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Update button
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _updateProfile,
+                      child: const Text('Update Profile'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Change password (email users only)
                   if (_isEmailUser)
@@ -311,5 +400,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 }

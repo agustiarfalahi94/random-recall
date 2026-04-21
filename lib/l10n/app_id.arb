@@ -527,10 +527,6 @@
   "deleteAccountWarning": "Apakah Anda yakin? Penghapusan akun bersifat permanen. Semua data Anda akan dihapus.",
   "deleteAccountConfirm": "Hapus Akun",
   "deleteAccountCancel": "Batal",
-  "profilePictureSourceCamera": "Ambil Foto",
-  "profilePictureSourceGallery": "Pilih dari Galeri",
-  "profilePictureUpdated": "Foto profil diperbarui",
-  "profilePictureUpdateFailed": "Gagal memperbarui foto profil",
   "profileUpdateSuccess": "Profil berhasil diperbarui",
   "profileUpdateFailed": "Gagal memperbarui profil",
   "passwordChangedSuccess": "Kata sandi berhasil diubah",
@@ -538,5 +534,71 @@
   "accountDeletedSuccess": "Akun berhasil dihapus",
   "accountDeleteFailed": "Gagal menghapus akun",
   "googleAccountLabel": "Akun Google",
-  "emailAccountLabel": "Email"
+  "emailAccountLabel": "Email",
+
+  "displayNameInputHint": "Masukkan nama Anda",
+  "displayNameLabel": "Nama Tampilan",
+  "displayNameMaxLength": "Maksimal 50 karakter",
+  "displayNameInvalidCharacters": "Hanya huruf, angka, spasi, tanda hubung, dan garis bawah yang diperbolehkan.",
+  "displayNameEmpty": "Silakan masukkan nama.",
+  "displayNameProfanity": "Nama ini mengandung konten yang tidak pantas. Silakan pilih yang lain.",
+  "displayNameError": "Kesalahan menyimpan nama. Silakan coba lagi.",
+  "displayNameSubmit": "Lanjutkan",
+  "displayNameCancel": "Batal",
+
+  "challengeModeFrequencyTitle": "Mode Tantangan: Pilih Frekuensi Harian",
+  "challengeModeFrequencyHint": "Berapa pertanyaan per hari selama tantangan {duration} hari ini?",
+  "@challengeModeFrequencyHint": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeModeFrequencyRange": "1-50 pertanyaan per hari",
+  "challengeWarningTitle": "⚠️ Mode Tantangan — Rangkaian {duration} Hari",
+  "@challengeWarningTitle": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeWarningRule1": "• Harus menjawab SEMUA pertanyaan dengan benar (tidak ada kesalahan)",
+  "challengeWarningRule2": "• Timer terkunci pada 5 atau 10 detik saja",
+  "challengeWarningRule3": "• Frekuensi notifikasi terkunci (tidak dapat diubah)",
+  "challengeWarningRule4": "• Harus menyelesaikan setiap hari selama {duration} hari berturut-turut",
+  "@challengeWarningRule4": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeWarningRule5": "Selesaikan semua {duration} hari untuk mendapatkan hadiah",
+  "@challengeWarningRule5": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeWarningCancel": "Batal",
+  "challengeWarningStart": "Saya Mengerti, Mulai Tantangan",
+  "challengeRewardFreeQuestions": "+{count} slot pertanyaan",
+  "@challengeRewardFreeQuestions": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "challengeRewardFreeCategories": "+{count} slot kategori",
+  "@challengeRewardFreeCategories": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "challengeRewardBadge": "🏆 Lencana",
+  "challengeRewardTitle": "👑 Judul Progresif",
+  "challengeRewardNotification": "🔥 Tampilan notifikasi khusus",
+  "challengeFailureMessage": "Anda melewatkan hari atau menjawab dengan salah. Tantangan gagal.",
+  "challengeCompleteMessage": "Tantangan selesai! Hadiah telah diperoleh.",
+  "challengeDayCounter": "Hari Tantangan {day}/{total}",
+  "@challengeDayCounter": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  }
 }

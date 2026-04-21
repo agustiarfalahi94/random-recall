@@ -1,10 +1,5 @@
-import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 
 class ProfileService {
@@ -20,91 +15,11 @@ class ProfileService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final ImagePicker _imagePicker = ImagePicker();
-
-  /// Compress and resize image to 512x512 at 80% JPEG quality
-  Future<File> compressImage(File imageFile) async {
-    try {
-      // Read image
-      final bytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-
-      if (image == null) throw Exception('Failed to decode image');
-
-      // Resize to 512x512
-      final resized = img.copyResize(
-        image,
-        width: 512,
-        height: 512,
-        interpolation: img.Interpolation.linear,
-      );
-
-      // Compress to 80% quality and save
-      final compressed = img.encodeJpg(resized, quality: 80);
-
-      // Save to temporary directory
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/profile_picture_temp.jpg');
-      await tempFile.writeAsBytes(compressed);
-
-      return tempFile;
-    } catch (e) {
-      debugPrint('ProfileService: Image compression failed: $e');
-      rethrow;
-    }
-  }
-
-  /// Pick image from camera
-  Future<File?> pickImageFromCamera() async {
-    try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 100, // Original quality before compression
-      );
-      return pickedFile != null ? File(pickedFile.path) : null;
-    } catch (e) {
-      debugPrint('ProfileService: Camera pick failed: $e');
-      return null;
-    }
-  }
-
-  /// Pick image from gallery
-  Future<File?> pickImageFromGallery() async {
-    try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 100, // Original quality before compression
-      );
-      return pickedFile != null ? File(pickedFile.path) : null;
-    } catch (e) {
-      debugPrint('ProfileService: Gallery pick failed: $e');
-      return null;
-    }
-  }
-
-  /// Upload image to Firebase Storage and return download URL
-  Future<String> uploadProfilePicture(File imageFile) async {
-    try {
-      final userId = _auth.currentUser?.uid;
-      if (userId == null) throw Exception('User not authenticated');
-
-      final storageRef = _storage.ref().child('users/$userId/profile_picture.jpg');
-      await storageRef.putFile(imageFile);
-      final downloadUrl = await storageRef.getDownloadURL();
-
-      return downloadUrl;
-    } catch (e) {
-      debugPrint('ProfileService: Upload to Storage failed: $e');
-      rethrow;
-    }
-  }
 
   /// Update user profile in Firestore
   Future<void> updateUserProfile({
     required String name,
     String? phoneNumber,
-    String? profilePictureUrl,
   }) async {
     try {
       final userId = _auth.currentUser?.uid;
@@ -113,7 +28,6 @@ class ProfileService {
       final updateData = {
         'name': name,
         'phone_number': phoneNumber,
-        if (profilePictureUrl != null) 'profile_picture_url': profilePictureUrl,
         'updated_at': FieldValue.serverTimestamp(),
       };
 
@@ -182,13 +96,6 @@ class ProfileService {
       // Delete Firestore data
       await _deleteUserData(user.uid);
 
-      // Delete Firebase Storage profile picture
-      try {
-        await _storage.ref().child('users/${user.uid}/profile_picture.jpg').delete();
-      } catch (_) {
-        // File may not exist, ignore
-      }
-
       // Delete auth account
       await user.delete();
     } catch (e) {
@@ -209,13 +116,6 @@ class ProfileService {
 
       // Delete Firestore data
       await _deleteUserData(user.uid);
-
-      // Delete Firebase Storage profile picture
-      try {
-        await _storage.ref().child('users/${user.uid}/profile_picture.jpg').delete();
-      } catch (_) {
-        // File may not exist, ignore
-      }
 
       // Delete auth account
       await user.delete();

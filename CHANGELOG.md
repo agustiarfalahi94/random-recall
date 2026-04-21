@@ -5,6 +5,34 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.10.0] — 2026-04-21
+
+### Added
+- **Display Name Personalization** — New dialog prompts users to set their display name on app launch (new users) or first app open (existing users without name).
+  - Real-time character validation (letters, numbers, spaces, hyphens, underscores only; max 50 chars)
+  - Google Safe Browsing API integration for profanity detection (stub, ready for full implementation)
+  - Firebase Auth displayName sync + Firestore backup for multi-device consistency
+  - Non-dismissible dialog for new users ensures all users have a display name
+  - Welcome message on home screen displays personalized greeting: "Welcome, [Name]"
+  - Full localization: English + Bahasa Indonesia
+
+- **Challenge Mode** — High-difficulty 7-day or 14-day streaks with strict rules and cosmetic rewards.
+  - **Rules:** Must answer ALL questions correctly (no mistakes), timer locked to 5-10 seconds, notification frequency locked, consecutive day completion required
+  - **Free-tier Rewards:** +1 question slot per 7-day completion, +1 question + 1 category slot per 14-day completion (repeatable, max 200 questions / 20 categories)
+  - **Premium Rewards:** 🏆 Unlock badge (shows completion count), 👑 Progressive titles (Challenger → Champion → Legend), 🔥 Special gold-bordered notification during challenge
+  - **User Flow:** Frequency selection dialog (1-50 questions/day) → Warning dialog with all rules → Challenge begins with locked settings
+  - **Failure Handling:** Wrong answer = instant exit + streak reset + all locks removed. Missed day (>1 day gap) auto-detected and fails challenge.
+  - **Existing Streak Dialog:** Users with active streaks choose to keep old rules or start fresh challenge
+  - Full Firestore persistence and multi-device sync
+  - Full localization: English + Bahasa Indonesia
+
+- **Increased Daily Notification Limit** — Expanded from 10 to 50 questions per day for more granular notification scheduling.
+  - Slider range: 1-50 questions/day (previously 1-10)
+  - Safety verified: 50 notifications in 60 minutes = 1.2 minute spacing (exceeds 1-minute minimum)
+  - Locked during challenge mode (frequency set at challenge start)
+
+---
+
 ## [0.9.0] — 2026-04-20
 
 ### Added

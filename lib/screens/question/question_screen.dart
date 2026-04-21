@@ -12,6 +12,7 @@ import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/score_record.dart';
+import '../challenge/challenge_complete_screen.dart';
 
 class QuestionScreen extends StatefulWidget {
   /// Pass a specific questionId when coming from a notification tap.
@@ -151,6 +152,35 @@ class _QuestionScreenState extends State<QuestionScreen>
     });
 
     try {
+      final streakService = StreakService.instance;
+
+      // Handle incorrect answer during challenge
+      if (!widget.isPractice && !isCorrect && streakService.isChallengeActive) {
+        await streakService.failChallenge();
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Challenge Failed'),
+              content: const Text(
+                'You answered incorrectly. Your challenge has been reset.',
+              ),
+              actions: [
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context); // Exit question screen
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
         final now = DateTime.now();
@@ -182,6 +212,35 @@ class _QuestionScreenState extends State<QuestionScreen>
           final result = await StreakService.recordActivity();
           if (result.milestoneReached && mounted) {
             _showStreakMilestoneDialog(result.streak);
+          }
+        }
+
+        // Check if challenge just completed
+        if (streakService.isChallengeActive && isCorrect) {
+          await streakService.incrementChallengeDay();
+
+          if (streakService.challengeDay >= streakService.challengeDuration) {
+            // Challenge complete!
+            final duration = streakService.challengeDuration;
+            await streakService.completeChallengeMode(duration);
+
+            if (mounted) {
+              final questionsEarned = duration == 7 ? 1 : 1;
+              final categoriesEarned = duration == 14 ? 1 : 0;
+
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChallengeCompleteScreen(
+                    duration: duration,
+                    questionsEarned: questionsEarned,
+                    categoriesEarned: categoriesEarned,
+                    isBadgeUnlocked: false, // Can be set to true for premium
+                    title: null,
+                  ),
+                ),
+              );
+            }
           }
         }
       }

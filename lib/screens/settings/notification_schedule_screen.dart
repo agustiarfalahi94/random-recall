@@ -348,15 +348,25 @@ class _NotificationScheduleScreenState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                Text(
-                                  _timerSeconds == 0
-                                      ? l10n.noTimeLimit
-                                      : l10n.autoMarksWrong,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: colorScheme.onSurfaceVariant,
+                                if (StreakService.instance.isChallengeActive)
+                                  Text(
+                                    'Warning: Challenge Active - Settings Locked',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colorScheme.error,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    _timerSeconds == 0
+                                        ? l10n.noTimeLimit
+                                        : l10n.autoMarksWrong,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -382,29 +392,46 @@ class _NotificationScheduleScreenState
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Slider(
-                        value: _timerSeconds.toDouble(),
-                        min: 0,
-                        max: 90,
-                        divisions: 18, // 0, 5, 10 … 90
-                        label: _timerSeconds == 0
-                            ? l10n.off
-                            : '$_timerSeconds${l10n.secondsUnit}',
-                        onChanged: (v) =>
-                            setState(() => _timerSeconds = v.round()),
-                      ),
+                      if (StreakService.instance.isChallengeActive)
+                        Opacity(
+                          opacity: 0.5,
+                          child: Slider(
+                            value: _timerSeconds.toDouble(),
+                            min: 5,
+                            max: 10,
+                            divisions: 1,
+                            label: _timerSeconds == 0
+                                ? l10n.off
+                                : '$_timerSeconds${l10n.secondsUnit}',
+                            onChanged: null,
+                          ),
+                        )
+                      else
+                        Slider(
+                          value: _timerSeconds.toDouble(),
+                          min: 0,
+                          max: 90,
+                          divisions: 18, // 0, 5, 10 … 90
+                          label: _timerSeconds == 0
+                              ? l10n.off
+                              : '$_timerSeconds${l10n.secondsUnit}',
+                          onChanged: (v) =>
+                              setState(() => _timerSeconds = v.round()),
+                        ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            l10n.off,
+                            StreakService.instance.isChallengeActive ? '5' : l10n.off,
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
-                            '90${l10n.secondsUnit}',
+                            StreakService.instance.isChallengeActive
+                                ? '10${l10n.secondsUnit}'
+                                : '90${l10n.secondsUnit}',
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
@@ -548,13 +575,23 @@ class _NotificationScheduleScreenState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                Text(
-                                  _frequencyLabel(_frequency, l10n),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: colorScheme.onSurfaceVariant,
+                                if (StreakService.instance.isChallengeActive)
+                                  Text(
+                                    'Locked: ${StreakService.instance.lockedFrequency} questions/day during challenge',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    _frequencyLabel(_frequency, l10n),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -567,15 +604,28 @@ class _NotificationScheduleScreenState
                           ),
                         ],
                       ),
-                      Slider(
-                        value: _frequency.toDouble(),
-                        min: 1,
-                        max: 10,
-                        divisions: 9,
-                        label: '$_frequency',
-                        onChanged: (v) =>
-                            setState(() => _frequency = v.round()),
-                      ),
+                      if (StreakService.instance.isChallengeActive)
+                        Opacity(
+                          opacity: 0.5,
+                          child: Slider(
+                            value: StreakService.instance.lockedFrequency.toDouble(),
+                            min: StreakService.instance.lockedFrequency.toDouble(),
+                            max: StreakService.instance.lockedFrequency.toDouble(),
+                            divisions: 1,
+                            label: '${StreakService.instance.lockedFrequency}',
+                            onChanged: null,
+                          ),
+                        )
+                      else
+                        Slider(
+                          value: _frequency.toDouble(),
+                          min: 1,
+                          max: 50,
+                          divisions: 49,
+                          label: '$_frequency',
+                          onChanged: (v) =>
+                              setState(() => _frequency = v.round()),
+                        ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -587,7 +637,7 @@ class _NotificationScheduleScreenState
                             ),
                           ),
                           Text(
-                            '10',
+                            '50',
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
