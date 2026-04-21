@@ -107,5 +107,23 @@ void main() {
       await streakService.completeChallengeMode(14);
       expect(streakService.total14DayCompleted, before + 1);
     });
+
+    test('checkChallengeDailyRequirement fails challenge if day gap > 1', () async {
+      await streakService.startChallenge(7, 10);
+
+      // Simulate last answer was 2 days ago
+      final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
+      await streakService.prefsForTesting.setString(
+        'challenge_last_answer_date',
+        twoDaysAgo.toIso8601String(),
+      );
+
+      // Check daily requirement
+      await streakService.checkChallengeDailyRequirement();
+
+      // Should fail challenge
+      expect(streakService.isChallengeActive, false);
+      expect(streakService.currentStreak, 0);
+    });
   });
 }

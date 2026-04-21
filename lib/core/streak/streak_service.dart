@@ -57,6 +57,10 @@ class StreakService {
     await _loadFromFirestore();
   }
 
+  // Test helper: expose _prefs for testing purposes
+  @visibleForTesting
+  SharedPreferences get prefsForTesting => _prefs;
+
   // ── Instance getters for challenge mode ─────────────────────────────────────
 
   bool get isChallengeActive => _prefs.getBool(_keyChallengeModeActive) ?? false;
@@ -118,8 +122,7 @@ class StreakService {
       await _prefs.setInt(_keyBonusCategories, min(newCategories, categoriesMax - categoryBase));
     }
 
-    await resetChallenge();
-    await _saveToFirestore();
+    await resetChallenge(); // resetChallenge() calls _saveToFirestore()
   }
 
   Future<void> unlockChallengeBadge() async {
@@ -232,6 +235,8 @@ class StreakService {
         // Restore rewards data
         if (data['rewards'] != null) {
           final rewards = data['rewards'];
+          // Restore both question and category bonuses
+          await _prefs.setInt(_keyBonusQuestions, rewards['bonus_questions'] ?? 0);
           await _prefs.setInt(_keyBonusCategories, rewards['bonus_categories'] ?? 0);
           await _prefs.setBool(_keyChallengeBadgeUnlocked, rewards['challenge_badge_unlocked'] ?? false);
           if (rewards['highest_title'] != null) {
