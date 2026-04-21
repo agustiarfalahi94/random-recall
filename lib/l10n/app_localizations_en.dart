@@ -1365,4 +1365,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get displayNameCancel => 'Cancel';
+
+  @override
+  String get challengeModeFrequencyTitle =>
+      'Challenge Mode: Select Daily Frequency';
+
+  @override
+  String challengeModeFrequencyHint(int duration) {
+    return 'How many questions per day during this $duration-day challenge?';
+  }
+
+  @override
+  String get challengeModeFrequencyRange => '1-50 questions per day';
+
+  @override
+  String challengeWarningTitle(int duration) {
+    return '⚠️ Challenge Mode — $duration-Day Streak';
+  }
+
+  @override
+  String get challengeWarningRule1 =>
+      '• Must answer ALL questions correctly (no mistakes allowed)';
+
+  @override
+  String get challengeWarningRule2 => '• Timer locked to 5 or 10 seconds only';
+
+  @override
+  String get challengeWarningRule3 =>
+      '• Notification frequency locked (cannot change)';
+
+  @override
+  String challengeWarningRule4(int duration) {
+    return '• Must complete every day for $duration consecutive days';
+  }
+
+  @override
+  String challengeWarningRule5(int duration) {
+    return 'Complete all $duration days to earn rewards';
+  }
+
+  @override
+  String get challengeWarningCancel => 'Cancel';
+
+  @override
+  String get challengeWarningStart => 'I Understand, Start Challenge';
+
+  @override
+  String challengeRewardFreeQuestions(int count) {
+    return '+$count question slot';
+  }
+
+  @override
+  String challengeRewardFreeCategories(int count) {
+    return '+$count category slot';
+  }
+
+  @override
+  String get challengeRewardBadge => '🏆 Badge';
+
+  @override
+  String get challengeRewardTitle => '👑 Progressive Title';
+
+  @override
+  String get challengeRewardNotification =>
+      '🔥 Special notification appearance';
+
+  @override
+  String get challengeFailureMessage =>
+      'You missed a day or answered incorrectly. Challenge failed.';
+
+  @override
+  String get challengeCompleteMessage => 'Challenge complete! Rewards earned.';
+
+  @override
+  String challengeDayCounter(int day, int total) {
+    return 'Challenge Day $day/$total';
+  }
 }

@@ -544,5 +544,61 @@
   "displayNameProfanity": "This name contains inappropriate content. Please choose another.",
   "displayNameError": "Error saving name. Please try again.",
   "displayNameSubmit": "Continue",
-  "displayNameCancel": "Cancel"
+  "displayNameCancel": "Cancel",
+
+  "challengeModeFrequencyTitle": "Challenge Mode: Select Daily Frequency",
+  "challengeModeFrequencyHint": "How many questions per day during this {duration}-day challenge?",
+  "@challengeModeFrequencyHint": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeModeFrequencyRange": "1-50 questions per day",
+  "challengeWarningTitle": "⚠️ Challenge Mode — {duration}-Day Streak",
+  "@challengeWarningTitle": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeWarningRule1": "• Must answer ALL questions correctly (no mistakes allowed)",
+  "challengeWarningRule2": "• Timer locked to 5 or 10 seconds only",
+  "challengeWarningRule3": "• Notification frequency locked (cannot change)",
+  "challengeWarningRule4": "• Must complete every day for {duration} consecutive days",
+  "@challengeWarningRule4": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeWarningRule5": "Complete all {duration} days to earn rewards",
+  "@challengeWarningRule5": {
+    "placeholders": {
+      "duration": { "type": "int" }
+    }
+  },
+  "challengeWarningCancel": "Cancel",
+  "challengeWarningStart": "I Understand, Start Challenge",
+  "challengeRewardFreeQuestions": "+{count} question slot",
+  "@challengeRewardFreeQuestions": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "challengeRewardFreeCategories": "+{count} category slot",
+  "@challengeRewardFreeCategories": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "challengeRewardBadge": "🏆 Badge",
+  "challengeRewardTitle": "👑 Progressive Title",
+  "challengeRewardNotification": "🔥 Special notification appearance",
+  "challengeFailureMessage": "You missed a day or answered incorrectly. Challenge failed.",
+  "challengeCompleteMessage": "Challenge complete! Rewards earned.",
+  "challengeDayCounter": "Challenge Day {day}/{total}",
+  "@challengeDayCounter": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  }
 }

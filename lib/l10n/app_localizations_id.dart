@@ -1375,4 +1375,81 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get displayNameCancel => 'Batal';
+
+  @override
+  String get challengeModeFrequencyTitle =>
+      'Mode Tantangan: Pilih Frekuensi Harian';
+
+  @override
+  String challengeModeFrequencyHint(int duration) {
+    return 'Berapa pertanyaan per hari selama tantangan $duration hari ini?';
+  }
+
+  @override
+  String get challengeModeFrequencyRange => '1-50 pertanyaan per hari';
+
+  @override
+  String challengeWarningTitle(int duration) {
+    return '⚠️ Mode Tantangan — Rangkaian $duration Hari';
+  }
+
+  @override
+  String get challengeWarningRule1 =>
+      '• Harus menjawab SEMUA pertanyaan dengan benar (tidak ada kesalahan)';
+
+  @override
+  String get challengeWarningRule2 =>
+      '• Timer terkunci pada 5 atau 10 detik saja';
+
+  @override
+  String get challengeWarningRule3 =>
+      '• Frekuensi notifikasi terkunci (tidak dapat diubah)';
+
+  @override
+  String challengeWarningRule4(int duration) {
+    return '• Harus menyelesaikan setiap hari selama $duration hari berturut-turut';
+  }
+
+  @override
+  String challengeWarningRule5(int duration) {
+    return 'Selesaikan semua $duration hari untuk mendapatkan hadiah';
+  }
+
+  @override
+  String get challengeWarningCancel => 'Batal';
+
+  @override
+  String get challengeWarningStart => 'Saya Mengerti, Mulai Tantangan';
+
+  @override
+  String challengeRewardFreeQuestions(int count) {
+    return '+$count slot pertanyaan';
+  }
+
+  @override
+  String challengeRewardFreeCategories(int count) {
+    return '+$count slot kategori';
+  }
+
+  @override
+  String get challengeRewardBadge => '🏆 Lencana';
+
+  @override
+  String get challengeRewardTitle => '👑 Judul Progresif';
+
+  @override
+  String get challengeRewardNotification => '🔥 Tampilan notifikasi khusus';
+
+  @override
+  String get challengeFailureMessage =>
+      'Anda melewatkan hari atau menjawab dengan salah. Tantangan gagal.';
+
+  @override
+  String get challengeCompleteMessage =>
+      'Tantangan selesai! Hadiah telah diperoleh.';
+
+  @override
+  String challengeDayCounter(int day, int total) {
+    return 'Hari Tantangan $day/$total';
+  }
 }

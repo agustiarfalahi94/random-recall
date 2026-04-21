@@ -2521,6 +2521,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get displayNameCancel;
+
+  /// No description provided for @challengeModeFrequencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Mode: Select Daily Frequency'**
+  String get challengeModeFrequencyTitle;
+
+  /// No description provided for @challengeModeFrequencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How many questions per day during this {duration}-day challenge?'**
+  String challengeModeFrequencyHint(int duration);
+
+  /// No description provided for @challengeModeFrequencyRange.
+  ///
+  /// In en, this message translates to:
+  /// **'1-50 questions per day'**
+  String get challengeModeFrequencyRange;
+
+  /// No description provided for @challengeWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Challenge Mode — {duration}-Day Streak'**
+  String challengeWarningTitle(int duration);
+
+  /// No description provided for @challengeWarningRule1.
+  ///
+  /// In en, this message translates to:
+  /// **'• Must answer ALL questions correctly (no mistakes allowed)'**
+  String get challengeWarningRule1;
+
+  /// No description provided for @challengeWarningRule2.
+  ///
+  /// In en, this message translates to:
+  /// **'• Timer locked to 5 or 10 seconds only'**
+  String get challengeWarningRule2;
+
+  /// No description provided for @challengeWarningRule3.
+  ///
+  /// In en, this message translates to:
+  /// **'• Notification frequency locked (cannot change)'**
+  String get challengeWarningRule3;
+
+  /// No description provided for @challengeWarningRule4.
+  ///
+  /// In en, this message translates to:
+  /// **'• Must complete every day for {duration} consecutive days'**
+  String challengeWarningRule4(int duration);
+
+  /// No description provided for @challengeWarningRule5.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete all {duration} days to earn rewards'**
+  String challengeWarningRule5(int duration);
+
+  /// No description provided for @challengeWarningCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get challengeWarningCancel;
+
+  /// No description provided for @challengeWarningStart.
+  ///
+  /// In en, this message translates to:
+  /// **'I Understand, Start Challenge'**
+  String get challengeWarningStart;
+
+  /// No description provided for @challengeRewardFreeQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} question slot'**
+  String challengeRewardFreeQuestions(int count);
+
+  /// No description provided for @challengeRewardFreeCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} category slot'**
+  String challengeRewardFreeCategories(int count);
+
+  /// No description provided for @challengeRewardBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'🏆 Badge'**
+  String get challengeRewardBadge;
+
+  /// No description provided for @challengeRewardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'👑 Progressive Title'**
+  String get challengeRewardTitle;
+
+  /// No description provided for @challengeRewardNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'🔥 Special notification appearance'**
+  String get challengeRewardNotification;
+
+  /// No description provided for @challengeFailureMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You missed a day or answered incorrectly. Challenge failed.'**
+  String get challengeFailureMessage;
+
+  /// No description provided for @challengeCompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge complete! Rewards earned.'**
+  String get challengeCompleteMessage;
+
+  /// No description provided for @challengeDayCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Day {day}/{total}'**
+  String challengeDayCounter(int day, int total);
 }
 
 class _AppLocalizationsDelegate
