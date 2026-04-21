@@ -696,8 +696,10 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
 
   Future<void> _checkAndShowDisplayNamePrompt() async {
     final user = FirebaseAuth.instance.currentUser;
+    debugPrint('HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"');
 
     if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+      debugPrint('HomeTab: Showing display name setup dialog');
       // Show display name setup screen
       if (mounted) {
         showDialog(
@@ -706,12 +708,17 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
           builder: (context) => DisplayNameSetupScreen(
             canDismiss: false,
             onComplete: () {
+              debugPrint('HomeTab: Display name setup completed');
               // Dialog will auto-close, refresh home screen
               setState(() {});
             },
           ),
         );
+      } else {
+        debugPrint('HomeTab: Widget not mounted, skipping display name dialog');
       }
+    } else {
+      debugPrint('HomeTab: User has displayName set or user is null, skipping dialog');
     }
   }
 
