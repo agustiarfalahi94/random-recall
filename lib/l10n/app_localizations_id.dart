@@ -1368,6 +1368,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Nama ini mengandung konten yang tidak pantas. Silakan pilih yang lain.';
 
   @override
+  String get displayNameError => 'Kesalahan menyimpan nama. Silakan coba lagi.';
+
+  @override
   String get displayNameSubmit => 'Lanjutkan';
 
   @override

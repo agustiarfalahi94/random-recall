@@ -1358,6 +1358,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'This name contains inappropriate content. Please choose another.';
 
   @override
+  String get displayNameError => 'Error saving name. Please try again.';
+
+  @override
   String get displayNameSubmit => 'Continue';
 
   @override

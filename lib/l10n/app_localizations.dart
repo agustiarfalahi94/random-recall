@@ -2504,6 +2504,12 @@ abstract class AppLocalizations {
   /// **'This name contains inappropriate content. Please choose another.'**
   String get displayNameProfanity;
 
+  /// No description provided for @displayNameError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error saving name. Please try again.'**
+  String get displayNameError;
+
   /// No description provided for @displayNameSubmit.
   ///
   /// In en, this message translates to:
