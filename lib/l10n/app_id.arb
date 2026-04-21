@@ -541,6 +541,7 @@
   "displayNameMaxLength": "Maksimal 50 karakter",
   "displayNameInvalidCharacters": "Hanya huruf, angka, spasi, tanda hubung, dan garis bawah yang diperbolehkan.",
   "displayNameEmpty": "Silakan masukkan nama.",
+  "displayNameProfanity": "Nama ini mengandung konten yang tidak pantas. Silakan pilih yang lain.",
   "displayNameSubmit": "Lanjutkan",
   "displayNameCancel": "Batal"
 }

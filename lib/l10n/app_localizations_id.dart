@@ -1364,6 +1364,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get displayNameEmpty => 'Silakan masukkan nama.';
 
   @override
+  String get displayNameProfanity =>
+      'Nama ini mengandung konten yang tidak pantas. Silakan pilih yang lain.';
+
+  @override
   String get displayNameSubmit => 'Lanjutkan';
 
   @override

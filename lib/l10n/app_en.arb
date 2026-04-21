@@ -541,6 +541,7 @@
   "displayNameMaxLength": "50 characters maximum",
   "displayNameInvalidCharacters": "Only letters, numbers, spaces, hyphens, and underscores allowed.",
   "displayNameEmpty": "Please enter a name.",
+  "displayNameProfanity": "This name contains inappropriate content. Please choose another.",
   "displayNameSubmit": "Continue",
   "displayNameCancel": "Cancel"
 }

@@ -1354,6 +1354,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get displayNameEmpty => 'Please enter a name.';
 
   @override
+  String get displayNameProfanity =>
+      'This name contains inappropriate content. Please choose another.';
+
+  @override
   String get displayNameSubmit => 'Continue';
 
   @override

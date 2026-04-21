@@ -48,6 +48,7 @@ dependencies:
   device_info_plus: ^11.0.0
   android_intent_plus: ^5.0.0
   purchases_flutter: ^9.16.1
+  http: ^1.1.0
 
   # Crash reporting & analytics
   sentry_flutter: ^8.10.1

@@ -2498,6 +2498,12 @@ abstract class AppLocalizations {
   /// **'Please enter a name.'**
   String get displayNameEmpty;
 
+  /// No description provided for @displayNameProfanity.
+  ///
+  /// In en, this message translates to:
+  /// **'This name contains inappropriate content. Please choose another.'**
+  String get displayNameProfanity;
+
   /// No description provided for @displayNameSubmit.
   ///
   /// In en, this message translates to:

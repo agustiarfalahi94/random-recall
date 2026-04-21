@@ -25,5 +25,10 @@ void main() {
       expect(DisplayNameService.isValidCharacters('a' * 51), false);
       expect(DisplayNameService.isValidCharacters('a' * 50), true);
     });
+
+    test('checkProfanity method exists and returns Future<bool>', () async {
+      final result = await DisplayNameService.checkProfanity('test');
+      expect(result, isFalse); // For now, returns false (safe)
+    });
   });
 }
