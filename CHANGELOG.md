@@ -49,6 +49,9 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ### Fixed
 - **Change Password dialog layout overflow** — Wrapped dialog content in `ConstrainedBox` + `SingleChildScrollView` to prevent confirm password field from becoming hidden when keyboard appears on Xiaomi devices.
+- **Profanity check not working** — Implemented actual profanity detection with 20+ English and Indonesian words (including "fuck", "kontol", "memek", etc.). Previously was a stub that always returned false.
+- **Display name mismatch between home screen and profile** — Now syncs Firebase Auth `displayName` when profile is updated in Firestore, ensuring both data sources stay in sync.
+- **Home screen not updating after profile name change** — Added `FirebaseAuth.currentUser.reload()` call after profile update to refresh local auth state, ensuring home screen displays the latest name on navigation back.
 
 ---
 
