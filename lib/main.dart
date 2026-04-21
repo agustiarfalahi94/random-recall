@@ -27,6 +27,7 @@ import 'core/sync/sync_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'core/auth/auth_service.dart';
 import 'core/plan/subscription_service.dart';
+import 'core/streak/streak_service.dart';
 import 'screens/question/notification_question_screen.dart';
 import 'screens/question/permission_required_screen.dart';
 import 'screens/auth/verify_email_screen.dart';
@@ -140,6 +141,9 @@ Future<void> main() async {
 
       // Start In-App Purchase listener
       SubscriptionService.instance.init();
+
+      // Initialize StreakService (required before NotificationScheduleScreen can access isChallengeActive)
+      await StreakService.instance.initialize();
 
       // Wire up navigator key so notification taps can navigate
       NotificationService.instance.navigatorKey = navigatorKey;
