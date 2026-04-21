@@ -766,7 +766,10 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
                 Navigator.pop(context);
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const NotificationScheduleScreen(scrollToTimer: true),
+                    builder: (_) => const NotificationScheduleScreen(
+                      scrollToTimer: true,
+                      isStartingChallenge: true,
+                    ),
                   ),
                 );
               }

@@ -601,14 +601,14 @@
       "total": { "type": "int" }
     }
   },
-  "existingStreakTitle": "Streak Aktif Terdeteksi",
-  "existingStreakMessage": "Anda saat ini memiliki streak {streak} hari!",
+  "existingStreakTitle": "Anda Memiliki Streak Reguler Aktif",
+  "existingStreakMessage": "Anda saat ini memiliki streak reguler {streak} hari! Terus tingkatkan atau coba Mode Tantangan baru.",
   "@existingStreakMessage": {
     "placeholders": {
       "streak": { "type": "int" }
     }
   },
-  "existingStreakWarning": "Streak Anda akan direset jika Anda memulai Mode Tantangan. Mode Tantangan memerlukan menjawab SEMUA pertanyaan dengan benar dengan timer ketat (5-10 detik saja) selama 7 atau 14 hari berturut-turut untuk mendapatkan hadiah.",
-  "existingStreakKeep": "Pertahankan Streak Saat Ini",
+  "existingStreakWarning": "⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5-10 detik saja\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis",
+  "existingStreakKeep": "Pertahankan Streak Reguler",
   "existingStreakStart": "Mulai Mode Tantangan"
 }
