@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -769,10 +770,23 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = user?.displayName ?? 'Random Recall';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
       child: Column(
         children: [
+          // ── Welcome message ──────────────────────────────────────────────
+          Text(
+            l10n.welcomeMessage(displayName),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+
           // ── Hero section ─────────────────────────────────────────────────
           GestureDetector(
             onTap: () async {
