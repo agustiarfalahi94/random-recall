@@ -287,23 +287,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Profile Picture
-                  Center(
-                    child: GestureDetector(
-                      onTap: _handleProfilePictureEdit,
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage: _profilePictureUrl.isNotEmpty
-                            ? CachedNetworkImageProvider(_profilePictureUrl)
-                            : null,
-                        child: _profilePictureUrl.isEmpty
-                            ? const Icon(Icons.person, size: 60)
-                            : null,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
                   // Name field
                   TextField(
                     controller: _nameController,
