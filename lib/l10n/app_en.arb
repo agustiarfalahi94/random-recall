@@ -600,5 +600,15 @@
       "day": { "type": "int" },
       "total": { "type": "int" }
     }
-  }
+  },
+  "existingStreakTitle": "Active Streak Detected",
+  "existingStreakMessage": "You currently have a {streak}-day streak!",
+  "@existingStreakMessage": {
+    "placeholders": {
+      "streak": { "type": "int" }
+    }
+  },
+  "existingStreakWarning": "If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to keep your streak or start a fresh challenge?",
+  "existingStreakKeep": "Keep Streak",
+  "existingStreakStart": "Start Challenge"
 }

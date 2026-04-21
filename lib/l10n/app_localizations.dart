@@ -2611,6 +2611,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Challenge Day {day}/{total}'**
   String challengeDayCounter(int day, int total);
+
+  /// No description provided for @existingStreakTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Streak Detected'**
+  String get existingStreakTitle;
+
+  /// No description provided for @existingStreakMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You currently have a {streak}-day streak!'**
+  String existingStreakMessage(int streak);
+
+  /// No description provided for @existingStreakWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to keep your streak or start a fresh challenge?'**
+  String get existingStreakWarning;
+
+  /// No description provided for @existingStreakKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Streak'**
+  String get existingStreakKeep;
+
+  /// No description provided for @existingStreakStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Challenge'**
+  String get existingStreakStart;
 }
 
 class _AppLocalizationsDelegate

@@ -1431,4 +1431,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String challengeDayCounter(int day, int total) {
     return 'Challenge Day $day/$total';
   }
+
+  @override
+  String get existingStreakTitle => 'Active Streak Detected';
+
+  @override
+  String existingStreakMessage(int streak) {
+    return 'You currently have a $streak-day streak!';
+  }
+
+  @override
+  String get existingStreakWarning =>
+      'If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to keep your streak or start a fresh challenge?';
+
+  @override
+  String get existingStreakKeep => 'Keep Streak';
+
+  @override
+  String get existingStreakStart => 'Start Challenge';
 }

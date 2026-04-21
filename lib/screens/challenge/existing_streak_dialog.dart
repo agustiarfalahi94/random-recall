@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 class ExistingStreakDialog extends StatelessWidget {
   final int currentStreak;
@@ -14,24 +15,25 @@ class ExistingStreakDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text('Active Streak Detected'),
+      title: Text(l10n.existingStreakTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You currently have a $currentStreak-day streak!',
+              l10n.existingStreakMessage(currentStreak),
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'If you start Challenge Mode now, your current streak will be reset to day 1. Do you want to:',
+              l10n.existingStreakWarning,
               style: theme.textTheme.bodyMedium,
             ),
           ],
@@ -43,14 +45,14 @@ class ExistingStreakDialog extends StatelessWidget {
             Navigator.pop(context);
             onKeepStreak();
           },
-          child: const Text('Keep Streak'),
+          child: Text(l10n.existingStreakKeep),
         ),
         FilledButton(
           onPressed: () {
             Navigator.pop(context);
             onStartChallenge();
           },
-          child: const Text('Start Challenge'),
+          child: Text(l10n.existingStreakStart),
         ),
       ],
     );

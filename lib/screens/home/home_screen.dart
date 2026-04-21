@@ -24,6 +24,7 @@ import '../question/questions_list_screen.dart';
 import '../settings/faq_screen.dart';
 import '../settings/notification_schedule_screen.dart';
 import '../auth/display_name_setup_screen.dart';
+import '../challenge/existing_streak_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -682,6 +683,9 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
 
     // Check if user has set a display name, prompt if not
     _checkAndShowDisplayNamePrompt();
+
+    // Check if user has an active challenge streak and show selection dialog
+    _checkAndShowExistingStreakDialog();
   }
 
   @override
@@ -719,6 +723,46 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
       }
     } else {
       debugPrint('HomeTab: User has displayName set or user is null, skipping dialog');
+    }
+  }
+
+  Future<void> _checkAndShowExistingStreakDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenDialog = prefs.getBool('has_seen_existing_streak_dialog') ?? false;
+    final isChallengeActive = StreakService.instance.isChallengeActive;
+    final currentStreak = StreakService.instance.currentStreak;
+
+    debugPrint('HomeTab: Checking existing streak dialog. Active: $isChallengeActive, Streak: $currentStreak, Seen: $hasSeenDialog');
+
+    if (isChallengeActive && !hasSeenDialog) {
+      debugPrint('HomeTab: Showing existing streak dialog');
+      // Mark as seen immediately to prevent showing multiple times
+      await prefs.setBool('has_seen_existing_streak_dialog', true);
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => ExistingStreakDialog(
+            currentStreak: currentStreak,
+            onKeepStreak: () {
+              debugPrint('HomeTab: User chose to keep existing streak');
+              // User wants to keep the existing streak - do nothing, dialog closes
+              Navigator.pop(context);
+            },
+            onStartChallenge: () {
+              debugPrint('HomeTab: User chose to start fresh challenge');
+              // User wants to start a fresh challenge
+              // The actual challenge will be started via the normal flow
+              Navigator.pop(context);
+            },
+          ),
+        );
+      } else {
+        debugPrint('HomeTab: Widget not mounted, skipping existing streak dialog');
+      }
+    } else {
+      debugPrint('HomeTab: No active challenge or dialog already shown, skipping');
     }
   }
 

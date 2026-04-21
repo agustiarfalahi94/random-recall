@@ -600,5 +600,15 @@
       "day": { "type": "int" },
       "total": { "type": "int" }
     }
-  }
+  },
+  "existingStreakTitle": "Streak Aktif Terdeteksi",
+  "existingStreakMessage": "Anda saat ini memiliki streak {streak} hari!",
+  "@existingStreakMessage": {
+    "placeholders": {
+      "streak": { "type": "int" }
+    }
+  },
+  "existingStreakWarning": "Jika Anda memulai Mode Tantangan sekarang, streak Anda saat ini akan direset ke hari 1. Apakah Anda ingin mempertahankan streak atau memulai tantangan baru?",
+  "existingStreakKeep": "Pertahankan Streak",
+  "existingStreakStart": "Mulai Tantangan"
 }
