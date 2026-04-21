@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -22,6 +23,7 @@ import '../question/question_screen.dart';
 import '../question/questions_list_screen.dart';
 import '../settings/faq_screen.dart';
 import '../settings/notification_schedule_screen.dart';
+import '../auth/display_name_setup_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -674,6 +676,9 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     _initRetryTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) _refreshData();
     });
+
+    // Check if user has set a display name, prompt if not
+    _checkAndShowDisplayNamePrompt();
   }
 
   @override
@@ -684,6 +689,27 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     _nextNotifTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _checkAndShowDisplayNamePrompt() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+      // Show display name setup screen
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Can't dismiss for new users
+          builder: (context) => DisplayNameSetupScreen(
+            canDismiss: false,
+            onComplete: () {
+              // Dialog will auto-close, refresh home screen
+              setState(() {});
+            },
+          ),
+        );
+      }
+    }
   }
 
   @override
