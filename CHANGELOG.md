@@ -5,6 +5,26 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.11.0] — 2026-04-23
+
+### Fixed
+- **Challenge Mode eligibility** — Timers above 10s (15–20s, etc.) no longer count as Challenge Mode.
+- **Challenge start Save Schedule black screen** — Removed unsafe double-pop navigation; saving returns safely.
+
+### Changed
+- **New Challenge Mode schedule locks** — Starting a new challenge now locks:
+  - Active days (locked during the challenge)
+  - “Send at any time” choice (locked for the whole challenge; start/end time is only editable when it’s OFF)
+- **Challenge gameplay wiring** — Challenge Mode now visibly affects the question experience:
+  - Shows “Challenge Day X/Y”
+  - Wrong answer triggers challenge failure handling
+  - Completion triggers the challenge completion flow and rewards
+
+### Improved
+- **Challenge notifications** — Scheduled notifications show a clearer Challenge Mode accent while a challenge is active.
+
+---
+
 ## [0.10.0] — 2026-04-21
 
 ### Added
