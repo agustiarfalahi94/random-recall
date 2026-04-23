@@ -13,6 +13,7 @@ import '../../core/streak/streak_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/score_record.dart';
+import '../challenge/challenge_complete_screen.dart';
 
 /// Shown when the user taps a notification (organic or test).
 /// No "next question" flow — grade once, see a brief toast, then app closes.
@@ -157,6 +158,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
 
   Future<void> _grade(bool isCorrect) async {
     if (_graded || _question == null) return;
+    final l10n = AppLocalizations.of(context)!;
     _stopTimer();
     setState(() {
       _graded = true;
@@ -195,6 +197,40 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
             await showDialog(
               context: context,
               builder: (_) => _StreakMilestoneDialog(streak: result.streak),
+            );
+          }
+        }
+
+        // NEW Challenge Mode: wrong answer fails; correct answer advances once/day.
+        if (StreakService.instance.isChallengeActive) {
+          final result = await StreakService.instance.recordChallengeAnswer(
+            isCorrect: isCorrect,
+            isPremiumUser: _isPremium,
+          );
+
+          if (mounted &&
+              result.outcome == ChallengeAnswerOutcome.failed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.challengeFailureMessage)),
+            );
+          }
+
+          if (mounted &&
+              result.outcome == ChallengeAnswerOutcome.completed &&
+              result.completion != null) {
+            final c = result.completion!;
+            // In notification flow, we can't keep the app open long;
+            // show completion UI briefly, then close.
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ChallengeCompleteScreen(
+                  duration: c.duration,
+                  questionsEarned: c.questionsEarned,
+                  categoriesEarned: c.categoriesEarned,
+                  isBadgeUnlocked: c.badgeUnlocked,
+                  title: c.title.isEmpty ? null : c.title,
+                ),
+              ),
             );
           }
         }
@@ -245,6 +281,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final challengeActive = StreakService.instance.isChallengeActive;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -269,6 +306,28 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
           onPressed: _close, // Use helper to handle pop vs system pop
         ),
         actions: [
+          if (challengeActive)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  l10n.challengeDayCounter(
+                    StreakService.instance.challengeDay,
+                    StreakService.instance.challengeDuration,
+                  ),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    color: colorScheme.onTertiaryContainer,
+                  ),
+                ),
+              ),
+            ),
           if (_timerSeconds > 0 && !_graded && !_isLoading)
             _TimerBadge(remaining: _remaining, total: _timerSeconds),
         ],
