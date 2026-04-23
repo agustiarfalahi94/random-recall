@@ -1433,19 +1433,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get existingStreakTitle => 'Active Streak Detected';
+  String get existingStreakTitle => 'You Have an Active Regular Streak';
 
   @override
   String existingStreakMessage(int streak) {
-    return 'You currently have a $streak-day streak!';
+    return 'You currently have a $streak-day regular streak! Keep improving or try the new Challenge Mode.';
   }
 
   @override
   String get existingStreakWarning =>
-      'Your streak will be reset if you start Challenge Mode. Challenge Mode requires answering ALL questions correctly within a strict timer (5-10 seconds only) for 7 or 14 consecutive days to earn rewards.';
+      '⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5-10s timer only\n• Missing one = restart\n• Win = Reward badge + free questions';
 
   @override
-  String get existingStreakKeep => 'Keep Current Streak';
+  String get existingStreakKeep => 'Keep Regular Streak';
 
   @override
   String get existingStreakStart => 'Start Challenge Mode';

@@ -1444,19 +1444,19 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get existingStreakTitle => 'Streak Aktif Terdeteksi';
+  String get existingStreakTitle => 'Anda Memiliki Streak Reguler Aktif';
 
   @override
   String existingStreakMessage(int streak) {
-    return 'Anda saat ini memiliki streak $streak hari!';
+    return 'Anda saat ini memiliki streak reguler $streak hari! Terus tingkatkan atau coba Mode Tantangan baru.';
   }
 
   @override
   String get existingStreakWarning =>
-      'Streak Anda akan direset jika Anda memulai Mode Tantangan. Mode Tantangan memerlukan menjawab SEMUA pertanyaan dengan benar dengan timer ketat (5-10 detik saja) selama 7 atau 14 hari berturut-turut untuk mendapatkan hadiah.';
+      '⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5-10 detik saja\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis';
 
   @override
-  String get existingStreakKeep => 'Pertahankan Streak Saat Ini';
+  String get existingStreakKeep => 'Pertahankan Streak Reguler';
 
   @override
   String get existingStreakStart => 'Mulai Mode Tantangan';

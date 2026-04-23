@@ -2615,25 +2615,25 @@ abstract class AppLocalizations {
   /// No description provided for @existingStreakTitle.
   ///
   /// In en, this message translates to:
-  /// **'Active Streak Detected'**
+  /// **'You Have an Active Regular Streak'**
   String get existingStreakTitle;
 
   /// No description provided for @existingStreakMessage.
   ///
   /// In en, this message translates to:
-  /// **'You currently have a {streak}-day streak!'**
+  /// **'You currently have a {streak}-day regular streak! Keep improving or try the new Challenge Mode.'**
   String existingStreakMessage(int streak);
 
   /// No description provided for @existingStreakWarning.
   ///
   /// In en, this message translates to:
-  /// **'Your streak will be reset if you start Challenge Mode. Challenge Mode requires answering ALL questions correctly within a strict timer (5-10 seconds only) for 7 or 14 consecutive days to earn rewards.'**
+  /// **'⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5-10s timer only\n• Missing one = restart\n• Win = Reward badge + free questions'**
   String get existingStreakWarning;
 
   /// No description provided for @existingStreakKeep.
   ///
   /// In en, this message translates to:
-  /// **'Keep Current Streak'**
+  /// **'Keep Regular Streak'**
   String get existingStreakKeep;
 
   /// No description provided for @existingStreakStart.
