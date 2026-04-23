@@ -110,6 +110,20 @@ class _NotificationScheduleScreenState
       _isLoading = false;
     });
 
+    // If a challenge is active, enforce locked values in the UI.
+    if (StreakService.instance.isChallengeActive) {
+      final lockedAnytime = StreakService.instance.lockedRandomAnytime;
+      final lockedDays = StreakService.instance.lockedActiveDaysCsv;
+      if (mounted) {
+        setState(() {
+          if (lockedAnytime != null) _randomAnytime = lockedAnytime;
+          if (lockedDays != null) {
+            _activeDays = lockedDays.split(',').map(int.parse).toSet();
+          }
+        });
+      }
+    }
+
     // Auto-scroll to timer section if requested
     if (widget.scrollToTimer) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -128,6 +142,7 @@ class _NotificationScheduleScreenState
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
+    final isChallengeActive = StreakService.instance.isChallengeActive;
 
     // Challenge mode validation: timer must be 5 or 10 seconds only
     if (widget.isStartingChallenge && (_timerSeconds != 5 && _timerSeconds != 10)) {
@@ -174,7 +189,18 @@ class _NotificationScheduleScreenState
     setState(() => _isSaving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('notif_random_anytime', _randomAnytime);
+      // Challenge startup: force active days to all 7 days and lock them.
+      if (widget.isStartingChallenge) {
+        _activeDays = {1, 2, 3, 4, 5, 6, 7};
+      }
+
+      // If challenge is active, keep the timing mode locked to whatever was chosen at start.
+      final lockedAnytime = StreakService.instance.lockedRandomAnytime;
+      final effectiveAnytime = isChallengeActive && lockedAnytime != null
+          ? lockedAnytime
+          : _randomAnytime;
+
+      await prefs.setBool('notif_random_anytime', effectiveAnytime);
       await prefs.setInt('notif_start_hour', _startTime.hour);
       await prefs.setInt('notif_end_hour', _endTime.hour);
       await prefs.setInt('notif_frequency', _frequency);
@@ -184,7 +210,12 @@ class _NotificationScheduleScreenState
 
       // If starting a challenge, activate it
       if (widget.isStartingChallenge) {
-        await StreakService.instance.startChallenge(7, _frequency);
+        await StreakService.instance.startChallenge(
+          7,
+          _frequency,
+          lockedActiveDaysCsv: '1,2,3,4,5,6,7',
+          lockedRandomAnytime: effectiveAnytime,
+        );
       }
 
       await NotificationService.instance.scheduleNotifications();
@@ -210,10 +241,6 @@ class _NotificationScheduleScreenState
           behavior: SnackBarBehavior.floating,
         ),
       );
-      // Pop twice if starting challenge (to get back to home), once otherwise
-      if (widget.isStartingChallenge) {
-        Navigator.of(context).pop();
-      }
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -360,8 +387,16 @@ class _NotificationScheduleScreenState
     final dayLabels = _getDayLabels(l10n);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    // Disable time picker when: (1) random anytime is selected, OR (2) challenge mode is active
-    final timeDisabled = _randomAnytime || StreakService.instance.isChallengeActive;
+    final challengeActive = StreakService.instance.isChallengeActive;
+    // If challenge is active, lock the switch to the chosen mode.
+    final lockedAnytime = StreakService.instance.lockedRandomAnytime;
+    final effectiveAnytime = challengeActive && lockedAnytime != null
+        ? lockedAnytime
+        : _randomAnytime;
+    // Disable time pickers when anytime is on, OR when the challenge locked anytime-on.
+    final timePickersDisabled = effectiveAnytime;
+    // Disable the anytime switch while challenge is active (lock-in).
+    final anytimeSwitchDisabled = challengeActive;
 
     return Scaffold(
       appBar: AppBar(
@@ -557,9 +592,9 @@ class _NotificationScheduleScreenState
                     children: [
                       // Anytime switch — disabled during challenge mode
                       Opacity(
-                        opacity: timeDisabled ? 0.35 : 1.0,
+                        opacity: anytimeSwitchDisabled ? 0.35 : 1.0,
                         child: IgnorePointer(
-                          ignoring: timeDisabled,
+                          ignoring: anytimeSwitchDisabled,
                           child: SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(
@@ -573,7 +608,7 @@ class _NotificationScheduleScreenState
                                 fontSize: 13,
                               ),
                             ),
-                            value: _randomAnytime,
+                            value: effectiveAnytime,
                             onChanged: (v) => setState(() => _randomAnytime = v),
                           ),
                         ),
@@ -586,9 +621,9 @@ class _NotificationScheduleScreenState
 
                       // Start time — always visible, dimmed when anytime is on
                       Opacity(
-                        opacity: timeDisabled ? 0.35 : 1.0,
+                        opacity: timePickersDisabled ? 0.35 : 1.0,
                         child: IgnorePointer(
-                          ignoring: timeDisabled,
+                          ignoring: timePickersDisabled,
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Container(
@@ -625,9 +660,9 @@ class _NotificationScheduleScreenState
 
                       // End time — always visible, dimmed when anytime is on
                       Opacity(
-                        opacity: timeDisabled ? 0.35 : 1.0,
+                        opacity: timePickersDisabled ? 0.35 : 1.0,
                         child: IgnorePointer(
-                          ignoring: timeDisabled,
+                          ignoring: timePickersDisabled,
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Container(
@@ -768,86 +803,92 @@ class _NotificationScheduleScreenState
 
                 _SettingCard(
                   colorScheme: colorScheme,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Quick-select presets
-                      Row(
+                  child: Opacity(
+                    opacity: challengeActive ? 0.5 : 1,
+                    child: IgnorePointer(
+                      ignoring: challengeActive,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _PresetChip(
-                              label: l10n.presetDaily,
-                              isSelected: _activeDays.length == 7,
-                              colorScheme: colorScheme,
-                              onTap: () => setState(
-                                () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                          // Quick-select presets
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _PresetChip(
+                                  label: l10n.presetDaily,
+                                  isSelected: _activeDays.length == 7,
+                                  colorScheme: colorScheme,
+                                  onTap: () => setState(
+                                    () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _PresetChip(
+                                  label: l10n.presetWeekdays,
+                                  isSelected:
+                                      _activeDays.length == 5 &&
+                                      _activeDays.every((d) => d <= 5),
+                                  colorScheme: colorScheme,
+                                  onTap: () =>
+                                      setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _PresetChip(
+                                  label: l10n.presetWeekends,
+                                  isSelected:
+                                      _activeDays.length == 2 &&
+                                      _activeDays.contains(6) &&
+                                      _activeDays.contains(7),
+                                  colorScheme: colorScheme,
+                                  onTap: () => setState(() => _activeDays = {6, 7}),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PresetChip(
-                              label: l10n.presetWeekdays,
-                              isSelected:
-                                  _activeDays.length == 5 &&
-                                  _activeDays.every((d) => d <= 5),
-                              colorScheme: colorScheme,
-                              onTap: () =>
-                                  setState(() => _activeDays = {1, 2, 3, 4, 5}),
-                            ),
+
+                          const SizedBox(height: 16),
+
+                          // Individual day chips
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(7, (index) {
+                              final day = index + 1;
+                              final isSelected = _activeDays.contains(day);
+                              return _DayChip(
+                                label: dayLabels[index],
+                                isSelected: isSelected,
+                                colorScheme: colorScheme,
+                                onTap: () {
+                                  setState(() {
+                                    if (isSelected && _activeDays.length > 1) {
+                                      _activeDays.remove(day);
+                                    } else if (!isSelected) {
+                                      _activeDays.add(day);
+                                    }
+                                  });
+                                },
+                              );
+                            }),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PresetChip(
-                              label: l10n.presetWeekends,
-                              isSelected:
-                                  _activeDays.length == 2 &&
-                                  _activeDays.contains(6) &&
-                                  _activeDays.contains(7),
-                              colorScheme: colorScheme,
-                              onTap: () => setState(() => _activeDays = {6, 7}),
+
+                          const SizedBox(height: 12),
+
+                          // Dynamic label
+                          Text(
+                            challengeActive ? 'Locked during challenge' : _activeDaysLabel(l10n),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: _activeDaysLabelColor(colorScheme),
                             ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Individual day chips
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(7, (index) {
-                          final day = index + 1;
-                          final isSelected = _activeDays.contains(day);
-                          return _DayChip(
-                            label: dayLabels[index],
-                            isSelected: isSelected,
-                            colorScheme: colorScheme,
-                            onTap: () {
-                              setState(() {
-                                if (isSelected && _activeDays.length > 1) {
-                                  _activeDays.remove(day);
-                                } else if (!isSelected) {
-                                  _activeDays.add(day);
-                                }
-                              });
-                            },
-                          );
-                        }),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Dynamic label
-                      Text(
-                        _activeDaysLabel(l10n),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _activeDaysLabelColor(colorScheme),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 // ── Battery optimisation whitelist ───────────────────────────
