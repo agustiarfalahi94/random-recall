@@ -148,7 +148,7 @@ class _NotificationScheduleScreenState
     if (widget.isStartingChallenge && (_timerSeconds != 5 && _timerSeconds != 10)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Challenge Mode requires timer to be 5 or 10 seconds only'),
+          content: Text(l10n.challengeTimerRequirementSnack),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -235,7 +235,7 @@ class _NotificationScheduleScreenState
         SnackBar(
           content: Text(
             widget.isStartingChallenge
-                ? '🔥 Challenge Mode activated! You have 7 days.'
+                ? l10n.challengeActivatedSnack(7)
                 : l10n.scheduleSavedSnack,
           ),
           behavior: SnackBarBehavior.floating,
@@ -260,44 +260,44 @@ class _NotificationScheduleScreenState
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('🔥 Start 7-Day Challenge Mode?'),
+        title: Text(l10n.challengeConfirmTitle(7)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'This will RESET your current streak and start a new 7-day challenge.',
+                l10n.challengeConfirmBody,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text('Challenge Mode Requirements:'),
+              Text(l10n.challengeConfirmRequirementsTitle),
               const SizedBox(height: 8),
-              _buildRequirementBullet('✓ Answer ALL questions correctly'),
-              _buildRequirementBullet('✓ Timer locked to ${_timerSeconds}s'),
-              _buildRequirementBullet('✓ Notification frequency locked to $_frequency/day'),
-              _buildRequirementBullet('✓ Complete 7 consecutive days'),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementAnswers),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementTimer(_timerSeconds)),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementFrequency(_frequency)),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementDays(7)),
               const SizedBox(height: 12),
-              const Text(
-                'Earn reward badge and free questions if you complete the challenge!',
+              Text(
+                l10n.challengeConfirmFooter,
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
-                  color: Colors.grey,
+                  color: Colors.grey.shade600,
                 ),
-              ),
+              )
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Start Challenge'),
+            child: Text(l10n.challengeWarningStart),
           ),
         ],
       ),
@@ -879,7 +879,9 @@ class _NotificationScheduleScreenState
 
                           // Dynamic label
                           Text(
-                            challengeActive ? 'Locked during challenge' : _activeDaysLabel(l10n),
+                            challengeActive
+                                ? l10n.lockedDuringChallenge
+                                : _activeDaysLabel(l10n),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,

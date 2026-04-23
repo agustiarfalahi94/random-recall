@@ -1219,7 +1219,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqA10 =>
-      'Set the response timer to 20 seconds or less in Notification Schedule settings to activate Challenge Mode. Answer at least one notification per day for 7 consecutive days while Challenge Mode is active, and you permanently earn +1 free question slot. The streak resets if you miss a day.';
+      'Start the NEW Challenge Mode from Notification Schedule. It requires a 5–10 second timer and perfect answers. Answer at least one notification per day for 7 consecutive days to complete it. Missing a day or answering incorrectly fails the challenge.';
 
   @override
   String get faqQ11 => 'Does the timer affect my score if it runs out?';
@@ -1433,6 +1433,54 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get lockedDuringChallenge => 'Locked during challenge';
+
+  @override
+  String get challengeTimerRequirementSnack =>
+      'Challenge Mode requires timer to be 5 or 10 seconds only.';
+
+  @override
+  String challengeActivatedSnack(int days) {
+    return '🔥 Challenge Mode activated! You have $days days.';
+  }
+
+  @override
+  String challengeConfirmTitle(int days) {
+    return '🔥 Start $days-Day Challenge Mode?';
+  }
+
+  @override
+  String get challengeConfirmBody =>
+      'This will reset your current Regular Streak and start a new challenge.';
+
+  @override
+  String get challengeConfirmRequirementsTitle =>
+      'Challenge Mode Requirements:';
+
+  @override
+  String get challengeConfirmRequirementAnswers =>
+      '✓ Answer ALL questions correctly';
+
+  @override
+  String challengeConfirmRequirementTimer(int seconds) {
+    return '✓ Timer locked to ${seconds}s';
+  }
+
+  @override
+  String challengeConfirmRequirementFrequency(int count) {
+    return '✓ Notification frequency locked to $count/day';
+  }
+
+  @override
+  String challengeConfirmRequirementDays(int days) {
+    return '✓ Complete $days consecutive days';
+  }
+
+  @override
+  String get challengeConfirmFooter =>
+      'Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.';
+
+  @override
   String get existingStreakTitle => 'You Have an Active Regular Streak';
 
   @override
@@ -1442,7 +1490,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get existingStreakWarning =>
-      '⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5-10s timer only\n• Missing one = restart\n• Win = Reward badge + free questions';
+      '⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5–10s timer only\n• Active days locked during challenge\n• Timing settings locked for the whole challenge\n• Missing one = restart\n• Win = Reward badge + free questions';
 
   @override
   String get existingStreakKeep => 'Keep Regular Streak';

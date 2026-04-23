@@ -1226,7 +1226,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA10 =>
-      'Atur timer respons ke 20 detik atau kurang di pengaturan Jadwal Notifikasi untuk mengaktifkan Mode Tantangan. Jawab minimal satu notifikasi per hari selama 7 hari berturut-turut saat Mode Tantangan aktif, dan kamu akan mendapatkan +1 slot pertanyaan gratis secara permanen. Streak reset jika kamu melewatkan satu hari.';
+      'Mulai Mode Tantangan BARU dari Jadwal Notifikasi. Mode ini mewajibkan timer 5–10 detik dan jawaban sempurna. Jawab minimal satu notifikasi per hari selama 7 hari berturut-turut untuk menyelesaikan tantangan. Melewatkan satu hari atau menjawab salah akan menggagalkan tantangan.';
 
   @override
   String get faqQ11 => 'Apakah timer mempengaruhi skor saya jika habis?';
@@ -1444,6 +1444,53 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get lockedDuringChallenge => 'Terkunci selama tantangan';
+
+  @override
+  String get challengeTimerRequirementSnack =>
+      'Mode Tantangan membutuhkan timer hanya 5 atau 10 detik.';
+
+  @override
+  String challengeActivatedSnack(int days) {
+    return '🔥 Mode Tantangan aktif! Kamu punya $days hari.';
+  }
+
+  @override
+  String challengeConfirmTitle(int days) {
+    return '🔥 Mulai Mode Tantangan $days Hari?';
+  }
+
+  @override
+  String get challengeConfirmBody =>
+      'Ini akan mereset Streak Reguler kamu dan memulai tantangan baru.';
+
+  @override
+  String get challengeConfirmRequirementsTitle => 'Syarat Mode Tantangan:';
+
+  @override
+  String get challengeConfirmRequirementAnswers =>
+      '✓ Harus jawab SEMUA dengan benar';
+
+  @override
+  String challengeConfirmRequirementTimer(int seconds) {
+    return '✓ Timer terkunci di $seconds detik';
+  }
+
+  @override
+  String challengeConfirmRequirementFrequency(int count) {
+    return '✓ Frekuensi notifikasi terkunci $count/hari';
+  }
+
+  @override
+  String challengeConfirmRequirementDays(int days) {
+    return '✓ Selesaikan $days hari berturut-turut';
+  }
+
+  @override
+  String get challengeConfirmFooter =>
+      'Pengaturan waktu kamu terkunci selama tantangan. Jika \"Kirim kapan saja\" AKTIF, jendela waktu terkunci. Jika NONAKTIF, kamu bisa mengubah jam mulai/selesai selama tantangan.';
+
+  @override
   String get existingStreakTitle => 'Anda Memiliki Streak Reguler Aktif';
 
   @override
@@ -1453,7 +1500,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get existingStreakWarning =>
-      '⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5-10 detik saja\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis';
+      '⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5–10 detik saja\n• Hari aktif terkunci selama tantangan\n• Pengaturan waktu terkunci selama tantangan\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis';
 
   @override
   String get existingStreakKeep => 'Pertahankan Streak Reguler';

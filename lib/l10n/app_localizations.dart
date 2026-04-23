@@ -2249,7 +2249,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA10.
   ///
   /// In en, this message translates to:
-  /// **'Set the response timer to 20 seconds or less in Notification Schedule settings to activate Challenge Mode. Answer at least one notification per day for 7 consecutive days while Challenge Mode is active, and you permanently earn +1 free question slot. The streak resets if you miss a day.'**
+  /// **'Start the NEW Challenge Mode from Notification Schedule. It requires a 5–10 second timer and perfect answers. Answer at least one notification per day for 7 consecutive days to complete it. Missing a day or answering incorrectly fails the challenge.'**
   String get faqA10;
 
   /// No description provided for @faqQ11.
@@ -2612,6 +2612,72 @@ abstract class AppLocalizations {
   /// **'Challenge Day {day}/{total}'**
   String challengeDayCounter(int day, int total);
 
+  /// No description provided for @lockedDuringChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked during challenge'**
+  String get lockedDuringChallenge;
+
+  /// No description provided for @challengeTimerRequirementSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Mode requires timer to be 5 or 10 seconds only.'**
+  String get challengeTimerRequirementSnack;
+
+  /// No description provided for @challengeActivatedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'🔥 Challenge Mode activated! You have {days} days.'**
+  String challengeActivatedSnack(int days);
+
+  /// No description provided for @challengeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'🔥 Start {days}-Day Challenge Mode?'**
+  String challengeConfirmTitle(int days);
+
+  /// No description provided for @challengeConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will reset your current Regular Streak and start a new challenge.'**
+  String get challengeConfirmBody;
+
+  /// No description provided for @challengeConfirmRequirementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Mode Requirements:'**
+  String get challengeConfirmRequirementsTitle;
+
+  /// No description provided for @challengeConfirmRequirementAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Answer ALL questions correctly'**
+  String get challengeConfirmRequirementAnswers;
+
+  /// No description provided for @challengeConfirmRequirementTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Timer locked to {seconds}s'**
+  String challengeConfirmRequirementTimer(int seconds);
+
+  /// No description provided for @challengeConfirmRequirementFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Notification frequency locked to {count}/day'**
+  String challengeConfirmRequirementFrequency(int count);
+
+  /// No description provided for @challengeConfirmRequirementDays.
+  ///
+  /// In en, this message translates to:
+  /// **'✓ Complete {days} consecutive days'**
+  String challengeConfirmRequirementDays(int days);
+
+  /// No description provided for @challengeConfirmFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.'**
+  String get challengeConfirmFooter;
+
   /// No description provided for @existingStreakTitle.
   ///
   /// In en, this message translates to:
@@ -2627,7 +2693,7 @@ abstract class AppLocalizations {
   /// No description provided for @existingStreakWarning.
   ///
   /// In en, this message translates to:
-  /// **'⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5-10s timer only\n• Missing one = restart\n• Win = Reward badge + free questions'**
+  /// **'⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5–10s timer only\n• Active days locked during challenge\n• Timing settings locked for the whole challenge\n• Missing one = restart\n• Win = Reward badge + free questions'**
   String get existingStreakWarning;
 
   /// No description provided for @existingStreakKeep.
