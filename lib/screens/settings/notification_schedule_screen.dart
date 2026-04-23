@@ -12,10 +12,18 @@ import '../../widgets/miui_battery_dialog.dart';
 import '../debug/debug_notification_screen.dart';
 
 class NotificationScheduleScreen extends StatefulWidget {
-  const NotificationScheduleScreen({super.key, this.scrollToTimer = false});
+  const NotificationScheduleScreen({
+    super.key,
+    this.scrollToTimer = false,
+    this.isStartingChallenge = false,
+  });
 
   /// When true, the screen will auto-scroll to the Challenge Mode section.
   final bool scrollToTimer;
+
+  /// When true, user is setting up a NEW challenge from the existing streak dialog.
+  /// Pressing save will start the challenge, not just update notification settings.
+  final bool isStartingChallenge;
 
   @override
   State<NotificationScheduleScreen> createState() =>
@@ -120,6 +128,18 @@ class _NotificationScheduleScreenState
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
+
+    // Challenge mode validation: timer must be 5 or 10 seconds only
+    if (widget.isStartingChallenge && (_timerSeconds != 5 && _timerSeconds != 10)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Challenge Mode requires timer to be 5 or 10 seconds only'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     // The window must span at least 1 hour. Overnight windows (e.g. 11 PM → 2 AM)
     // are valid — the span wraps around midnight.
     if (!_randomAnytime) {
@@ -145,6 +165,12 @@ class _NotificationScheduleScreenState
       return;
     }
 
+    // If starting a challenge, show confirmation dialog first
+    if (widget.isStartingChallenge) {
+      final confirmed = await _showChallengeConfirmationDialog();
+      if (!confirmed) return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -155,6 +181,11 @@ class _NotificationScheduleScreenState
       final sortedDays = _activeDays.toList()..sort();
       await prefs.setString('notif_active_days', sortedDays.join(','));
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
+
+      // If starting a challenge, activate it
+      if (widget.isStartingChallenge) {
+        await StreakService.instance.startChallenge(7, _frequency);
+      }
 
       await NotificationService.instance.scheduleNotifications();
       AnalyticsService.instance
@@ -171,10 +202,18 @@ class _NotificationScheduleScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.scheduleSavedSnack),
+          content: Text(
+            widget.isStartingChallenge
+                ? '🔥 Challenge Mode activated! You have 7 days.'
+                : l10n.scheduleSavedSnack,
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Pop twice if starting challenge (to get back to home), once otherwise
+      if (widget.isStartingChallenge) {
+        Navigator.of(context).pop();
+      }
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -184,6 +223,68 @@ class _NotificationScheduleScreenState
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<bool> _showChallengeConfirmationDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('🔥 Start 7-Day Challenge Mode?'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This will RESET your current streak and start a new 7-day challenge.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Challenge Mode Requirements:'),
+              const SizedBox(height: 8),
+              _buildRequirementBullet('✓ Answer ALL questions correctly'),
+              _buildRequirementBullet('✓ Timer locked to ${_timerSeconds}s'),
+              _buildRequirementBullet('✓ Notification frequency locked to $_frequency/day'),
+              _buildRequirementBullet('✓ Complete 7 consecutive days'),
+              const SizedBox(height: 12),
+              const Text(
+                'Earn reward badge and free questions if you complete the challenge!',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Start Challenge'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  Widget _buildRequirementBullet(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 13),
+      ),
+    );
   }
 
   Future<void> _pickTime({required bool isStart}) async {
@@ -259,7 +360,8 @@ class _NotificationScheduleScreenState
     final dayLabels = _getDayLabels(l10n);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final timeDisabled = _randomAnytime;
+    // Disable time picker when: (1) random anytime is selected, OR (2) challenge mode is active
+    final timeDisabled = _randomAnytime || StreakService.instance.isChallengeActive;
 
     return Scaffold(
       appBar: AppBar(
@@ -453,22 +555,28 @@ class _NotificationScheduleScreenState
                   colorScheme: colorScheme,
                   child: Column(
                     children: [
-                      // Anytime switch
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          l10n.sendAtAnyTime,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          l10n.sendAtAnyTimeSubtitle,
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 13,
+                      // Anytime switch — disabled during challenge mode
+                      Opacity(
+                        opacity: timeDisabled ? 0.35 : 1.0,
+                        child: IgnorePointer(
+                          ignoring: timeDisabled,
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              l10n.sendAtAnyTime,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              l10n.sendAtAnyTimeSubtitle,
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
+                            ),
+                            value: _randomAnytime,
+                            onChanged: (v) => setState(() => _randomAnytime = v),
                           ),
                         ),
-                        value: _randomAnytime,
-                        onChanged: (v) => setState(() => _randomAnytime = v),
                       ),
 
                       Divider(

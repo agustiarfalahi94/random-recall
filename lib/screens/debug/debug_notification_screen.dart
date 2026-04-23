@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/utils/battery_optimization.dart';
@@ -101,6 +102,34 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                   },
                   icon: const Icon(Icons.send_rounded),
                   label: const Text('Fire Immediate Test Notification'),
+                ),
+                const SizedBox(height: 16),
+                _buildSectionHeader('Streak Dialog Testing'),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.remove('last_streak_asked_for_challenge');
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Streak dialog flag reset! Dialog will show again on next app open.',
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to reset: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Reset Existing Streak Dialog'),
                 ),
               ],
             ),

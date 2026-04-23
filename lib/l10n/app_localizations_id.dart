@@ -1442,4 +1442,22 @@ class AppLocalizationsId extends AppLocalizations {
   String challengeDayCounter(int day, int total) {
     return 'Hari Tantangan $day/$total';
   }
+
+  @override
+  String get existingStreakTitle => 'Anda Memiliki Streak Reguler Aktif';
+
+  @override
+  String existingStreakMessage(int streak) {
+    return 'Anda saat ini memiliki streak reguler $streak hari! Terus tingkatkan atau coba Mode Tantangan baru.';
+  }
+
+  @override
+  String get existingStreakWarning =>
+      '⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5-10 detik saja\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis';
+
+  @override
+  String get existingStreakKeep => 'Pertahankan Streak Reguler';
+
+  @override
+  String get existingStreakStart => 'Mulai Mode Tantangan';
 }
