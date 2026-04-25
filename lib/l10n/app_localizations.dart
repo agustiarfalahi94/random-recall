@@ -2420,36 +2420,6 @@ abstract class AppLocalizations {
   /// **'Failed to update profile'**
   String get profileUpdateFailed;
 
-  /// No description provided for @profilePhotoPickerTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Change profile photo'**
-  String get profilePhotoPickerTitle;
-
-  /// No description provided for @profilePhotoFromCamera.
-  ///
-  /// In en, this message translates to:
-  /// **'Take photo'**
-  String get profilePhotoFromCamera;
-
-  /// No description provided for @profilePhotoFromGallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose from gallery'**
-  String get profilePhotoFromGallery;
-
-  /// No description provided for @profilePhotoUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile photo updated'**
-  String get profilePhotoUpdated;
-
-  /// No description provided for @profilePhotoUpdateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to update photo. Please try again.'**
-  String get profilePhotoUpdateFailed;
-
   /// No description provided for @passwordChangedSuccess.
   ///
   /// In en, this message translates to:

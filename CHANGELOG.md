@@ -5,18 +5,6 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [0.11.2] — 2026-04-25
-
-### Added
-- **Profile photo** — Users can now set a profile picture from camera or gallery.
-  - Tappable avatar at the top of the Profile screen (shows initials when no photo)
-  - Camera icon overlay to trigger the picker (camera or gallery)
-  - Image is compressed to 512×512 px at 75% quality before upload
-  - Stored in Firebase Storage (`users/{uid}/profile_photo.jpg`) and synced to Firebase Auth `photoURL` + Firestore
-  - Photo is deleted from Storage when the account is deleted
-
----
-
 ## [0.11.1] — 2026-04-25
 
 ### Fixed

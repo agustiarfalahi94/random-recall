@@ -1327,21 +1327,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get profileUpdateFailed => 'Gagal memperbarui profil';
 
   @override
-  String get profilePhotoPickerTitle => 'Ganti foto profil';
-
-  @override
-  String get profilePhotoFromCamera => 'Ambil foto';
-
-  @override
-  String get profilePhotoFromGallery => 'Pilih dari galeri';
-
-  @override
-  String get profilePhotoUpdated => 'Foto profil diperbarui';
-
-  @override
-  String get profilePhotoUpdateFailed => 'Gagal memperbarui foto. Coba lagi.';
-
-  @override
   String get passwordChangedSuccess => 'Kata sandi berhasil diubah';
 
   @override
