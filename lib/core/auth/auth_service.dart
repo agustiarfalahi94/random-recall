@@ -201,12 +201,11 @@ class AuthService {
       force: true,
       isInitialLogin: true,
     );
-    // Re-load streak/challenge state from Firestore now that the user is
-    // authenticated. StreakService.initialize() runs at app startup before
-    // login, so its _loadFromFirestore() returns early (no user). Calling it
-    // again here ensures challenge_mode_active and other streak data are
-    // correctly restored after a reinstall.
-    await StreakService.instance.initialize();
+    // Sync streak/challenge state from Firestore now that the user is
+    // authenticated. StreakService.initialize() only loads SharedPreferences
+    // (no Firestore) so it is safe to call at startup without a user.
+    // loadFromCloud() is the auth-required half — called here after login.
+    await StreakService.instance.loadFromCloud();
   }
 
   /// Force-reloads the user from Firebase servers.

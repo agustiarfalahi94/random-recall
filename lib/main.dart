@@ -142,7 +142,8 @@ Future<void> main() async {
       // Start In-App Purchase listener
       SubscriptionService.instance.init();
 
-      // Initialize StreakService (required before NotificationScheduleScreen can access isChallengeActive)
+      // Initialize StreakService local cache (SharedPreferences only — no Firestore).
+      // Firestore sync happens in initializeUserSession() after auth is confirmed.
       await StreakService.instance.initialize();
 
       // Wire up navigator key so notification taps can navigate

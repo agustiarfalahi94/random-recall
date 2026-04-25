@@ -57,8 +57,14 @@ class StreakService {
 
   late SharedPreferences _prefs;
 
+  /// Set up local SharedPreferences cache. Safe to call before auth.
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
+  }
+
+  /// Sync streak/challenge state from Firestore. Must only be called after
+  /// the user is authenticated (i.e. from initializeUserSession).
+  Future<void> loadFromCloud() async {
     await _loadFromFirestore();
   }
 
