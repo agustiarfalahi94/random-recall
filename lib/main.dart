@@ -307,10 +307,12 @@ class _RandomRecallAppState extends State<RandomRecallApp>
                       );
                       final isAnonymous = user.isAnonymous;
 
-                      // If NOT Google and NOT Anonymous, it MUST be an Email user.
-                      // They are ONLY verified if emailVerified is strictly true.
+                      // Phone users are verified by OTP — include them.
                       final bool isVerified =
-                          isGoogle || isAnonymous || user.emailVerified;
+                          isGoogle ||
+                          isAnonymous ||
+                          user.emailVerified ||
+                          user.phoneNumber != null;
 
                       if (!isVerified) {
                         return const VerifyEmailScreen();
