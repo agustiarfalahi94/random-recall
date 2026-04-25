@@ -618,6 +618,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get scheduleSavedSnack => 'Jadwal notifikasi tersimpan! 🔔';
 
   @override
+  String get exactAlarmPermissionWarning =>
+      'Pengaturan tersimpan, tapi notifikasi tidak dapat dijadwalkan — harap izinkan \'Alarm & Pengingat\' di pengaturan perangkat Anda.';
+
+  @override
+  String get noSettingsChanged => 'Tidak ada pengaturan yang diubah.';
+
+  @override
   String saveFailedSnack(String error) {
     return 'Gagal menyimpan: $error';
   }
@@ -1507,4 +1514,108 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get existingStreakStart => 'Mulai Mode Tantangan';
+
+  @override
+  String get continueWithPhone => 'Lanjutkan dengan Nomor Telepon';
+
+  @override
+  String get phoneAuthTitle => 'Nomor Telepon';
+
+  @override
+  String get phoneAuthEnterNumber => 'Masukkan nomor telepon Anda';
+
+  @override
+  String get phoneAuthSendOtp => 'Kirim OTP';
+
+  @override
+  String get phoneAuthEnterCode => 'Masukkan kode 6 digit';
+
+  @override
+  String phoneAuthCodeSentTo(String phone) {
+    return 'Kode dikirim ke $phone';
+  }
+
+  @override
+  String get phoneAuthVerify => 'Verifikasi';
+
+  @override
+  String get phoneAuthResend => 'Kirim Ulang';
+
+  @override
+  String phoneAuthResendIn(int seconds) {
+    return 'Kirim ulang dalam ${seconds}d';
+  }
+
+  @override
+  String get phoneAuthInvalidCode => 'Kode verifikasi tidak valid. Coba lagi.';
+
+  @override
+  String get phoneAuthTooManyRequests =>
+      'Terlalu banyak percobaan. Coba lagi nanti.';
+
+  @override
+  String get phoneAuthCredentialInUse =>
+      'Nomor telepon ini sudah terhubung ke akun lain.';
+
+  @override
+  String get phoneAuthFailed => 'Verifikasi telepon gagal. Coba lagi.';
+
+  @override
+  String get linkPhoneTitle => 'Hubungkan Nomor Telepon';
+
+  @override
+  String get changePhoneTitle => 'Ganti Nomor Telepon';
+
+  @override
+  String get profilePhoneLinkedLabel => 'Telepon terverifikasi';
+
+  @override
+  String get profileLinkPhone => 'Hubungkan nomor telepon';
+
+  @override
+  String get profileChangePhone => 'Ubah';
+
+  @override
+  String get optionalEmailTitle => 'Tambah Email Pemulihan';
+
+  @override
+  String get optionalEmailSubtitle =>
+      'Tambahkan alamat email agar Anda bisa memulihkan akun jika kehilangan akses ke nomor telepon.';
+
+  @override
+  String get optionalEmailAddButton => 'Tambah Email';
+
+  @override
+  String get optionalEmailSkip => 'Lewati';
+
+  @override
+  String get optionalEmailCreatePassword => 'Buat kata sandi';
+
+  @override
+  String get optionalEmailConfirmPassword => 'Konfirmasi kata sandi';
+
+  @override
+  String get optionalEmailSuccess =>
+      'Email pemulihan ditambahkan! Periksa kotak masuk Anda untuk verifikasi.';
+
+  @override
+  String get optionalEmailPasswordMismatch => 'Kata sandi tidak cocok.';
+
+  @override
+  String get optionalEmailPasswordLength => 'Kata sandi minimal 6 karakter.';
+
+  @override
+  String get profileAddRecoveryEmail => 'Tambah email pemulihan';
+
+  @override
+  String get profileAddRecoveryEmailSubtitle =>
+      'Lindungi akun dengan alamat email cadangan';
+
+  @override
+  String get phoneDeleteReauthTitle => 'Konfirmasi dengan Kode SMS';
+
+  @override
+  String phoneDeleteReauthSubtitle(String phone) {
+    return 'Kami akan mengirim kode verifikasi ke $phone untuk konfirmasi.';
+  }
 }

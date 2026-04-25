@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,6 +49,27 @@ class _NotificationScheduleScreenState
   Set<int> _activeDays = {1, 2, 3, 4, 5, 6, 7}; // 1=Mon … 7=Sun
   int _timerSeconds = 0; // 0 = off
 
+  // Snapshot of values as-loaded from prefs — used to detect unsaved changes.
+  bool _savedRandomAnytime = true;
+  TimeOfDay _savedStartTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _savedEndTime = const TimeOfDay(hour: 20, minute: 0);
+  int _savedFrequency = 3;
+  Set<int> _savedActiveDays = {1, 2, 3, 4, 5, 6, 7};
+  int _savedTimerSeconds = 0;
+
+  bool get _hasChanges {
+    if (widget.isStartingChallenge) return true; // always saveable for new challenge
+    return _randomAnytime != _savedRandomAnytime ||
+        _startTime != _savedStartTime ||
+        _endTime != _savedEndTime ||
+        _frequency != _savedFrequency ||
+        !_setEquals(_activeDays, _savedActiveDays) ||
+        _timerSeconds != _savedTimerSeconds;
+  }
+
+  bool _setEquals(Set<int> a, Set<int> b) =>
+      a.length == b.length && a.containsAll(b);
+
   int _debugTaps = 0;
 
   void _handleDebugTap() {
@@ -94,19 +116,29 @@ class _NotificationScheduleScreenState
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
+    final loadedRandomAnytime = prefs.getBool('notif_random_anytime') ?? true;
+    final loadedStartTime = TimeOfDay(hour: prefs.getInt('notif_start_hour') ?? 8, minute: 0);
+    final loadedEndTime = TimeOfDay(hour: prefs.getInt('notif_end_hour') ?? 20, minute: 0);
+    final loadedFrequency = (prefs.getInt('notif_frequency') ?? 3).clamp(1, 10);
+    final loadedActiveDays = daysStr.split(',').map(int.parse).toSet();
+    final loadedTimerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+
     setState(() {
-      _randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
-      _startTime = TimeOfDay(
-        hour: prefs.getInt('notif_start_hour') ?? 8,
-        minute: 0,
-      );
-      _endTime = TimeOfDay(
-        hour: prefs.getInt('notif_end_hour') ?? 20,
-        minute: 0,
-      );
-      _frequency = (prefs.getInt('notif_frequency') ?? 3).clamp(1, 10);
-      _activeDays = daysStr.split(',').map(int.parse).toSet();
-      _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+      _randomAnytime = loadedRandomAnytime;
+      _startTime = loadedStartTime;
+      _endTime = loadedEndTime;
+      _frequency = loadedFrequency;
+      _activeDays = loadedActiveDays;
+      _timerSeconds = loadedTimerSeconds;
+
+      // Snapshot for change-detection
+      _savedRandomAnytime = loadedRandomAnytime;
+      _savedStartTime = loadedStartTime;
+      _savedEndTime = loadedEndTime;
+      _savedFrequency = loadedFrequency;
+      _savedActiveDays = Set.from(loadedActiveDays);
+      _savedTimerSeconds = loadedTimerSeconds;
+
       _isLoading = false;
     });
 
@@ -218,7 +250,17 @@ class _NotificationScheduleScreenState
         );
       }
 
-      await NotificationService.instance.scheduleNotifications();
+      bool notifScheduledOk = true;
+      try {
+        await NotificationService.instance.scheduleNotifications();
+      } on PlatformException catch (pe) {
+        if (pe.code == 'exact_alarms_not_permitted') {
+          notifScheduledOk = false;
+        } else {
+          rethrow;
+        }
+      }
+
       AnalyticsService.instance
           .trackScheduleChanged(
             frequency: _frequency,
@@ -231,16 +273,27 @@ class _NotificationScheduleScreenState
       await SyncService.instance.performBackup();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isStartingChallenge
-                ? l10n.challengeActivatedSnack(7)
-                : l10n.scheduleSavedSnack,
+
+      if (!notifScheduledOk) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.exactAlarmPermissionWarning),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
           ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.isStartingChallenge
+                  ? l10n.challengeActivatedSnack(7)
+                  : l10n.scheduleSavedSnack,
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -919,7 +972,18 @@ class _NotificationScheduleScreenState
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           child: FilledButton.icon(
-            onPressed: (_isLoading || _isSaving) ? null : _save,
+            onPressed: (_isLoading || _isSaving)
+                ? null
+                : _hasChanges
+                    ? _save
+                    : () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.noSettingsChanged),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
             icon: _isSaving
                 ? const SizedBox(
                     width: 18,
@@ -936,6 +1000,22 @@ class _NotificationScheduleScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
+              disabledBackgroundColor: null, // keep default disabled style
+            ).copyWith(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) return null;
+                if (!_hasChanges) {
+                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
+                }
+                return null; // use default filled colour
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) return null;
+                if (!_hasChanges) {
+                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
+                }
+                return null;
+              }),
             ),
           ),
         ),

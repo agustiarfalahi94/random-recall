@@ -1220,6 +1220,18 @@ abstract class AppLocalizations {
   /// **'Notification schedule saved! 🔔'**
   String get scheduleSavedSnack;
 
+  /// No description provided for @exactAlarmPermissionWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings saved, but notifications couldn\'t be scheduled — please grant \'Alarms & Reminders\' permission in your device settings.'**
+  String get exactAlarmPermissionWarning;
+
+  /// No description provided for @noSettingsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No settings were changed.'**
+  String get noSettingsChanged;
+
   /// No description provided for @saveFailedSnack.
   ///
   /// In en, this message translates to:
@@ -2707,6 +2719,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Challenge Mode'**
   String get existingStreakStart;
+
+  /// No description provided for @continueWithPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Phone Number'**
+  String get continueWithPhone;
+
+  /// No description provided for @phoneAuthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneAuthTitle;
+
+  /// No description provided for @phoneAuthEnterNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number'**
+  String get phoneAuthEnterNumber;
+
+  /// No description provided for @phoneAuthSendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send OTP'**
+  String get phoneAuthSendOtp;
+
+  /// No description provided for @phoneAuthEnterCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code'**
+  String get phoneAuthEnterCode;
+
+  /// No description provided for @phoneAuthCodeSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent to {phone}'**
+  String phoneAuthCodeSentTo(String phone);
+
+  /// No description provided for @phoneAuthVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get phoneAuthVerify;
+
+  /// No description provided for @phoneAuthResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend'**
+  String get phoneAuthResend;
+
+  /// No description provided for @phoneAuthResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String phoneAuthResendIn(int seconds);
+
+  /// No description provided for @phoneAuthInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid verification code. Please try again.'**
+  String get phoneAuthInvalidCode;
+
+  /// No description provided for @phoneAuthTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please try again later.'**
+  String get phoneAuthTooManyRequests;
+
+  /// No description provided for @phoneAuthCredentialInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone number is already linked to another account.'**
+  String get phoneAuthCredentialInUse;
+
+  /// No description provided for @phoneAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verification failed. Please try again.'**
+  String get phoneAuthFailed;
+
+  /// No description provided for @linkPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Phone Number'**
+  String get linkPhoneTitle;
+
+  /// No description provided for @changePhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Phone Number'**
+  String get changePhoneTitle;
+
+  /// No description provided for @profilePhoneLinkedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified phone'**
+  String get profilePhoneLinkedLabel;
+
+  /// No description provided for @profileLinkPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Link phone number'**
+  String get profileLinkPhone;
+
+  /// No description provided for @profileChangePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get profileChangePhone;
+
+  /// No description provided for @optionalEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Recovery Email'**
+  String get optionalEmailTitle;
+
+  /// No description provided for @optionalEmailSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an email address so you can recover your account if you ever lose access to your phone number.'**
+  String get optionalEmailSubtitle;
+
+  /// No description provided for @optionalEmailAddButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Email'**
+  String get optionalEmailAddButton;
+
+  /// No description provided for @optionalEmailSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get optionalEmailSkip;
+
+  /// No description provided for @optionalEmailCreatePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a password'**
+  String get optionalEmailCreatePassword;
+
+  /// No description provided for @optionalEmailConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get optionalEmailConfirmPassword;
+
+  /// No description provided for @optionalEmailSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery email added! Check your inbox to verify it.'**
+  String get optionalEmailSuccess;
+
+  /// No description provided for @optionalEmailPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get optionalEmailPasswordMismatch;
+
+  /// No description provided for @optionalEmailPasswordLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters.'**
+  String get optionalEmailPasswordLength;
+
+  /// No description provided for @profileAddRecoveryEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Add recovery email'**
+  String get profileAddRecoveryEmail;
+
+  /// No description provided for @profileAddRecoveryEmailSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your account with a backup email address'**
+  String get profileAddRecoveryEmailSubtitle;
+
+  /// No description provided for @phoneDeleteReauthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm with SMS Code'**
+  String get phoneDeleteReauthTitle;
+
+  /// No description provided for @phoneDeleteReauthSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send a verification code to {phone} to confirm.'**
+  String phoneDeleteReauthSubtitle(String phone);
 }
 
 class _AppLocalizationsDelegate

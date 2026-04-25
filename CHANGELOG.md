@@ -5,6 +5,24 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.11.1] — 2026-04-25
+
+### Fixed
+- **Phone auth input** — Phone number field now accepts digits only, enforces max 13 digits, and requires at least 9 digits before enabling Send OTP.
+- **Exact alarm permission** — Notification schedule save now gracefully handles Android `exact_alarms_not_permitted` and shows a user-friendly warning instead of crashing.
+
+### Improved
+- **Notification schedule save button** — Button is visually greyed out and shows "No settings were changed" snackbar when tapped with no changes, preventing unnecessary saves.
+- **Notification schedule change detection** — Snapshots loaded settings on open and compares before saving.
+
+### Removed
+- **Auto-show existing streak dialog on home screen** — Dialog was shown every app open which felt intrusive; it is still shown contextually when starting a new challenge.
+
+### Added
+- **Localization completions** — All phone auth and notification schedule strings now present in English + Bahasa Indonesia.
+
+---
+
 ## [0.11.0] — 2026-04-23
 
 ### Fixed

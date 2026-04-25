@@ -616,6 +616,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleSavedSnack => 'Notification schedule saved! 🔔';
 
   @override
+  String get exactAlarmPermissionWarning =>
+      'Settings saved, but notifications couldn\'t be scheduled — please grant \'Alarms & Reminders\' permission in your device settings.';
+
+  @override
+  String get noSettingsChanged => 'No settings were changed.';
+
+  @override
   String saveFailedSnack(String error) {
     return 'Failed to save: $error';
   }
@@ -1497,4 +1504,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get existingStreakStart => 'Start Challenge Mode';
+
+  @override
+  String get continueWithPhone => 'Continue with Phone Number';
+
+  @override
+  String get phoneAuthTitle => 'Phone Number';
+
+  @override
+  String get phoneAuthEnterNumber => 'Enter your phone number';
+
+  @override
+  String get phoneAuthSendOtp => 'Send OTP';
+
+  @override
+  String get phoneAuthEnterCode => 'Enter the 6-digit code';
+
+  @override
+  String phoneAuthCodeSentTo(String phone) {
+    return 'Code sent to $phone';
+  }
+
+  @override
+  String get phoneAuthVerify => 'Verify';
+
+  @override
+  String get phoneAuthResend => 'Resend';
+
+  @override
+  String phoneAuthResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get phoneAuthInvalidCode =>
+      'Invalid verification code. Please try again.';
+
+  @override
+  String get phoneAuthTooManyRequests =>
+      'Too many attempts. Please try again later.';
+
+  @override
+  String get phoneAuthCredentialInUse =>
+      'This phone number is already linked to another account.';
+
+  @override
+  String get phoneAuthFailed => 'Phone verification failed. Please try again.';
+
+  @override
+  String get linkPhoneTitle => 'Link Phone Number';
+
+  @override
+  String get changePhoneTitle => 'Change Phone Number';
+
+  @override
+  String get profilePhoneLinkedLabel => 'Verified phone';
+
+  @override
+  String get profileLinkPhone => 'Link phone number';
+
+  @override
+  String get profileChangePhone => 'Change';
+
+  @override
+  String get optionalEmailTitle => 'Add Recovery Email';
+
+  @override
+  String get optionalEmailSubtitle =>
+      'Add an email address so you can recover your account if you ever lose access to your phone number.';
+
+  @override
+  String get optionalEmailAddButton => 'Add Email';
+
+  @override
+  String get optionalEmailSkip => 'Skip for now';
+
+  @override
+  String get optionalEmailCreatePassword => 'Create a password';
+
+  @override
+  String get optionalEmailConfirmPassword => 'Confirm password';
+
+  @override
+  String get optionalEmailSuccess =>
+      'Recovery email added! Check your inbox to verify it.';
+
+  @override
+  String get optionalEmailPasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get optionalEmailPasswordLength =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get profileAddRecoveryEmail => 'Add recovery email';
+
+  @override
+  String get profileAddRecoveryEmailSubtitle =>
+      'Protect your account with a backup email address';
+
+  @override
+  String get phoneDeleteReauthTitle => 'Confirm with SMS Code';
+
+  @override
+  String phoneDeleteReauthSubtitle(String phone) {
+    return 'We\'ll send a verification code to $phone to confirm.';
+  }
 }

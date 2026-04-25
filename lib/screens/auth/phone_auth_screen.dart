@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
@@ -247,6 +248,11 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               // Stage 1: phone entry
               IntlPhoneField(
                 initialCountryCode: 'ID',
+                disableLengthCheck: true,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(13),
+                ],
                 decoration: InputDecoration(
                   labelText: l10n.phoneAuthEnterNumber,
                   border: const OutlineInputBorder(),
@@ -254,7 +260,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                 onChanged: (phone) {
                   setState(() {
                     _completePhoneNumber = phone.completeNumber;
-                    _phoneValid = phone.number.isNotEmpty;
+                    _phoneValid = phone.number.length >= 9;
                   });
                 },
                 onCountryChanged: (_) {},
