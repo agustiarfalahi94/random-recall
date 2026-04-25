@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
 import '../services/analytics_service.dart';
+import '../streak/streak_service.dart';
 import '../sync/sync_service.dart';
 import '../plan/subscription_service.dart';
 
@@ -200,6 +201,12 @@ class AuthService {
       force: true,
       isInitialLogin: true,
     );
+    // Re-load streak/challenge state from Firestore now that the user is
+    // authenticated. StreakService.initialize() runs at app startup before
+    // login, so its _loadFromFirestore() returns early (no user). Calling it
+    // again here ensures challenge_mode_active and other streak data are
+    // correctly restored after a reinstall.
+    await StreakService.instance.initialize();
   }
 
   /// Force-reloads the user from Firebase servers.
