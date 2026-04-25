@@ -10,6 +10,6 @@
              App Check → Apps → [Android app] → Manage debug tokens → Add token -->
         <meta-data
             android:name="com.google.firebase.appcheck.debug.token"
-            android:value="a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
+            android:value="F8555F6B-CCF7-450D-9302-3E135386637F" />
     </application>
 </manifest>
