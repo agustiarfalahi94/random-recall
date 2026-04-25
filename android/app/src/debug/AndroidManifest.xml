@@ -4,4 +4,12 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application>
+        <!-- Firebase App Check debug token — register this UUID in Firebase Console:
+             App Check → Apps → [Android app] → Manage debug tokens → Add token -->
+        <meta-data
+            android:name="com.google.firebase.appcheck.debug.token"
+            android:value="a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
+    </application>
 </manifest>
