@@ -247,6 +247,8 @@
   "timeWindowError": "The time window must span at least 1 hour.",
   "selectActiveDayError": "Please select at least one active day.",
   "scheduleSavedSnack": "Notification schedule saved! 🔔",
+  "exactAlarmPermissionWarning": "Settings saved, but notifications couldn't be scheduled — please grant 'Alarms & Reminders' permission in your device settings.",
+  "noSettingsChanged": "No settings were changed.",
   "saveFailedSnack": "Failed to save: {error}",
   "@saveFailedSnack": {
     "placeholders": { "error": { "type": "String" } }
@@ -636,5 +638,46 @@
   },
   "existingStreakWarning": "⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5–10s timer only\n• Active days locked during challenge\n• Timing settings locked for the whole challenge\n• Missing one = restart\n• Win = Reward badge + free questions",
   "existingStreakKeep": "Keep Regular Streak",
-  "existingStreakStart": "Start Challenge Mode"
+  "existingStreakStart": "Start Challenge Mode",
+
+  "continueWithPhone": "Continue with Phone Number",
+  "phoneAuthTitle": "Phone Number",
+  "phoneAuthEnterNumber": "Enter your phone number",
+  "phoneAuthSendOtp": "Send OTP",
+  "phoneAuthEnterCode": "Enter the 6-digit code",
+  "phoneAuthCodeSentTo": "Code sent to {phone}",
+  "@phoneAuthCodeSentTo": {
+    "placeholders": { "phone": { "type": "String" } }
+  },
+  "phoneAuthVerify": "Verify",
+  "phoneAuthResend": "Resend",
+  "phoneAuthResendIn": "Resend in {seconds}s",
+  "@phoneAuthResendIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "phoneAuthInvalidCode": "Invalid verification code. Please try again.",
+  "phoneAuthTooManyRequests": "Too many attempts. Please try again later.",
+  "phoneAuthCredentialInUse": "This phone number is already linked to another account.",
+  "phoneAuthFailed": "Phone verification failed. Please try again.",
+  "linkPhoneTitle": "Link Phone Number",
+  "changePhoneTitle": "Change Phone Number",
+  "profilePhoneLinkedLabel": "Verified phone",
+  "profileLinkPhone": "Link phone number",
+  "profileChangePhone": "Change",
+  "optionalEmailTitle": "Add Recovery Email",
+  "optionalEmailSubtitle": "Add an email address so you can recover your account if you ever lose access to your phone number.",
+  "optionalEmailAddButton": "Add Email",
+  "optionalEmailSkip": "Skip for now",
+  "optionalEmailCreatePassword": "Create a password",
+  "optionalEmailConfirmPassword": "Confirm password",
+  "optionalEmailSuccess": "Recovery email added! Check your inbox to verify it.",
+  "optionalEmailPasswordMismatch": "Passwords do not match.",
+  "optionalEmailPasswordLength": "Password must be at least 6 characters.",
+  "profileAddRecoveryEmail": "Add recovery email",
+  "profileAddRecoveryEmailSubtitle": "Protect your account with a backup email address",
+  "phoneDeleteReauthTitle": "Confirm with SMS Code",
+  "phoneDeleteReauthSubtitle": "We'll send a verification code to {phone} to confirm.",
+  "@phoneDeleteReauthSubtitle": {
+    "placeholders": { "phone": { "type": "String" } }
+  }
 }

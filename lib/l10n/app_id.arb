@@ -247,6 +247,8 @@
   "timeWindowError": "Jendela waktu harus minimal 1 jam.",
   "selectActiveDayError": "Pilih minimal satu hari aktif.",
   "scheduleSavedSnack": "Jadwal notifikasi tersimpan! 🔔",
+  "exactAlarmPermissionWarning": "Pengaturan tersimpan, tapi notifikasi tidak dapat dijadwalkan — harap izinkan 'Alarm & Pengingat' di pengaturan perangkat Anda.",
+  "noSettingsChanged": "Tidak ada pengaturan yang diubah.",
   "saveFailedSnack": "Gagal menyimpan: {error}",
   "@saveFailedSnack": {
     "placeholders": { "error": { "type": "String" } }
@@ -636,5 +638,46 @@
   },
   "existingStreakWarning": "⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5–10 detik saja\n• Hari aktif terkunci selama tantangan\n• Pengaturan waktu terkunci selama tantangan\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis",
   "existingStreakKeep": "Pertahankan Streak Reguler",
-  "existingStreakStart": "Mulai Mode Tantangan"
+  "existingStreakStart": "Mulai Mode Tantangan",
+
+  "continueWithPhone": "Lanjutkan dengan Nomor Telepon",
+  "phoneAuthTitle": "Nomor Telepon",
+  "phoneAuthEnterNumber": "Masukkan nomor telepon Anda",
+  "phoneAuthSendOtp": "Kirim OTP",
+  "phoneAuthEnterCode": "Masukkan kode 6 digit",
+  "phoneAuthCodeSentTo": "Kode dikirim ke {phone}",
+  "@phoneAuthCodeSentTo": {
+    "placeholders": { "phone": { "type": "String" } }
+  },
+  "phoneAuthVerify": "Verifikasi",
+  "phoneAuthResend": "Kirim Ulang",
+  "phoneAuthResendIn": "Kirim ulang dalam {seconds}d",
+  "@phoneAuthResendIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "phoneAuthInvalidCode": "Kode verifikasi tidak valid. Coba lagi.",
+  "phoneAuthTooManyRequests": "Terlalu banyak percobaan. Coba lagi nanti.",
+  "phoneAuthCredentialInUse": "Nomor telepon ini sudah terhubung ke akun lain.",
+  "phoneAuthFailed": "Verifikasi telepon gagal. Coba lagi.",
+  "linkPhoneTitle": "Hubungkan Nomor Telepon",
+  "changePhoneTitle": "Ganti Nomor Telepon",
+  "profilePhoneLinkedLabel": "Telepon terverifikasi",
+  "profileLinkPhone": "Hubungkan nomor telepon",
+  "profileChangePhone": "Ubah",
+  "optionalEmailTitle": "Tambah Email Pemulihan",
+  "optionalEmailSubtitle": "Tambahkan alamat email agar Anda bisa memulihkan akun jika kehilangan akses ke nomor telepon.",
+  "optionalEmailAddButton": "Tambah Email",
+  "optionalEmailSkip": "Lewati",
+  "optionalEmailCreatePassword": "Buat kata sandi",
+  "optionalEmailConfirmPassword": "Konfirmasi kata sandi",
+  "optionalEmailSuccess": "Email pemulihan ditambahkan! Periksa kotak masuk Anda untuk verifikasi.",
+  "optionalEmailPasswordMismatch": "Kata sandi tidak cocok.",
+  "optionalEmailPasswordLength": "Kata sandi minimal 6 karakter.",
+  "profileAddRecoveryEmail": "Tambah email pemulihan",
+  "profileAddRecoveryEmailSubtitle": "Lindungi akun dengan alamat email cadangan",
+  "phoneDeleteReauthTitle": "Konfirmasi dengan Kode SMS",
+  "phoneDeleteReauthSubtitle": "Kami akan mengirim kode verifikasi ke {phone} untuk konfirmasi.",
+  "@phoneDeleteReauthSubtitle": {
+    "placeholders": { "phone": { "type": "String" } }
+  }
 }
