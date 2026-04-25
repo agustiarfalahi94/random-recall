@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:random_recall/core/services/profile_service.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:random_recall/services/display_name_service.dart';
@@ -27,7 +29,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isPhoneUser = false;
   bool _isPremium = false;
   bool _isLoading = false;
+  bool _isUploadingPhoto = false;
   String? _linkedPhoneNumber;
+  String? _photoUrl;
   int _phoneOnlyPrompted = 0;
 
   @override
@@ -57,6 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _phoneOnlyPrompted =
               (profile?['phone_only_prompted'] as int?) ?? 0;
           _isPremium = isPremium;
+          _photoUrl = user.photoURL ?? (profile?['photo_url'] as String?);
         });
       }
     } catch (e) {
@@ -152,6 +157,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SetOptions(merge: true),
         );
     if (mounted) setState(() => _phoneOnlyPrompted++);
+  }
+
+  Future<void> _pickAndUploadPhoto(ImageSource source) async {
+    final l10n = AppLocalizations.of(context)!;
+    Navigator.pop(context); // close bottom sheet
+
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: source,
+      imageQuality: 75,
+      maxWidth: 512,
+      maxHeight: 512,
+    );
+    if (image == null || !mounted) return;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      final url = await _profileService.uploadProfilePhoto(image);
+      if (mounted) {
+        setState(() => _photoUrl = url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.profilePhotoUpdated),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.profilePhotoUpdateFailed),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  void _showPhotoPickerSheet(AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: Text(l10n.profilePhotoFromCamera),
+              onTap: () => _pickAndUploadPhoto(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(l10n.profilePhotoFromGallery),
+              onTap: () => _pickAndUploadPhoto(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(AppLocalizations l10n) {
+    final initials = _nameController.text.trim().isNotEmpty
+        ? _nameController.text.trim()[0].toUpperCase()
+        : '?';
+
+    return Center(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: 52,
+            backgroundColor:
+                Theme.of(context).colorScheme.primaryContainer,
+            child: _isUploadingPhoto
+                ? const CircularProgressIndicator()
+                : _photoUrl != null
+                    ? ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: _photoUrl!,
+                          width: 104,
+                          height: 104,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              const CircularProgressIndicator(),
+                          errorWidget: (_, __, ___) => Text(
+                            initials,
+                            style: const TextStyle(
+                                fontSize: 36, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        initials,
+                        style: const TextStyle(
+                            fontSize: 36, fontWeight: FontWeight.bold),
+                      ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: GestureDetector(
+              onTap: _isUploadingPhoto
+                  ? null
+                  : () => _showPhotoPickerSheet(l10n),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.surface,
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPhoneField(AppLocalizations l10n) {
@@ -551,6 +685,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // Profile photo
+                  _buildAvatar(l10n),
+                  const SizedBox(height: 24),
+
                   // Name field
                   TextField(
                     controller: _nameController,

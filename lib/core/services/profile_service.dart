@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileService {
   static final ProfileService _instance = ProfileService._internal();
@@ -15,6 +17,7 @@ class ProfileService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   /// Update user profile in Firestore and Firebase Auth displayName.
   /// Phone number is managed via auth linking — not updated here.
@@ -36,6 +39,26 @@ class ProfileService {
       debugPrint('ProfileService: Firestore update failed: $e');
       rethrow;
     }
+  }
+
+  /// Upload profile photo to Firebase Storage and update Auth + Firestore.
+  /// Returns the public download URL.
+  Future<String> uploadProfilePhoto(XFile image) async {
+    final user = _auth.currentUser;
+    final userId = user?.uid;
+    if (userId == null) throw Exception('User not authenticated');
+
+    final ref = _storage.ref('users/$userId/profile_photo.jpg');
+    final bytes = await image.readAsBytes();
+    await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+
+    final url = await ref.getDownloadURL();
+    await user!.updatePhotoURL(url);
+    await _firestore.collection('users').doc(userId).update({
+      'photo_url': url,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+    return url;
   }
 
   /// Get current user profile from Firestore
@@ -153,13 +176,18 @@ class ProfileService {
     }
   }
 
-  /// Helper: Delete all user data from Firestore
+  /// Helper: Delete all user data from Firestore and Storage
   Future<void> _deleteUserData(String userId) async {
     try {
       await _firestore.collection('users').doc(userId).delete();
     } catch (e) {
       debugPrint('ProfileService: Delete Firestore data failed: $e');
       rethrow;
+    }
+    try {
+      await _storage.ref('users/$userId/profile_photo.jpg').delete();
+    } catch (_) {
+      // Photo may not exist — ignore
     }
   }
 }
