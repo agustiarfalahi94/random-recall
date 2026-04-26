@@ -5,6 +5,19 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.2] — 2026-04-26
+
+### Fixed
+- **Challenge locked settings incorrectly removed** — v0.12.1 mistakenly stripped all challenge mechanics from the notification settings screen (locked timer, frequency, active days). This is now restored: challenge setup still requires a 5 or 10 s timer, and frequency/active days/anytime mode are locked for the full challenge period.
+- **Challenge not fully restored after reinstall** — On a fresh install or clear-data, re-login would restore the challenge active/day/duration from Firestore but would not re-apply the locked notification settings to SharedPreferences, so no notifications would fire. Fixed: `locked_timer_seconds` is now persisted to Firestore; `_loadFromFirestore()` writes all locked settings back to SharedPreferences; and `initializeUserSession()` reschedules notifications immediately after cloud restore when a challenge is active.
+
+### Changed
+- **Challenge entry point moved to home screen** — The old implicit trigger (setting timer ≤ 10 s in notification settings auto-activated challenge mode) is removed. Challenge is now started exclusively via the "7-Day" / "14-Day" buttons on the home screen Challenge Mode card, which opens the notification settings screen in challenge-setup mode (`isStartingChallenge: true`).
+- **Home screen: Challenge Mode card** — Replaces the old Timer Challenge card. Shows "7-Day" and "14-Day" start buttons when no challenge is running. Shows day-progress bar and "Stop Challenge" button when one is active.
+- **Timer setting decoupled from challenge trigger** — The notification timer (0–90 s) is now a pure UX preference outside of challenge mode. It does not activate or gate any challenge behaviour. During an active challenge the timer remains locked to the chosen 5 or 10 s value.
+
+---
+
 ## [0.12.1] — 2026-04-26
 
 ### Added
