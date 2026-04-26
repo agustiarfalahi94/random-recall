@@ -28,6 +28,9 @@ import 'screens/auth/login_screen.dart';
 import 'core/auth/auth_service.dart';
 import 'core/plan/subscription_service.dart';
 import 'core/streak/streak_service.dart';
+import 'core/ads/ad_service.dart';
+import 'core/plan/plan_service.dart';
+import 'widgets/ad_banner_widget.dart';
 import 'screens/question/notification_question_screen.dart';
 import 'screens/question/permission_required_screen.dart';
 import 'screens/auth/verify_email_screen.dart';
@@ -150,6 +153,11 @@ Future<void> main() async {
 
       // Wire up navigator key so notification taps can navigate
       NotificationService.instance.navigatorKey = navigatorKey;
+
+      // Initialize AdService — premium check happens here so ads are never
+      // shown to premium users from the very first frame.
+      final isPremium = await PlanService.isPremium();
+      await AdService.instance.initialize(isPremium: isPremium);
 
       runApp(const RandomRecallApp());
 
@@ -287,6 +295,7 @@ class _RandomRecallAppState extends State<RandomRecallApp>
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: ThemeMode.system,
+            builder: (context, child) => _AdBannerWrapper(child: child!),
             home: _isChecking
                 ? const Scaffold(
                     body: Center(child: CircularProgressIndicator()),
@@ -547,5 +556,63 @@ class _HomeGateState extends State<_HomeGate> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return _onboardingComplete ? const HomeScreen() : const OnboardingScreen();
+  }
+}
+
+// ── Persistent ad banner wrapper ─────────────────────────────────────────────
+
+/// Wraps the entire app to place a persistent ad banner at the bottom of every
+/// screen. The banner:
+///   • is hidden for premium users
+///   • is hidden while the user is on a question-answering screen
+///   • sits ABOVE the system gesture zone / navigation bar
+///   • stays behind the keyboard (keyboard overlays it — same behaviour as
+///     Baby Tracker by NIGHP SOFTWARE)
+class _AdBannerWrapper extends StatelessWidget {
+  const _AdBannerWrapper({required this.child});
+  final Widget child;
+
+  // Standard banner height from AdSize.banner
+  static const double _bannerHeight = 50.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final viewPadding = MediaQuery.of(context).viewPadding;
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final keyboardVisible = viewInsets.bottom > 0;
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: AdService.instance.bannerVisible,
+      builder: (context, bannerVisible, _) {
+        // When keyboard is up the keyboard already covers the banner, so we
+        // don't add extra bottom padding (avoids double-compressing content).
+        final bottomPad =
+            (bannerVisible && !keyboardVisible) ? _bannerHeight : 0.0;
+
+        return Stack(
+          children: [
+            // Propagate extra bottom padding so Scaffolds leave room for banner
+            MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                padding: MediaQuery.of(context).padding.copyWith(
+                  bottom: MediaQuery.of(context).padding.bottom + bottomPad,
+                ),
+              ),
+              child: child,
+            ),
+
+            // Banner: positioned above the system gesture/nav zone.
+            // Keyboard (system layer) overlays this automatically.
+            if (bannerVisible)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: viewPadding.bottom,
+                child: const AdBannerWidget(),
+              ),
+          ],
+        );
+      },
+    );
   }
 }

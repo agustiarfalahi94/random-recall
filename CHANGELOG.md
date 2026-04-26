@@ -5,6 +5,34 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.0] — 2026-04-26
+
+### Added
+- **Persistent Ad Banner** — A Google Mobile Ads banner (AdSize.banner, 50dp) is now shown at the bottom of every screen for free-tier users.
+  - Sits above the system gesture zone / navigation bar using `MediaQuery.viewPadding.bottom`, so it never conflicts with gesture navigation or 3-button nav (same behaviour as Baby Tracker by NIGHP SOFTWARE).
+  - Stays behind the keyboard — the keyboard overlays the banner rather than pushing it up.
+  - Hidden on question-answering screens (`QuestionScreen`, `NotificationQuestionScreen`) via `AdService.enterExcludedScreen()` / `exitExcludedScreen()`.
+  - Hidden permanently for premium users (set at app init; never shown again during the session).
+  - Implemented at `MaterialApp.builder` level so it persists across all pushed routes without any per-screen setup.
+  - Retry on failed load (1-minute backoff).
+- **Interstitial Ad After Organic Answer** — A full-screen interstitial is shown after the user answers an organic question.
+  - Organic sources: notification-triggered questions (`NotificationQuestionScreen`) and home screen badge questions (`QuestionScreen` with `isPractice: false`).
+  - NOT shown for: practice mode, test notifications.
+  - Shown for all organic questions including Challenge Mode (pass and fail alike).
+  - Frequency cap: max **5 interstitials per day**, minimum **10-minute gap** between any two — enforced in `AdService` and persisted across cold starts.
+  - Next ad is preloaded immediately after the current one is dismissed.
+  - Failures are handled silently — no user-visible error.
+- **AdService** (`lib/core/ads/ad_service.dart`) — Singleton managing all ad lifecycle, frequency cap, and premium gating.
+- **AdBannerWidget** (`lib/widgets/ad_banner_widget.dart`) — Thin wrapper around `AdWidget`.
+- **google_mobile_ads `^5.1.0`** added to `pubspec.yaml`.
+- **AndroidManifest**: Google Mobile Ads App ID added (currently test ID — replace with real ID when Google Dev Account is ready).
+
+### Notes
+- All ad unit IDs are currently **Google test IDs** that display test ads without requiring a real account. Replace with production IDs in `AdService` when your Google Dev Account and AdMob app are set up.
+- Ad display is silently suppressed for users with DNS-level ad blocking (AdGuard, NextDNS, etc.) — no error state is shown.
+
+---
+
 ## [0.11.3] — 2026-04-26
 
 ### Fixed

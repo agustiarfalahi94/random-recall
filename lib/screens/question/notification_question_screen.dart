@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/ads/ad_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/plan/plan_service.dart';
@@ -57,6 +58,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
   @override
   void initState() {
     super.initState();
+    AdService.instance.enterExcludedScreen();
     _revealController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -71,6 +73,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
 
   @override
   void dispose() {
+    AdService.instance.exitExcludedScreen();
     _countdownTimer?.cancel();
     _revealController.dispose();
     super.dispose();
@@ -236,6 +239,12 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
         }
       }
     } catch (_) {}
+
+    // Show interstitial ad after every organic answer (test notifications skip).
+    // Frequency cap (max 5/day, min 10 min apart) is enforced inside AdService.
+    if (!widget.isPractice) {
+      AdService.instance.showInterstitialAd().ignore();
+    }
 
     // Auto-close logic:
     // Close if Correct OR if user is Free OR if Premium used their Undo already.
