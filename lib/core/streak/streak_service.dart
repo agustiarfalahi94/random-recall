@@ -386,7 +386,9 @@ class StreakService {
 
   // ── Record an activity (call when user grades a question with timer on) ────
 
-  static Future<StreakResult> recordActivity() async {
+  static Future<StreakResult> recordActivity({
+    bool isPremiumUser = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final today = _dateKey(DateTime.now());
     final lastDate = prefs.getString(_keyLastDate) ?? '';
@@ -407,11 +409,13 @@ class StreakService {
     await prefs.setInt(_keyStreak, newStreak);
     await prefs.setString(_keyLastDate, today);
 
-    // Every 7 days grant a bonus question
+    // Every 7 days grant a bonus question slot (free-tier only)
     bool milestone = false;
     if (newStreak % 7 == 0) {
-      final earned = prefs.getInt(_keyBonusQuestions) ?? 0;
-      await prefs.setInt(_keyBonusQuestions, earned + 1);
+      if (!isPremiumUser) {
+        final earned = prefs.getInt(_keyBonusQuestions) ?? 0;
+        await prefs.setInt(_keyBonusQuestions, earned + 1);
+      }
       milestone = true;
     }
 

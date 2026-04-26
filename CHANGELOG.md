@@ -5,6 +5,14 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.11.2] — 2026-04-26
+
+### Fixed
+- **Streak milestone reward given to premium users** — `recordActivity()` now accepts `isPremiumUser` and skips the +1 question slot grant for premium accounts. The milestone dialog is also suppressed for premium users (nothing to celebrate there).
+- **App Check debug token** — Token is now seeded directly into Firebase App Check's native SharedPreferences in `MainActivity.onCreate()` before Firebase initializes, guaranteeing the registered token is always used in debug builds regardless of whether app data was cleared.
+
+---
+
 ## [0.11.1] — 2026-04-25
 
 ### Fixed

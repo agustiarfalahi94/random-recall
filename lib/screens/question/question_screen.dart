@@ -183,8 +183,10 @@ class _QuestionScreenState extends State<QuestionScreen>
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 &&
             _timerSeconds <= StreakService.challengeThreshold) {
-          final result = await StreakService.recordActivity();
-          if (result.milestoneReached && mounted) {
+          final result = await StreakService.recordActivity(
+            isPremiumUser: _isPremium,
+          );
+          if (result.milestoneReached && !_isPremium && mounted) {
             _showStreakMilestoneDialog(result.streak);
           }
         }
