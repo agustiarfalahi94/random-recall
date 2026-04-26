@@ -8,7 +8,7 @@
 
     <application
         android:label="Random Recall"
-        android:name="${applicationName}"
+        android:name=".App"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
         
