@@ -36,7 +36,7 @@ void main() {
     test('completeChallengeMode 7-day awards bonus question', () async {
       final before = streakService.bonusQuestions;
       await streakService.startChallenge(7, 10);
-      await streakService.completeChallengeMode(7);
+      await streakService.completeChallengeMode(7, isPremiumUser: false);
       expect(streakService.bonusQuestions, before + 1);
       expect(streakService.isChallengeActive, false);
     });
@@ -45,7 +45,7 @@ void main() {
       final beforeQ = streakService.bonusQuestions;
       final beforeC = streakService.bonusCategories;
       await streakService.startChallenge(14, 10);
-      await streakService.completeChallengeMode(14);
+      await streakService.completeChallengeMode(14, isPremiumUser: false);
       expect(streakService.bonusQuestions, beforeQ + 1);
       expect(streakService.bonusCategories, beforeC + 1);
     });
@@ -75,7 +75,7 @@ void main() {
       await prefs.setInt('timer_streak_bonus_questions', 170);
 
       // Complete challenge to award bonus
-      await streakService.completeChallengeMode(7);
+      await streakService.completeChallengeMode(7, isPremiumUser: false);
 
       // Should not exceed max
       expect(streakService.bonusQuestions, lessThanOrEqualTo(200 - 20));
@@ -88,7 +88,7 @@ void main() {
       await prefs.setInt('bonus_categories', 14);
 
       // Complete challenge to award bonus
-      await streakService.completeChallengeMode(14);
+      await streakService.completeChallengeMode(14, isPremiumUser: false);
 
       // Should not exceed max
       expect(streakService.bonusCategories, lessThanOrEqualTo(20 - 4));
@@ -97,14 +97,14 @@ void main() {
     test('total 7-day completed counter increments', () async {
       final before = streakService.total7DayCompleted;
       await streakService.startChallenge(7, 10);
-      await streakService.completeChallengeMode(7);
+      await streakService.completeChallengeMode(7, isPremiumUser: false);
       expect(streakService.total7DayCompleted, before + 1);
     });
 
     test('total 14-day completed counter increments', () async {
       final before = streakService.total14DayCompleted;
       await streakService.startChallenge(14, 10);
-      await streakService.completeChallengeMode(14);
+      await streakService.completeChallengeMode(14, isPremiumUser: false);
       expect(streakService.total14DayCompleted, before + 1);
     });
 

@@ -145,6 +145,7 @@ class _QuestionScreenState extends State<QuestionScreen>
 
   Future<void> _grade(bool isCorrect) async {
     if (_graded || _question == null) return;
+    final l10n = AppLocalizations.of(context)!;
     _stopTimer();
     setState(() {
       _graded = true;
@@ -153,33 +154,6 @@ class _QuestionScreenState extends State<QuestionScreen>
 
     try {
       final streakService = StreakService.instance;
-
-      // Handle incorrect answer during challenge
-      if (!widget.isPractice && !isCorrect && streakService.isChallengeActive) {
-        await streakService.failChallenge();
-        if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Challenge Failed'),
-              content: const Text(
-                'You answered incorrectly. Your challenge has been reset.',
-              ),
-              actions: [
-                FilledButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.pop(context); // Exit question screen
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
 
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
@@ -209,44 +183,64 @@ class _QuestionScreenState extends State<QuestionScreen>
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 &&
             _timerSeconds <= StreakService.challengeThreshold) {
-          final result = await StreakService.recordActivity();
-          if (result.milestoneReached && mounted) {
+          final result = await StreakService.recordActivity(
+            isPremiumUser: _isPremium,
+          );
+          if (result.milestoneReached && !_isPremium && mounted) {
             _showStreakMilestoneDialog(result.streak);
           }
         }
 
-        // Check if challenge just completed
-        if (streakService.isChallengeActive && isCorrect) {
-          await streakService.incrementChallengeDay();
+        // NEW Challenge Mode: wrong answer fails; correct answer advances once/day.
+        if (streakService.isChallengeActive) {
+          final result = await streakService.recordChallengeAnswer(
+            isCorrect: isCorrect,
+            isPremiumUser: _isPremium,
+          );
 
-          if (streakService.challengeDay >= streakService.challengeDuration) {
-            // Challenge complete!
-            final duration = streakService.challengeDuration;
-            await streakService.completeChallengeMode(duration);
+          if (!mounted) return;
 
-            if (mounted) {
-              final questionsEarned = duration == 7 ? 1 : 1;
-              final categoriesEarned = duration == 14 ? 1 : 0;
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChallengeCompleteScreen(
-                    duration: duration,
-                    questionsEarned: questionsEarned,
-                    categoriesEarned: categoriesEarned,
-                    isBadgeUnlocked: false, // Can be set to true for premium
-                    title: null,
+          if (result.outcome == ChallengeAnswerOutcome.failed) {
+            // End the run immediately on failure.
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.challengeFailureMessage),
+                content: Text(l10n.challengeFailureMessage),
+                actions: [
+                  FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(l10n.awesome),
                   ),
+                ],
+              ),
+            );
+            if (mounted) Navigator.of(context).pop();
+            return;
+          }
+
+          if (result.outcome == ChallengeAnswerOutcome.completed &&
+              result.completion != null) {
+            final c = result.completion!;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChallengeCompleteScreen(
+                  duration: c.duration,
+                  questionsEarned: c.questionsEarned,
+                  categoriesEarned: c.categoriesEarned,
+                  isBadgeUnlocked: c.badgeUnlocked,
+                  title: c.title.isEmpty ? null : c.title,
                 ),
-              );
-            }
+              ),
+            );
+            return;
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.failedToSaveScore(e.toString()))),
         );
@@ -314,6 +308,7 @@ class _QuestionScreenState extends State<QuestionScreen>
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final challengeActive = StreakService.instance.isChallengeActive;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -333,6 +328,28 @@ class _QuestionScreenState extends State<QuestionScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
+          if (challengeActive)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  l10n.challengeDayCounter(
+                    StreakService.instance.challengeDay,
+                    StreakService.instance.challengeDuration,
+                  ),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    color: colorScheme.onTertiaryContainer,
+                  ),
+                ),
+              ),
+            ),
           if (_timerSeconds > 0 && !_graded && !_isLoading)
             _TimerBadge(remaining: _remaining, total: _timerSeconds),
           // Next question button

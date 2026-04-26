@@ -16,11 +16,9 @@ class ProfileService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Update user profile in Firestore and Firebase Auth displayName
-  Future<void> updateUserProfile({
-    required String name,
-    String? phoneNumber,
-  }) async {
+  /// Update user profile in Firestore and Firebase Auth displayName.
+  /// Phone number is managed via auth linking — not updated here.
+  Future<void> updateUserProfile({required String name}) async {
     try {
       final user = _auth.currentUser;
       final userId = user?.uid;
@@ -30,13 +28,10 @@ class ProfileService {
       await user!.updateDisplayName(name);
 
       // Update Firestore
-      final updateData = {
+      await _firestore.collection('users').doc(userId).update({
         'name': name,
-        'phone_number': phoneNumber,
         'updated_at': FieldValue.serverTimestamp(),
-      };
-
-      await _firestore.collection('users').doc(userId).update(updateData);
+      });
     } catch (e) {
       debugPrint('ProfileService: Firestore update failed: $e');
       rethrow;
@@ -126,6 +121,34 @@ class ProfileService {
       await user.delete();
     } catch (e) {
       debugPrint('ProfileService: Delete account (Google) failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Re-authenticates with a fresh OTP then deletes the account.
+  /// [verificationId] and [smsCode] come from a fresh verifyPhoneNumber call
+  /// triggered from the UI just before calling this method.
+  Future<void> deleteAccountPhoneAuth({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Delete Firestore data
+      await _deleteUserData(user.uid);
+
+      // Delete auth account
+      await user.delete();
+    } catch (e) {
+      debugPrint('ProfileService: Delete account (phone) failed: $e');
       rethrow;
     }
   }

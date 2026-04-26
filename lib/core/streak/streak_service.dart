@@ -29,6 +29,8 @@ class StreakService {
   static const _keyChallengeModeDay = 'challenge_mode_day';
   static const _keyChallengeDuration = 'challenge_duration'; // 7 or 14
   static const _keyChallengeLockedFrequency = 'challenge_locked_frequency';
+  static const _keyChallengeLockedActiveDays = 'challenge_locked_active_days'; // csv, e.g. 1,2,3,4,5,6,7
+  static const _keyChallengeLockedRandomAnytime = 'challenge_locked_random_anytime'; // bool
   static const _keyChallengeLastAnswerDate = 'challenge_last_answer_date';
   static const _keyTotal7DayCompleted = 'total_7day_completed';
   static const _keyTotal14DayCompleted = 'total_14day_completed';
@@ -55,8 +57,14 @@ class StreakService {
 
   late SharedPreferences _prefs;
 
+  /// Set up local SharedPreferences cache. Safe to call before auth.
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
+  }
+
+  /// Sync streak/challenge state from Firestore. Must only be called after
+  /// the user is authenticated (i.e. from initializeUserSession).
+  Future<void> loadFromCloud() async {
     await _loadFromFirestore();
   }
 
@@ -70,6 +78,8 @@ class StreakService {
   int get challengeDay => _prefs.getInt(_keyChallengeModeDay) ?? 0;
   int get challengeDuration => _prefs.getInt(_keyChallengeDuration) ?? 7;
   int get lockedFrequency => _prefs.getInt(_keyChallengeLockedFrequency) ?? 0;
+  String? get lockedActiveDaysCsv => _prefs.getString(_keyChallengeLockedActiveDays);
+  bool? get lockedRandomAnytime => _prefs.getBool(_keyChallengeLockedRandomAnytime);
   int get total7DayCompleted => _prefs.getInt(_keyTotal7DayCompleted) ?? 0;
   int get total14DayCompleted => _prefs.getInt(_keyTotal14DayCompleted) ?? 0;
   bool get challengeBadgeUnlocked =>
@@ -81,11 +91,22 @@ class StreakService {
 
   // ── Challenge mode setter methods ───────────────────────────────────────────
 
-  Future<void> startChallenge(int duration, int frequency) async {
+  Future<void> startChallenge(
+    int duration,
+    int frequency, {
+    String? lockedActiveDaysCsv,
+    bool? lockedRandomAnytime,
+  }) async {
     await _prefs.setBool(_keyChallengeModeActive, true);
     await _prefs.setInt(_keyChallengeDuration, duration);
     await _prefs.setInt(_keyChallengeModeDay, 1);
     await _prefs.setInt(_keyChallengeLockedFrequency, frequency);
+    if (lockedActiveDaysCsv != null) {
+      await _prefs.setString(_keyChallengeLockedActiveDays, lockedActiveDaysCsv);
+    }
+    if (lockedRandomAnytime != null) {
+      await _prefs.setBool(_keyChallengeLockedRandomAnytime, lockedRandomAnytime);
+    }
     await _prefs.setString(_keyChallengeModeStartDate, DateTime.now().toIso8601String());
     await _saveToFirestore();
   }
@@ -102,6 +123,8 @@ class StreakService {
     await _prefs.remove(_keyChallengeModeDay);
     await _prefs.remove(_keyChallengeDuration);
     await _prefs.remove(_keyChallengeLockedFrequency);
+    await _prefs.remove(_keyChallengeLockedActiveDays);
+    await _prefs.remove(_keyChallengeLockedRandomAnytime);
     await _prefs.remove(_keyChallengeModeStartDate);
     await _prefs.remove(_keyChallengeLastAnswerDate);
     // Reset current streak
@@ -109,23 +132,72 @@ class StreakService {
     await _saveToFirestore();
   }
 
-  Future<void> completeChallengeMode(int duration) async {
+  Future<ChallengeCompletion> completeChallengeMode(
+    int duration, {
+    required bool isPremiumUser,
+  }) async {
     // Challenge completed successfully
+    int questionsEarned = 0;
+    int categoriesEarned = 0;
+    bool badgeUnlocked = false;
+    String title = '';
+
     if (duration == 7) {
       await _prefs.setInt(_keyTotal7DayCompleted, total7DayCompleted + 1);
-      // Award bonus question (free-tier)
-      final newQuestions = bonusQuestions + 1;
-      await _prefs.setInt(_keyBonusQuestions, min(newQuestions, questionsMax - questionBase));
+      if (!isPremiumUser) {
+        // Award bonus question (free-tier)
+        questionsEarned = 1;
+        final newQuestions = bonusQuestions + 1;
+        await _prefs.setInt(
+          _keyBonusQuestions,
+          min(newQuestions, questionsMax - questionBase),
+        );
+      }
     } else if (duration == 14) {
       await _prefs.setInt(_keyTotal14DayCompleted, total14DayCompleted + 1);
-      // Award bonus question + category (free-tier)
-      final newQuestions = bonusQuestions + 1;
-      final newCategories = bonusCategories + 1;
-      await _prefs.setInt(_keyBonusQuestions, min(newQuestions, questionsMax - questionBase));
-      await _prefs.setInt(_keyBonusCategories, min(newCategories, categoriesMax - categoryBase));
+      if (!isPremiumUser) {
+        // Award bonus question + category (free-tier)
+        questionsEarned = 1;
+        categoriesEarned = 1;
+        final newQuestions = bonusQuestions + 1;
+        final newCategories = bonusCategories + 1;
+        await _prefs.setInt(
+          _keyBonusQuestions,
+          min(newQuestions, questionsMax - questionBase),
+        );
+        await _prefs.setInt(
+          _keyBonusCategories,
+          min(newCategories, categoriesMax - categoryBase),
+        );
+      }
+    }
+
+    if (isPremiumUser) {
+      // Cosmetic rewards (premium)
+      badgeUnlocked = true;
+      await _prefs.setBool(_keyChallengeBadgeUnlocked, true);
+
+      final totalCompleted = total7DayCompleted + total14DayCompleted + 1;
+      // Simple progression: 1+ = Challenger, 3+ = Champion, 7+ = Legend
+      if (totalCompleted >= 7) {
+        title = 'Legend';
+      } else if (totalCompleted >= 3) {
+        title = 'Champion';
+      } else {
+        title = 'Challenger';
+      }
+      await _prefs.setString(_keyHighestTitle, title);
     }
 
     await resetChallenge(); // resetChallenge() calls _saveToFirestore()
+
+    return ChallengeCompletion(
+      duration: duration,
+      questionsEarned: questionsEarned,
+      categoriesEarned: categoriesEarned,
+      badgeUnlocked: badgeUnlocked,
+      title: title,
+    );
   }
 
   Future<void> unlockChallengeBadge() async {
@@ -164,6 +236,58 @@ class StreakService {
     }
   }
 
+  /// Called whenever the user answers a question during an active challenge.
+  ///
+  /// - Wrong answer => immediate failure + reset.
+  /// - Correct answer => counts once per calendar day.
+  /// - Completion => returns a [ChallengeCompletion] snapshot.
+  Future<ChallengeAnswerResult> recordChallengeAnswer({
+    required bool isCorrect,
+    required bool isPremiumUser,
+  }) async {
+    if (!isChallengeActive) {
+      return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.noChallenge);
+    }
+
+    if (!isCorrect) {
+      await failChallenge();
+      return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.failed);
+    }
+
+    final now = DateTime.now();
+    final todayKey = _dateKey(now);
+    final lastAnswerDateStr = _prefs.getString(_keyChallengeLastAnswerDate);
+
+    // First ever correct answer in this challenge: mark today as done, keep day=1.
+    if (lastAnswerDateStr == null) {
+      await _prefs.setString(_keyChallengeLastAnswerDate, now.toIso8601String());
+      await _saveToFirestore();
+      return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.progressed);
+    }
+
+    final lastKey = _dateKey(DateTime.parse(lastAnswerDateStr));
+    if (lastKey == todayKey) {
+      return const ChallengeAnswerResult(
+        outcome: ChallengeAnswerOutcome.alreadyCompletedToday,
+      );
+    }
+
+    // If we reached the final day and get a new-day correct answer, complete.
+    if (challengeDay >= challengeDuration) {
+      final completion = await completeChallengeMode(
+        challengeDuration,
+        isPremiumUser: isPremiumUser,
+      );
+      return ChallengeAnswerResult(
+        outcome: ChallengeAnswerOutcome.completed,
+        completion: completion,
+      );
+    }
+
+    await incrementChallengeDay();
+    return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.progressed);
+  }
+
   // ── Firestore persistence ───────────────────────────────────────────────────
 
   Future<void> _saveToFirestore() async {
@@ -183,6 +307,8 @@ class StreakService {
                 'day': challengeDay,
                 'duration': challengeDuration,
                 'locked_frequency': lockedFrequency,
+                'locked_active_days': lockedActiveDaysCsv,
+                'locked_random_anytime': lockedRandomAnytime,
                 'start_date': _prefs.getString(_keyChallengeModeStartDate),
                 'last_answer_date': _prefs.getString(_keyChallengeLastAnswerDate),
               },
@@ -227,6 +353,12 @@ class StreakService {
           await _prefs.setInt(_keyChallengeModeDay, challenge['day'] ?? 0);
           await _prefs.setInt(_keyChallengeDuration, challenge['duration'] ?? 7);
           await _prefs.setInt(_keyChallengeLockedFrequency, challenge['locked_frequency'] ?? 0);
+          if (challenge['locked_active_days'] != null) {
+            await _prefs.setString(_keyChallengeLockedActiveDays, challenge['locked_active_days']);
+          }
+          if (challenge['locked_random_anytime'] != null) {
+            await _prefs.setBool(_keyChallengeLockedRandomAnytime, challenge['locked_random_anytime'] ?? false);
+          }
           if (challenge['start_date'] != null) {
             await _prefs.setString(_keyChallengeModeStartDate, challenge['start_date']);
           }
@@ -254,7 +386,9 @@ class StreakService {
 
   // ── Record an activity (call when user grades a question with timer on) ────
 
-  static Future<StreakResult> recordActivity() async {
+  static Future<StreakResult> recordActivity({
+    bool isPremiumUser = false,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final today = _dateKey(DateTime.now());
     final lastDate = prefs.getString(_keyLastDate) ?? '';
@@ -275,11 +409,13 @@ class StreakService {
     await prefs.setInt(_keyStreak, newStreak);
     await prefs.setString(_keyLastDate, today);
 
-    // Every 7 days grant a bonus question
+    // Every 7 days grant a bonus question slot (free-tier only)
     bool milestone = false;
     if (newStreak % 7 == 0) {
-      final earned = prefs.getInt(_keyBonusQuestions) ?? 0;
-      await prefs.setInt(_keyBonusQuestions, earned + 1);
+      if (!isPremiumUser) {
+        final earned = prefs.getInt(_keyBonusQuestions) ?? 0;
+        await prefs.setInt(_keyBonusQuestions, earned + 1);
+      }
       milestone = true;
     }
 
@@ -327,4 +463,29 @@ class StreakResult {
   final bool milestoneReached;
 
   const StreakResult({required this.streak, required this.milestoneReached});
+}
+
+enum ChallengeAnswerOutcome { noChallenge, alreadyCompletedToday, progressed, completed, failed }
+
+class ChallengeAnswerResult {
+  final ChallengeAnswerOutcome outcome;
+  final ChallengeCompletion? completion;
+
+  const ChallengeAnswerResult({required this.outcome, this.completion});
+}
+
+class ChallengeCompletion {
+  final int duration;
+  final int questionsEarned;
+  final int categoriesEarned;
+  final bool badgeUnlocked;
+  final String title;
+
+  const ChallengeCompletion({
+    required this.duration,
+    required this.questionsEarned,
+    required this.categoriesEarned,
+    required this.badgeUnlocked,
+    required this.title,
+  });
 }

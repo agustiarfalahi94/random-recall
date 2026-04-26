@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
+import 'display_name_setup_screen.dart';
 import 'email_auth_screen.dart';
+import 'optional_email_prompt_screen.dart';
+import 'phone_auth_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,6 +30,42 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isLoggingIn = false);
     }
+  }
+
+  Future<void> _handlePhoneSignIn() async {
+    // Capture current UID before sign-in to detect new vs returning user.
+    final previousUid = AuthService.instance.currentUser?.uid;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PhoneAuthScreen(mode: PhoneAuthMode.signIn),
+      ),
+    );
+
+    if (!mounted) return;
+
+    final user = AuthService.instance.currentUser;
+    if (user == null) return; // sign-in was cancelled or failed
+
+    final isNewUser = previousUid == null || user.uid != previousUid;
+    final hasNoDisplayName =
+        user.displayName == null || user.displayName!.trim().isEmpty;
+
+    if (isNewUser || hasNoDisplayName) {
+      // New phone user — collect display name then optionally add email.
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const DisplayNameSetupScreen(canDismiss: false),
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const OptionalEmailPromptScreen(),
+        ),
+      );
+    }
+    // The StreamBuilder in main.dart handles routing to home once auth state changes.
   }
 
   @override
@@ -89,6 +128,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     side: BorderSide(color: colorScheme.outline),
                   ),
                 ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _handlePhoneSignIn,
+                  icon: const Icon(Icons.phone_outlined),
+                  label: Text(l10n.continueWithPhone),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    side: BorderSide(color: colorScheme.outline),
+                  ),
+                ),
               ],
             ],
           ),
@@ -122,6 +174,10 @@ class _SocialLoginButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
+        minimumSize: const Size(double.infinity, 52),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
       ),
     );
   }

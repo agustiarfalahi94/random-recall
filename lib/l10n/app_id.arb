@@ -247,6 +247,8 @@
   "timeWindowError": "Jendela waktu harus minimal 1 jam.",
   "selectActiveDayError": "Pilih minimal satu hari aktif.",
   "scheduleSavedSnack": "Jadwal notifikasi tersimpan! 🔔",
+  "exactAlarmPermissionWarning": "Pengaturan tersimpan, tapi notifikasi tidak dapat dijadwalkan — harap izinkan 'Alarm & Pengingat' di pengaturan perangkat Anda.",
+  "noSettingsChanged": "Tidak ada pengaturan yang diubah.",
   "saveFailedSnack": "Gagal menyimpan: {error}",
   "@saveFailedSnack": {
     "placeholders": { "error": { "type": "String" } }
@@ -493,7 +495,7 @@
   "faqQ9": "Apa itu Batal harian?",
   "faqA9": "Kamu bisa membatalkan jawaban terakhirmu sekali per hari kalender. Batas ini direset tengah malam. Ini tersedia untuk akun gratis dan premium.",
   "faqQ10": "Apa itu Mode Tantangan dan bagaimana cara kerjanya?",
-  "faqA10": "Atur timer respons ke 20 detik atau kurang di pengaturan Jadwal Notifikasi untuk mengaktifkan Mode Tantangan. Jawab minimal satu notifikasi per hari selama 7 hari berturut-turut saat Mode Tantangan aktif, dan kamu akan mendapatkan +1 slot pertanyaan gratis secara permanen. Streak reset jika kamu melewatkan satu hari.",
+  "faqA10": "Mulai Mode Tantangan BARU dari Jadwal Notifikasi. Mode ini mewajibkan timer 5–10 detik dan jawaban sempurna. Jawab minimal satu notifikasi per hari selama 7 hari berturut-turut untuk menyelesaikan tantangan. Melewatkan satu hari atau menjawab salah akan menggagalkan tantangan.",
   "faqQ11": "Apakah timer mempengaruhi skor saya jika habis?",
   "faqA11": "Ya — jika hitungan mundur mencapai nol sebelum kamu menjawab, pertanyaan secara otomatis ditandai salah. Atur timer ke 0 di pengaturan untuk menonaktifkannya dan menjawab sesuai kecepatan kamu.",
   "faqQ12": "Apakah pertanyaan saya tersinkronisasi di berbagai perangkat?",
@@ -601,6 +603,32 @@
       "total": { "type": "int" }
     }
   },
+  "lockedDuringChallenge": "Terkunci selama tantangan",
+  "challengeTimerRequirementSnack": "Mode Tantangan membutuhkan timer hanya 5 atau 10 detik.",
+  "challengeActivatedSnack": "🔥 Mode Tantangan aktif! Kamu punya {days} hari.",
+  "@challengeActivatedSnack": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "challengeConfirmTitle": "🔥 Mulai Mode Tantangan {days} Hari?",
+  "@challengeConfirmTitle": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "challengeConfirmBody": "Ini akan mereset Streak Reguler kamu dan memulai tantangan baru.",
+  "challengeConfirmRequirementsTitle": "Syarat Mode Tantangan:",
+  "challengeConfirmRequirementAnswers": "✓ Harus jawab SEMUA dengan benar",
+  "challengeConfirmRequirementTimer": "✓ Timer terkunci di {seconds} detik",
+  "@challengeConfirmRequirementTimer": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "challengeConfirmRequirementFrequency": "✓ Frekuensi notifikasi terkunci {count}/hari",
+  "@challengeConfirmRequirementFrequency": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "challengeConfirmRequirementDays": "✓ Selesaikan {days} hari berturut-turut",
+  "@challengeConfirmRequirementDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "challengeConfirmFooter": "Pengaturan waktu kamu terkunci selama tantangan. Jika \"Kirim kapan saja\" AKTIF, jendela waktu terkunci. Jika NONAKTIF, kamu bisa mengubah jam mulai/selesai selama tantangan.",
   "existingStreakTitle": "Anda Memiliki Streak Reguler Aktif",
   "existingStreakMessage": "Anda saat ini memiliki streak reguler {streak} hari! Terus tingkatkan atau coba Mode Tantangan baru.",
   "@existingStreakMessage": {
@@ -608,7 +636,48 @@
       "streak": { "type": "int" }
     }
   },
-  "existingStreakWarning": "⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5-10 detik saja\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis",
+  "existingStreakWarning": "⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5–10 detik saja\n• Hari aktif terkunci selama tantangan\n• Pengaturan waktu terkunci selama tantangan\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis",
   "existingStreakKeep": "Pertahankan Streak Reguler",
-  "existingStreakStart": "Mulai Mode Tantangan"
+  "existingStreakStart": "Mulai Mode Tantangan",
+
+  "continueWithPhone": "Lanjutkan dengan Nomor Telepon",
+  "phoneAuthTitle": "Nomor Telepon",
+  "phoneAuthEnterNumber": "Masukkan nomor telepon Anda",
+  "phoneAuthSendOtp": "Kirim OTP",
+  "phoneAuthEnterCode": "Masukkan kode 6 digit",
+  "phoneAuthCodeSentTo": "Kode dikirim ke {phone}",
+  "@phoneAuthCodeSentTo": {
+    "placeholders": { "phone": { "type": "String" } }
+  },
+  "phoneAuthVerify": "Verifikasi",
+  "phoneAuthResend": "Kirim Ulang",
+  "phoneAuthResendIn": "Kirim ulang dalam {seconds}d",
+  "@phoneAuthResendIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "phoneAuthInvalidCode": "Kode verifikasi tidak valid. Coba lagi.",
+  "phoneAuthTooManyRequests": "Terlalu banyak percobaan. Coba lagi nanti.",
+  "phoneAuthCredentialInUse": "Nomor telepon ini sudah terhubung ke akun lain.",
+  "phoneAuthFailed": "Verifikasi telepon gagal. Coba lagi.",
+  "linkPhoneTitle": "Hubungkan Nomor Telepon",
+  "changePhoneTitle": "Ganti Nomor Telepon",
+  "profilePhoneLinkedLabel": "Telepon terverifikasi",
+  "profileLinkPhone": "Hubungkan nomor telepon",
+  "profileChangePhone": "Ubah",
+  "optionalEmailTitle": "Tambah Email Pemulihan",
+  "optionalEmailSubtitle": "Tambahkan alamat email agar Anda bisa memulihkan akun jika kehilangan akses ke nomor telepon.",
+  "optionalEmailAddButton": "Tambah Email",
+  "optionalEmailSkip": "Lewati",
+  "optionalEmailCreatePassword": "Buat kata sandi",
+  "optionalEmailConfirmPassword": "Konfirmasi kata sandi",
+  "optionalEmailSuccess": "Email pemulihan ditambahkan! Periksa kotak masuk Anda untuk verifikasi.",
+  "optionalEmailPasswordMismatch": "Kata sandi tidak cocok.",
+  "optionalEmailPasswordLength": "Kata sandi minimal 6 karakter.",
+  "profileAddRecoveryEmail": "Tambah email pemulihan",
+  "profileAddRecoveryEmailSubtitle": "Lindungi akun dengan alamat email cadangan",
+  "phoneDeleteReauthTitle": "Konfirmasi dengan Kode SMS",
+  "phoneDeleteReauthSubtitle": "Kami akan mengirim kode verifikasi ke {phone} untuk konfirmasi.",
+  "@phoneDeleteReauthSubtitle": {
+    "placeholders": { "phone": { "type": "String" } }
+  }
 }

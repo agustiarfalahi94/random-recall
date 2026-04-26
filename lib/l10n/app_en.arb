@@ -247,6 +247,8 @@
   "timeWindowError": "The time window must span at least 1 hour.",
   "selectActiveDayError": "Please select at least one active day.",
   "scheduleSavedSnack": "Notification schedule saved! 🔔",
+  "exactAlarmPermissionWarning": "Settings saved, but notifications couldn't be scheduled — please grant 'Alarms & Reminders' permission in your device settings.",
+  "noSettingsChanged": "No settings were changed.",
   "saveFailedSnack": "Failed to save: {error}",
   "@saveFailedSnack": {
     "placeholders": { "error": { "type": "String" } }
@@ -493,7 +495,7 @@
   "faqQ9": "What is the daily Undo?",
   "faqA9": "You can undo your last answer once per calendar day. The limit resets at midnight. This is available on both free and premium accounts.",
   "faqQ10": "What is Challenge Mode and how does it work?",
-  "faqA10": "Set the response timer to 20 seconds or less in Notification Schedule settings to activate Challenge Mode. Answer at least one notification per day for 7 consecutive days while Challenge Mode is active, and you permanently earn +1 free question slot. The streak resets if you miss a day.",
+  "faqA10": "Start the NEW Challenge Mode from Notification Schedule. It requires a 5–10 second timer and perfect answers. Answer at least one notification per day for 7 consecutive days to complete it. Missing a day or answering incorrectly fails the challenge.",
   "faqQ11": "Does the timer affect my score if it runs out?",
   "faqA11": "Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. Set the timer to 0 in settings to disable it and answer at your own pace.",
   "faqQ12": "Do my questions sync across devices?",
@@ -601,6 +603,32 @@
       "total": { "type": "int" }
     }
   },
+  "lockedDuringChallenge": "Locked during challenge",
+  "challengeTimerRequirementSnack": "Challenge Mode requires timer to be 5 or 10 seconds only.",
+  "challengeActivatedSnack": "🔥 Challenge Mode activated! You have {days} days.",
+  "@challengeActivatedSnack": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "challengeConfirmTitle": "🔥 Start {days}-Day Challenge Mode?",
+  "@challengeConfirmTitle": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "challengeConfirmBody": "This will reset your current Regular Streak and start a new challenge.",
+  "challengeConfirmRequirementsTitle": "Challenge Mode Requirements:",
+  "challengeConfirmRequirementAnswers": "✓ Answer ALL questions correctly",
+  "challengeConfirmRequirementTimer": "✓ Timer locked to {seconds}s",
+  "@challengeConfirmRequirementTimer": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "challengeConfirmRequirementFrequency": "✓ Notification frequency locked to {count}/day",
+  "@challengeConfirmRequirementFrequency": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "challengeConfirmRequirementDays": "✓ Complete {days} consecutive days",
+  "@challengeConfirmRequirementDays": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "challengeConfirmFooter": "Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.",
   "existingStreakTitle": "You Have an Active Regular Streak",
   "existingStreakMessage": "You currently have a {streak}-day regular streak! Keep improving or try the new Challenge Mode.",
   "@existingStreakMessage": {
@@ -608,7 +636,48 @@
       "streak": { "type": "int" }
     }
   },
-  "existingStreakWarning": "⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5-10s timer only\n• Missing one = restart\n• Win = Reward badge + free questions",
+  "existingStreakWarning": "⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5–10s timer only\n• Active days locked during challenge\n• Timing settings locked for the whole challenge\n• Missing one = restart\n• Win = Reward badge + free questions",
   "existingStreakKeep": "Keep Regular Streak",
-  "existingStreakStart": "Start Challenge Mode"
+  "existingStreakStart": "Start Challenge Mode",
+
+  "continueWithPhone": "Continue with Phone Number",
+  "phoneAuthTitle": "Phone Number",
+  "phoneAuthEnterNumber": "Enter your phone number",
+  "phoneAuthSendOtp": "Send OTP",
+  "phoneAuthEnterCode": "Enter the 6-digit code",
+  "phoneAuthCodeSentTo": "Code sent to {phone}",
+  "@phoneAuthCodeSentTo": {
+    "placeholders": { "phone": { "type": "String" } }
+  },
+  "phoneAuthVerify": "Verify",
+  "phoneAuthResend": "Resend",
+  "phoneAuthResendIn": "Resend in {seconds}s",
+  "@phoneAuthResendIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "phoneAuthInvalidCode": "Invalid verification code. Please try again.",
+  "phoneAuthTooManyRequests": "Too many attempts. Please try again later.",
+  "phoneAuthCredentialInUse": "This phone number is already linked to another account.",
+  "phoneAuthFailed": "Phone verification failed. Please try again.",
+  "linkPhoneTitle": "Link Phone Number",
+  "changePhoneTitle": "Change Phone Number",
+  "profilePhoneLinkedLabel": "Verified phone",
+  "profileLinkPhone": "Link phone number",
+  "profileChangePhone": "Change",
+  "optionalEmailTitle": "Add Recovery Email",
+  "optionalEmailSubtitle": "Add an email address so you can recover your account if you ever lose access to your phone number.",
+  "optionalEmailAddButton": "Add Email",
+  "optionalEmailSkip": "Skip for now",
+  "optionalEmailCreatePassword": "Create a password",
+  "optionalEmailConfirmPassword": "Confirm password",
+  "optionalEmailSuccess": "Recovery email added! Check your inbox to verify it.",
+  "optionalEmailPasswordMismatch": "Passwords do not match.",
+  "optionalEmailPasswordLength": "Password must be at least 6 characters.",
+  "profileAddRecoveryEmail": "Add recovery email",
+  "profileAddRecoveryEmailSubtitle": "Protect your account with a backup email address",
+  "phoneDeleteReauthTitle": "Confirm with SMS Code",
+  "phoneDeleteReauthSubtitle": "We'll send a verification code to {phone} to confirm.",
+  "@phoneDeleteReauthSubtitle": {
+    "placeholders": { "phone": { "type": "String" } }
+  }
 }

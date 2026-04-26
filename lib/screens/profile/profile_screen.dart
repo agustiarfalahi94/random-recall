@@ -1,9 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/core/services/profile_service.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:random_recall/services/display_name_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../core/auth/auth_service.dart';
+import '../auth/optional_email_prompt_screen.dart';
+import '../auth/phone_auth_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,17 +22,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   late TextEditingController _nameController;
-  late TextEditingController _phoneController;
 
   bool _isEmailUser = false;
+  bool _isPhoneUser = false;
   bool _isPremium = false;
   bool _isLoading = false;
+  String? _linkedPhoneNumber;
+  int _phoneOnlyPrompted = 0;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _phoneController = TextEditingController();
     _loadProfileData();
   }
 
@@ -36,7 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Load from Firestore
       final profile = await _profileService.getUserProfile();
       final prefs = await SharedPreferences.getInstance();
       final isPremium = prefs.getBool('is_premium') ?? false;
@@ -44,8 +49,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() {
           _nameController.text = profile?['name'] ?? '';
-          _phoneController.text = profile?['phone_number'] ?? '';
-          _isEmailUser = user.providerData.any((p) => p.providerId == 'password');
+          _isEmailUser =
+              user.providerData.any((p) => p.providerId == 'password');
+          _isPhoneUser =
+              user.providerData.any((p) => p.providerId == 'phone');
+          _linkedPhoneNumber = user.phoneNumber;
+          _phoneOnlyPrompted =
+              (profile?['phone_only_prompted'] as int?) ?? 0;
           _isPremium = isPremium;
         });
       }
@@ -67,22 +77,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    // Validate characters
     if (!DisplayNameService.isValidCharacters(trimmedName)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Display name contains invalid characters')),
+          const SnackBar(
+            content: Text('Display name contains invalid characters'),
+          ),
         );
       }
       return;
     }
 
-    // Check for profanity
-    final hasProfanity = await DisplayNameService.checkProfanity(trimmedName);
+    final hasProfanity =
+        await DisplayNameService.checkProfanity(trimmedName);
     if (hasProfanity) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Display name contains inappropriate content')),
+          const SnackBar(
+            content: Text('Display name contains inappropriate content'),
+          ),
         );
       }
       return;
@@ -91,27 +104,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _profileService.updateUserProfile(
-        name: trimmedName,
-        phoneNumber: _phoneController.text.trim(),
-      );
+      await _profileService.updateUserProfile(name: trimmedName);
 
-      // Reload Firebase Auth user to ensure displayName is synced
       await _auth.currentUser?.reload();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.profileUpdateSuccess),
-          ),
+          SnackBar(content: Text(l10n.profileUpdateSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.profileUpdateFailed),
-          ),
+          SnackBar(content: Text(l10n.profileUpdateFailed)),
         );
       }
     } finally {
@@ -119,6 +124,114 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _openPhoneAuth(PhoneAuthMode mode) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => PhoneAuthScreen(mode: mode)),
+    );
+    if (result == true && mounted) {
+      await _auth.currentUser?.reload();
+      await _loadProfileData();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.profileUpdateSuccess),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _dismissRecoveryEmailNudge() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .set(
+          {'phone_only_prompted': FieldValue.increment(1)},
+          SetOptions(merge: true),
+        );
+    if (mounted) setState(() => _phoneOnlyPrompted++);
+  }
+
+  Widget _buildPhoneField(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (_linkedPhoneNumber != null) {
+      return InputDecorator(
+        decoration: InputDecoration(
+          labelText: l10n.profilePhoneLinkedLabel,
+          border: const OutlineInputBorder(),
+          suffixIcon: TextButton(
+            onPressed: () => _openPhoneAuth(PhoneAuthMode.change),
+            child: Text(l10n.profileChangePhone),
+          ),
+        ),
+        child: Text(_linkedPhoneNumber!),
+      );
+    }
+
+    final hasEmailOrGoogle = _isEmailUser ||
+        (_auth.currentUser?.providerData
+                .any((p) => p.providerId == 'google.com') ??
+            false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton.icon(
+          onPressed: () => _openPhoneAuth(PhoneAuthMode.link),
+          icon: const Icon(Icons.phone_outlined),
+          label: Text(l10n.profileLinkPhone),
+        ),
+        if (_isPhoneUser && !hasEmailOrGoogle && _phoneOnlyPrompted < 2) ...[
+          const SizedBox(height: 8),
+          Card(
+            color: colorScheme.secondaryContainer,
+            child: ListTile(
+              leading: Icon(
+                Icons.email_outlined,
+                color: colorScheme.onSecondaryContainer,
+              ),
+              title: Text(
+                l10n.profileAddRecoveryEmail,
+                style: TextStyle(
+                  color: colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                l10n.profileAddRecoveryEmailSubtitle,
+                style: TextStyle(
+                  color: colorScheme.onSecondaryContainer,
+                  fontSize: 12,
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const OptionalEmailPromptScreen(),
+                      ),
+                    ),
+                    child: Text(l10n.optionalEmailAddButton),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _dismissRecoveryEmailNudge,
+                    tooltip: l10n.optionalEmailSkip,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 
   Future<void> _changePassword() async {
     final l10n = AppLocalizations.of(context)!;
@@ -136,7 +249,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: currentPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(hintText: 'Current Password'),
+              decoration:
+                  const InputDecoration(hintText: 'Current Password'),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -148,7 +262,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: confirmPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(hintText: 'Confirm Password'),
+              decoration:
+                  const InputDecoration(hintText: 'Confirm Password'),
             ),
           ],
         ),
@@ -159,7 +274,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           FilledButton(
             onPressed: () async {
-              if (newPasswordController.text != confirmPasswordController.text) {
+              if (newPasswordController.text !=
+                  confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Passwords do not match')),
                 );
@@ -196,7 +312,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _deleteAccount() async {
     final l10n = AppLocalizations.of(context)!;
 
-    // First warning dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -217,9 +332,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirmed != true) return;
 
-    // Second step: Re-authentication
+    // Route to the right re-auth based on provider.
+    // Prefer email re-auth when both email and phone are linked.
     if (_isEmailUser) {
       await _reauthenticateEmail();
+    } else if (_isPhoneUser) {
+      await _reauthenticatePhone();
     } else {
       await _reauthenticateGoogle();
     }
@@ -257,8 +375,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(l10n.accountDeletedSuccess)),
                   );
-                  // Navigate to login or home
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/', (_) => false);
                 }
               } catch (e) {
                 if (mounted) {
@@ -289,7 +407,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.accountDeletedSuccess)),
         );
-        // Navigate to login or home
         Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
       }
     } catch (e) {
@@ -301,6 +418,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _reauthenticatePhone() async {
+    final l10n = AppLocalizations.of(context)!;
+    final phoneNumber = _linkedPhoneNumber;
+    if (phoneNumber == null) return;
+
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.phoneDeleteReauthTitle),
+        content: Text(l10n.phoneDeleteReauthSubtitle(phoneNumber)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.deleteAccountCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.deleteAccountConfirm),
+          ),
+        ],
+      ),
+    );
+
+    if (proceed != true || !mounted) return;
+
+    String? verificationId;
+    setState(() => _isLoading = true);
+
+    await AuthService.instance.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      onCodeSent: (id, _) {
+        verificationId = id;
+      },
+      onAutoVerified: (credential) async {
+        try {
+          await _profileService.deleteAccountPhoneAuth(
+            verificationId: credential.verificationId!,
+            smsCode: credential.smsCode!,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.accountDeletedSuccess)),
+            );
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (_) => false);
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.accountDeleteFailed)),
+            );
+          }
+        }
+      },
+      onFailed: (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.accountDeleteFailed)),
+          );
+        }
+      },
+    );
+
+    // If auto-retrieval didn't fire, prompt for the code manually.
+    if (verificationId != null && mounted) {
+      final codeController = TextEditingController();
+      final smsCode = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.phoneAuthEnterCode),
+          content: TextField(
+            controller: codeController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            decoration: const InputDecoration(counterText: ''),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(ctx, codeController.text.trim()),
+              child: Text(l10n.deleteAccountConfirm),
+            ),
+          ],
+        ),
+      );
+
+      if (smsCode != null && smsCode.length == 6 && mounted) {
+        try {
+          await _profileService.deleteAccountPhoneAuth(
+            verificationId: verificationId!,
+            smsCode: smsCode,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.accountDeletedSuccess)),
+            );
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (_) => false);
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.accountDeleteFailed)),
+            );
+          }
+        }
+      }
+    }
+
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -326,20 +562,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Phone field
-                  TextField(
-                    controller: _phoneController,
-                    maxLength: 20,
-                    decoration: InputDecoration(
-                      labelText: l10n.phoneLabel,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
+                  // Phone field — auth-driven
+                  _buildPhoneField(l10n),
                   const SizedBox(height: 16),
 
                   // Email (read-only)
                   TextField(
-                    controller: TextEditingController(text: _auth.currentUser?.email ?? ''),
+                    controller: TextEditingController(
+                      text: _auth.currentUser?.email ?? '',
+                    ),
                     readOnly: true,
                     decoration: InputDecoration(
                       labelText: l10n.emailLabel,
@@ -368,7 +599,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? l10n.subscriptionStatusPremium
                                 : l10n.subscriptionStatusFree,
                           ),
-                          backgroundColor: _isPremium ? Colors.green : Colors.grey,
+                          backgroundColor:
+                              _isPremium ? Colors.green : Colors.grey,
                         ),
                       ],
                     ),
@@ -416,7 +648,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 }

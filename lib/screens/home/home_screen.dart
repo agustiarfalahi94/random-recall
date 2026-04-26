@@ -24,7 +24,6 @@ import '../question/questions_list_screen.dart';
 import '../settings/faq_screen.dart';
 import '../settings/notification_schedule_screen.dart';
 import '../auth/display_name_setup_screen.dart';
-import '../challenge/existing_streak_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -684,8 +683,6 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     // Check if user has set a display name, prompt if not
     _checkAndShowDisplayNamePrompt();
 
-    // Check if user has an active challenge streak and show selection dialog
-    _checkAndShowExistingStreakDialog();
   }
 
   @override
@@ -726,63 +723,6 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _checkAndShowExistingStreakDialog() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Check for REGULAR active streak (not challenge mode)
-    final currentStreak = StreakService.instance.currentStreak;
-    final isChallengeActive = StreakService.instance.isChallengeActive;
-
-    // Check if user has already been asked about THIS streak
-    final lastStreakAsked = prefs.getInt('last_streak_asked_for_challenge') ?? 0;
-    final hasAlreadyBeenAsked = lastStreakAsked == currentStreak && currentStreak > 0;
-
-    debugPrint('HomeTab: Checking existing streak dialog. RegularStreak: $currentStreak, ChallengeActive: $isChallengeActive, AlreadyAsked: $hasAlreadyBeenAsked');
-
-    // Show dialog ONCE per streak if:
-    // 1. User has a regular streak (not in challenge mode)
-    // 2. We haven't already asked them about THIS specific streak
-    if (currentStreak > 0 && !isChallengeActive && !hasAlreadyBeenAsked) {
-      debugPrint('HomeTab: Showing existing streak dialog for $currentStreak-day streak');
-
-      // Mark this streak as asked so we don't show dialog again on next app open
-      await prefs.setInt('last_streak_asked_for_challenge', currentStreak);
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => ExistingStreakDialog(
-            currentStreak: currentStreak,
-            onKeepStreak: () {
-              debugPrint('HomeTab: User chose to keep existing streak');
-              // Dialog closes, user keeps their regular streak
-              if (mounted) Navigator.pop(context);
-            },
-            onStartChallenge: () {
-              debugPrint('HomeTab: User chose to start fresh challenge, navigating to settings');
-              // Navigate to notification schedule screen where they can start challenge
-              if (mounted) {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationScheduleScreen(
-                      scrollToTimer: true,
-                      isStartingChallenge: true,
-                    ),
-                  ),
-                );
-              }
-            },
-          ),
-        );
-      } else {
-        debugPrint('HomeTab: Widget not mounted, skipping existing streak dialog');
-      }
-    } else {
-      debugPrint('HomeTab: No active regular streak or already asked, skipping');
-    }
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {

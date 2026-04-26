@@ -1,0 +1,29 @@
+---
+description: Release workflow, versioning, branching, and testing context
+alwaysApply: true
+---
+
+## Workflow rules (must follow)
+
+- **Every change must be included in a git commit** (do not leave work uncommitted).
+- If a change requires a **version bump**, it must also include:
+  - a matching entry in `CHANGELOG.md`
+  - a matching **git tag** for that version
+
+## Versioning policy (X.Y.Z)
+
+- **X (first number)**: strictly locked — **never change X** unless the user explicitly instructs it.
+- **Y (second number)**: major feature release / major bugfix release.
+- **Z (third number)**: minor improvement / minor bugfix.
+- Keep `pubspec.yaml` `version:` and `CHANGELOG.md` headings consistent.
+
+## Branching policy
+
+- Branches: `main` (most stable) and `develop` (beta).
+- For bigger changes, prefer working on `develop` (or a feature branch targeting `develop`) and keep `main` stable.
+
+## Manual testing context
+
+- **Device 1**: Xiaomi 15, `agustiarfalahi@gmail.com` (Premium; used as real end-user).
+- **Device 2**: Xiaomi 12T, `agustiar18@gmail.com` (Free; used for sanity checks / second opinion).
+

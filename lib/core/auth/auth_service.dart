@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
 import '../services/analytics_service.dart';
+import '../streak/streak_service.dart';
 import '../sync/sync_service.dart';
 import '../plan/subscription_service.dart';
 
@@ -101,11 +102,98 @@ class AuthService {
     return userCredential;
   }
 
+  /// Initiates phone number verification — sends an SMS OTP.
+  /// [resendToken] is the token from a previous [onCodeSent] call; pass it
+  /// to trigger a resend without re-entering the phone number.
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required void Function(String verificationId, int? resendToken) onCodeSent,
+    required void Function(PhoneAuthCredential credential) onAutoVerified,
+    required void Function(FirebaseAuthException e) onFailed,
+    int? resendToken,
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: onAutoVerified,
+      verificationFailed: onFailed,
+      codeSent: onCodeSent,
+      codeAutoRetrievalTimeout: (_) {},
+      forceResendingToken: resendToken,
+    );
+  }
+
+  /// Completes OTP sign-in for a new or returning phone user.
+  Future<UserCredential> signInWithPhone(
+    String verificationId,
+    String smsCode,
+  ) async {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    final userCredential = await _auth.signInWithCredential(credential);
+    if (userCredential.user != null) {
+      await _ensureUserDocument(userCredential.user!);
+      await initializeUserSession();
+      AnalyticsService.instance.trackLogin(method: 'phone').ignore();
+      AnalyticsService.instance
+          .identify(userCredential.user!.uid)
+          .ignore();
+    }
+    return userCredential;
+  }
+
+  /// Links a phone credential to the currently signed-in account.
+  /// Use this when an existing email/Google user wants to add their phone.
+  Future<void> linkPhoneNumber(
+    String verificationId,
+    String smsCode,
+  ) async {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('Not signed in');
+    await user.linkWithCredential(credential);
+    await user.reload();
+    await _db.collection('users').doc(user.uid).update({
+      'phone_number': _auth.currentUser?.phoneNumber,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Changes the phone credential on the currently signed-in account.
+  /// Unlinks the old phone provider then links the new credential.
+  Future<void> changePhoneNumber(
+    String verificationId,
+    String smsCode,
+  ) async {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('Not signed in');
+    final hasPhone = user.providerData.any((p) => p.providerId == 'phone');
+    if (hasPhone) {
+      await user.unlink('phone');
+    }
+    await user.linkWithCredential(credential);
+    await user.reload();
+    await _db.collection('users').doc(user.uid).update({
+      'phone_number': _auth.currentUser?.phoneNumber,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Performs RevenueCat login and Cloud Restore only for verified users.
   /// Ensures user document exists (defensive — normally created at signup).
   Future<void> initializeUserSession() async {
     final user = currentUser;
-    if (user == null || !user.emailVerified) return;
+    // Phone users are verified by OTP — no emailVerified check needed for them.
+    final isVerified = user?.emailVerified == true || user?.phoneNumber != null;
+    if (user == null || !isVerified) return;
 
     await _ensureUserDocument(user);
     await SubscriptionService.instance.logIn(user.uid);
@@ -113,6 +201,11 @@ class AuthService {
       force: true,
       isInitialLogin: true,
     );
+    // Sync streak/challenge state from Firestore now that the user is
+    // authenticated. StreakService.initialize() only loads SharedPreferences
+    // (no Firestore) so it is safe to call at startup without a user.
+    // loadFromCloud() is the auth-required half — called here after login.
+    await StreakService.instance.loadFromCloud();
   }
 
   /// Force-reloads the user from Firebase servers.
@@ -222,7 +315,8 @@ class AuthService {
 
     if (!doc.exists) {
       await userDoc.set({
-        'email': user.email,
+        if (user.email != null) 'email': user.email,
+        if (user.phoneNumber != null) 'phone_number': user.phoneNumber,
         'is_premium': false,
         'created_at': FieldValue.serverTimestamp(),
       });

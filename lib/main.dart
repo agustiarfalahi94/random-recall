@@ -80,7 +80,9 @@ Future<void> main() async {
       await _getOrCreateDeviceId();
       await Firebase.initializeApp();
       await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.debug,
+        androidProvider: kDebugMode
+            ? AndroidProvider.debug
+            : AndroidProvider.playIntegrity,
       );
 
       // Crashlytics: route Flutter and async errors to Crashlytics + Sentry
@@ -142,7 +144,8 @@ Future<void> main() async {
       // Start In-App Purchase listener
       SubscriptionService.instance.init();
 
-      // Initialize StreakService (required before NotificationScheduleScreen can access isChallengeActive)
+      // Initialize StreakService local cache (SharedPreferences only — no Firestore).
+      // Firestore sync happens in initializeUserSession() after auth is confirmed.
       await StreakService.instance.initialize();
 
       // Wire up navigator key so notification taps can navigate
@@ -307,10 +310,12 @@ class _RandomRecallAppState extends State<RandomRecallApp>
                       );
                       final isAnonymous = user.isAnonymous;
 
-                      // If NOT Google and NOT Anonymous, it MUST be an Email user.
-                      // They are ONLY verified if emailVerified is strictly true.
+                      // Phone users are verified by OTP — include them.
                       final bool isVerified =
-                          isGoogle || isAnonymous || user.emailVerified;
+                          isGoogle ||
+                          isAnonymous ||
+                          user.emailVerified ||
+                          user.phoneNumber != null;
 
                       if (!isVerified) {
                         return const VerifyEmailScreen();

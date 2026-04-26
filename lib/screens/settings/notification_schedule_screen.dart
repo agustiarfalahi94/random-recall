@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,6 +49,27 @@ class _NotificationScheduleScreenState
   Set<int> _activeDays = {1, 2, 3, 4, 5, 6, 7}; // 1=Mon … 7=Sun
   int _timerSeconds = 0; // 0 = off
 
+  // Snapshot of values as-loaded from prefs — used to detect unsaved changes.
+  bool _savedRandomAnytime = true;
+  TimeOfDay _savedStartTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _savedEndTime = const TimeOfDay(hour: 20, minute: 0);
+  int _savedFrequency = 3;
+  Set<int> _savedActiveDays = {1, 2, 3, 4, 5, 6, 7};
+  int _savedTimerSeconds = 0;
+
+  bool get _hasChanges {
+    if (widget.isStartingChallenge) return true; // always saveable for new challenge
+    return _randomAnytime != _savedRandomAnytime ||
+        _startTime != _savedStartTime ||
+        _endTime != _savedEndTime ||
+        _frequency != _savedFrequency ||
+        !_setEquals(_activeDays, _savedActiveDays) ||
+        _timerSeconds != _savedTimerSeconds;
+  }
+
+  bool _setEquals(Set<int> a, Set<int> b) =>
+      a.length == b.length && a.containsAll(b);
+
   int _debugTaps = 0;
 
   void _handleDebugTap() {
@@ -94,21 +116,45 @@ class _NotificationScheduleScreenState
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
+    final loadedRandomAnytime = prefs.getBool('notif_random_anytime') ?? true;
+    final loadedStartTime = TimeOfDay(hour: prefs.getInt('notif_start_hour') ?? 8, minute: 0);
+    final loadedEndTime = TimeOfDay(hour: prefs.getInt('notif_end_hour') ?? 20, minute: 0);
+    final loadedFrequency = (prefs.getInt('notif_frequency') ?? 3).clamp(1, 10);
+    final loadedActiveDays = daysStr.split(',').map(int.parse).toSet();
+    final loadedTimerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+
     setState(() {
-      _randomAnytime = prefs.getBool('notif_random_anytime') ?? true;
-      _startTime = TimeOfDay(
-        hour: prefs.getInt('notif_start_hour') ?? 8,
-        minute: 0,
-      );
-      _endTime = TimeOfDay(
-        hour: prefs.getInt('notif_end_hour') ?? 20,
-        minute: 0,
-      );
-      _frequency = (prefs.getInt('notif_frequency') ?? 3).clamp(1, 10);
-      _activeDays = daysStr.split(',').map(int.parse).toSet();
-      _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
+      _randomAnytime = loadedRandomAnytime;
+      _startTime = loadedStartTime;
+      _endTime = loadedEndTime;
+      _frequency = loadedFrequency;
+      _activeDays = loadedActiveDays;
+      _timerSeconds = loadedTimerSeconds;
+
+      // Snapshot for change-detection
+      _savedRandomAnytime = loadedRandomAnytime;
+      _savedStartTime = loadedStartTime;
+      _savedEndTime = loadedEndTime;
+      _savedFrequency = loadedFrequency;
+      _savedActiveDays = Set.from(loadedActiveDays);
+      _savedTimerSeconds = loadedTimerSeconds;
+
       _isLoading = false;
     });
+
+    // If a challenge is active, enforce locked values in the UI.
+    if (StreakService.instance.isChallengeActive) {
+      final lockedAnytime = StreakService.instance.lockedRandomAnytime;
+      final lockedDays = StreakService.instance.lockedActiveDaysCsv;
+      if (mounted) {
+        setState(() {
+          if (lockedAnytime != null) _randomAnytime = lockedAnytime;
+          if (lockedDays != null) {
+            _activeDays = lockedDays.split(',').map(int.parse).toSet();
+          }
+        });
+      }
+    }
 
     // Auto-scroll to timer section if requested
     if (widget.scrollToTimer) {
@@ -128,12 +174,13 @@ class _NotificationScheduleScreenState
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
+    final isChallengeActive = StreakService.instance.isChallengeActive;
 
     // Challenge mode validation: timer must be 5 or 10 seconds only
     if (widget.isStartingChallenge && (_timerSeconds != 5 && _timerSeconds != 10)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Challenge Mode requires timer to be 5 or 10 seconds only'),
+          content: Text(l10n.challengeTimerRequirementSnack),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -174,7 +221,18 @@ class _NotificationScheduleScreenState
     setState(() => _isSaving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('notif_random_anytime', _randomAnytime);
+      // Challenge startup: force active days to all 7 days and lock them.
+      if (widget.isStartingChallenge) {
+        _activeDays = {1, 2, 3, 4, 5, 6, 7};
+      }
+
+      // If challenge is active, keep the timing mode locked to whatever was chosen at start.
+      final lockedAnytime = StreakService.instance.lockedRandomAnytime;
+      final effectiveAnytime = isChallengeActive && lockedAnytime != null
+          ? lockedAnytime
+          : _randomAnytime;
+
+      await prefs.setBool('notif_random_anytime', effectiveAnytime);
       await prefs.setInt('notif_start_hour', _startTime.hour);
       await prefs.setInt('notif_end_hour', _endTime.hour);
       await prefs.setInt('notif_frequency', _frequency);
@@ -184,10 +242,25 @@ class _NotificationScheduleScreenState
 
       // If starting a challenge, activate it
       if (widget.isStartingChallenge) {
-        await StreakService.instance.startChallenge(7, _frequency);
+        await StreakService.instance.startChallenge(
+          7,
+          _frequency,
+          lockedActiveDaysCsv: '1,2,3,4,5,6,7',
+          lockedRandomAnytime: effectiveAnytime,
+        );
       }
 
-      await NotificationService.instance.scheduleNotifications();
+      bool notifScheduledOk = true;
+      try {
+        await NotificationService.instance.scheduleNotifications();
+      } on PlatformException catch (pe) {
+        if (pe.code == 'exact_alarms_not_permitted') {
+          notifScheduledOk = false;
+        } else {
+          rethrow;
+        }
+      }
+
       AnalyticsService.instance
           .trackScheduleChanged(
             frequency: _frequency,
@@ -200,19 +273,26 @@ class _NotificationScheduleScreenState
       await SyncService.instance.performBackup();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isStartingChallenge
-                ? '🔥 Challenge Mode activated! You have 7 days.'
-                : l10n.scheduleSavedSnack,
+
+      if (!notifScheduledOk) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.exactAlarmPermissionWarning),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
           ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      // Pop twice if starting challenge (to get back to home), once otherwise
-      if (widget.isStartingChallenge) {
-        Navigator.of(context).pop();
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.isStartingChallenge
+                  ? l10n.challengeActivatedSnack(7)
+                  : l10n.scheduleSavedSnack,
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
       Navigator.of(context).pop();
     } catch (e) {
@@ -233,44 +313,44 @@ class _NotificationScheduleScreenState
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('🔥 Start 7-Day Challenge Mode?'),
+        title: Text(l10n.challengeConfirmTitle(7)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'This will RESET your current streak and start a new 7-day challenge.',
+                l10n.challengeConfirmBody,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text('Challenge Mode Requirements:'),
+              Text(l10n.challengeConfirmRequirementsTitle),
               const SizedBox(height: 8),
-              _buildRequirementBullet('✓ Answer ALL questions correctly'),
-              _buildRequirementBullet('✓ Timer locked to ${_timerSeconds}s'),
-              _buildRequirementBullet('✓ Notification frequency locked to $_frequency/day'),
-              _buildRequirementBullet('✓ Complete 7 consecutive days'),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementAnswers),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementTimer(_timerSeconds)),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementFrequency(_frequency)),
+              _buildRequirementBullet(l10n.challengeConfirmRequirementDays(7)),
               const SizedBox(height: 12),
-              const Text(
-                'Earn reward badge and free questions if you complete the challenge!',
+              Text(
+                l10n.challengeConfirmFooter,
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
-                  color: Colors.grey,
+                  color: Colors.grey.shade600,
                 ),
-              ),
+              )
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Start Challenge'),
+            child: Text(l10n.challengeWarningStart),
           ),
         ],
       ),
@@ -360,8 +440,16 @@ class _NotificationScheduleScreenState
     final dayLabels = _getDayLabels(l10n);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    // Disable time picker when: (1) random anytime is selected, OR (2) challenge mode is active
-    final timeDisabled = _randomAnytime || StreakService.instance.isChallengeActive;
+    final challengeActive = StreakService.instance.isChallengeActive;
+    // If challenge is active, lock the switch to the chosen mode.
+    final lockedAnytime = StreakService.instance.lockedRandomAnytime;
+    final effectiveAnytime = challengeActive && lockedAnytime != null
+        ? lockedAnytime
+        : _randomAnytime;
+    // Disable time pickers when anytime is on, OR when the challenge locked anytime-on.
+    final timePickersDisabled = effectiveAnytime;
+    // Disable the anytime switch while challenge is active (lock-in).
+    final anytimeSwitchDisabled = challengeActive;
 
     return Scaffold(
       appBar: AppBar(
@@ -557,9 +645,9 @@ class _NotificationScheduleScreenState
                     children: [
                       // Anytime switch — disabled during challenge mode
                       Opacity(
-                        opacity: timeDisabled ? 0.35 : 1.0,
+                        opacity: anytimeSwitchDisabled ? 0.35 : 1.0,
                         child: IgnorePointer(
-                          ignoring: timeDisabled,
+                          ignoring: anytimeSwitchDisabled,
                           child: SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(
@@ -573,7 +661,7 @@ class _NotificationScheduleScreenState
                                 fontSize: 13,
                               ),
                             ),
-                            value: _randomAnytime,
+                            value: effectiveAnytime,
                             onChanged: (v) => setState(() => _randomAnytime = v),
                           ),
                         ),
@@ -586,9 +674,9 @@ class _NotificationScheduleScreenState
 
                       // Start time — always visible, dimmed when anytime is on
                       Opacity(
-                        opacity: timeDisabled ? 0.35 : 1.0,
+                        opacity: timePickersDisabled ? 0.35 : 1.0,
                         child: IgnorePointer(
-                          ignoring: timeDisabled,
+                          ignoring: timePickersDisabled,
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Container(
@@ -625,9 +713,9 @@ class _NotificationScheduleScreenState
 
                       // End time — always visible, dimmed when anytime is on
                       Opacity(
-                        opacity: timeDisabled ? 0.35 : 1.0,
+                        opacity: timePickersDisabled ? 0.35 : 1.0,
                         child: IgnorePointer(
-                          ignoring: timeDisabled,
+                          ignoring: timePickersDisabled,
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Container(
@@ -768,86 +856,94 @@ class _NotificationScheduleScreenState
 
                 _SettingCard(
                   colorScheme: colorScheme,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Quick-select presets
-                      Row(
+                  child: Opacity(
+                    opacity: challengeActive ? 0.5 : 1,
+                    child: IgnorePointer(
+                      ignoring: challengeActive,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _PresetChip(
-                              label: l10n.presetDaily,
-                              isSelected: _activeDays.length == 7,
-                              colorScheme: colorScheme,
-                              onTap: () => setState(
-                                () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                          // Quick-select presets
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _PresetChip(
+                                  label: l10n.presetDaily,
+                                  isSelected: _activeDays.length == 7,
+                                  colorScheme: colorScheme,
+                                  onTap: () => setState(
+                                    () => _activeDays = {1, 2, 3, 4, 5, 6, 7},
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _PresetChip(
+                                  label: l10n.presetWeekdays,
+                                  isSelected:
+                                      _activeDays.length == 5 &&
+                                      _activeDays.every((d) => d <= 5),
+                                  colorScheme: colorScheme,
+                                  onTap: () =>
+                                      setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _PresetChip(
+                                  label: l10n.presetWeekends,
+                                  isSelected:
+                                      _activeDays.length == 2 &&
+                                      _activeDays.contains(6) &&
+                                      _activeDays.contains(7),
+                                  colorScheme: colorScheme,
+                                  onTap: () => setState(() => _activeDays = {6, 7}),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PresetChip(
-                              label: l10n.presetWeekdays,
-                              isSelected:
-                                  _activeDays.length == 5 &&
-                                  _activeDays.every((d) => d <= 5),
-                              colorScheme: colorScheme,
-                              onTap: () =>
-                                  setState(() => _activeDays = {1, 2, 3, 4, 5}),
-                            ),
+
+                          const SizedBox(height: 16),
+
+                          // Individual day chips
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(7, (index) {
+                              final day = index + 1;
+                              final isSelected = _activeDays.contains(day);
+                              return _DayChip(
+                                label: dayLabels[index],
+                                isSelected: isSelected,
+                                colorScheme: colorScheme,
+                                onTap: () {
+                                  setState(() {
+                                    if (isSelected && _activeDays.length > 1) {
+                                      _activeDays.remove(day);
+                                    } else if (!isSelected) {
+                                      _activeDays.add(day);
+                                    }
+                                  });
+                                },
+                              );
+                            }),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PresetChip(
-                              label: l10n.presetWeekends,
-                              isSelected:
-                                  _activeDays.length == 2 &&
-                                  _activeDays.contains(6) &&
-                                  _activeDays.contains(7),
-                              colorScheme: colorScheme,
-                              onTap: () => setState(() => _activeDays = {6, 7}),
+
+                          const SizedBox(height: 12),
+
+                          // Dynamic label
+                          Text(
+                            challengeActive
+                                ? l10n.lockedDuringChallenge
+                                : _activeDaysLabel(l10n),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: _activeDaysLabelColor(colorScheme),
                             ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Individual day chips
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(7, (index) {
-                          final day = index + 1;
-                          final isSelected = _activeDays.contains(day);
-                          return _DayChip(
-                            label: dayLabels[index],
-                            isSelected: isSelected,
-                            colorScheme: colorScheme,
-                            onTap: () {
-                              setState(() {
-                                if (isSelected && _activeDays.length > 1) {
-                                  _activeDays.remove(day);
-                                } else if (!isSelected) {
-                                  _activeDays.add(day);
-                                }
-                              });
-                            },
-                          );
-                        }),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Dynamic label
-                      Text(
-                        _activeDaysLabel(l10n),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _activeDaysLabelColor(colorScheme),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 // ── Battery optimisation whitelist ───────────────────────────
@@ -876,7 +972,18 @@ class _NotificationScheduleScreenState
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           child: FilledButton.icon(
-            onPressed: (_isLoading || _isSaving) ? null : _save,
+            onPressed: (_isLoading || _isSaving)
+                ? null
+                : _hasChanges
+                    ? _save
+                    : () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.noSettingsChanged),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
             icon: _isSaving
                 ? const SizedBox(
                     width: 18,
@@ -893,6 +1000,22 @@ class _NotificationScheduleScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
+              disabledBackgroundColor: null, // keep default disabled style
+            ).copyWith(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) return null;
+                if (!_hasChanges) {
+                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
+                }
+                return null; // use default filled colour
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) return null;
+                if (!_hasChanges) {
+                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
+                }
+                return null;
+              }),
             ),
           ),
         ),

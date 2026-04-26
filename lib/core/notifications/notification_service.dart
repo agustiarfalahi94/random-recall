@@ -13,6 +13,7 @@ import 'package:firebase_performance/firebase_performance.dart';
 import '../config/remote_config_service.dart';
 import '../database/database_helper.dart';
 import '../../models/question.dart';
+import '../streak/streak_service.dart';
 import 'notification_scheduler.dart';
 
 class NotificationService {
@@ -320,8 +321,11 @@ class NotificationService {
     final startHour = prefs.getInt('notif_start_hour') ?? rc.notifStartHour;
     final endHour = prefs.getInt('notif_end_hour') ?? rc.notifEndHour;
     final frequency = prefs.getInt('notif_frequency') ?? rc.notifFrequencyFree;
-    final activeDaysStr =
-        prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
+    final challengeActive = StreakService.instance.isChallengeActive;
+    final lockedDays = StreakService.instance.lockedActiveDaysCsv;
+    final activeDaysStr = challengeActive && lockedDays != null
+        ? lockedDays
+        : (prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7');
 
     debugPrint(
       'NotificationService: Settings used: randomAnytime=$randomAnytime, '
@@ -697,7 +701,8 @@ class NotificationService {
     required Question question,
     bool isTest = false,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
+    final isChallenge = StreakService.instance.isChallengeActive && !isTest;
+    final androidDetails = AndroidNotificationDetails(
       'random_recall_channel',
       'Random Recall',
       channelDescription: 'Random quiz reminders',
@@ -705,6 +710,7 @@ class NotificationService {
       priority: Priority.max,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
+      color: isChallenge ? const Color(0xFFFFB300) : null, // amber accent
       // Do NOT set category:alarm here — on Xiaomi HyperOS this routes the
       // notification through the system clock app's group, blocking it.
       // DND bypass is handled by the channel's audioAttributesUsage=alarm.
@@ -722,10 +728,10 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       id,
-      title,
+      isChallenge ? '🔥 $title' : title,
       body,
       scheduledDate,
-      const NotificationDetails(android: androidDetails),
+      NotificationDetails(android: androidDetails),
       // alarmClock is intercepted by Xiaomi HyperOS power management for
       // third-party apps. exactAllowWhileIdle uses setExactAndAllowWhileIdle()
       // which bypasses that interception while still being exact and
