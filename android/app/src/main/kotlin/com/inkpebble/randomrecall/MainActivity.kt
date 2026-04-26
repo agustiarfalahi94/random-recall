@@ -19,7 +19,8 @@ class MainActivity : FlutterActivity() {
         // file that the Firebase App Check debug SDK reads from. This ensures the token
         // matches the one registered in Firebase Console, even after clearing app data.
         // Only applies to debug builds — release builds use Play Integrity.
-        if (BuildConfig.DEBUG) {
+        val isDebuggable = applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
+        if (isDebuggable) {
             getSharedPreferences("com.google.firebase.appcheck.debug.store", Context.MODE_PRIVATE)
                 .edit()
                 .putString("debug_token", "F8555F6B-CCF7-450D-9302-3E135386637F")
