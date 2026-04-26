@@ -86,7 +86,10 @@ class AdService {
   }
 
   void _refreshBannerVisible() {
-    bannerVisible.value = !_isPremium && !_onExcludedScreen && _bannerLoaded;
+    final next = !_isPremium && !_onExcludedScreen && _bannerLoaded;
+    if (bannerVisible.value == next) return;
+    // Defer to avoid markNeedsBuild during build (called from initState/dispose).
+    Future.microtask(() => bannerVisible.value = next);
   }
 
   // ── Banner ad loading ──────────────────────────────────────────────────────
