@@ -5,6 +5,26 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.1] — 2026-04-26
+
+### Added
+- **Explicit Challenge Mode entry point** — Home screen now has a dedicated Challenge Mode card with "7-Day" and "14-Day" start buttons. Users opt in deliberately rather than triggering challenge mode implicitly by setting the timer to ≤ 10 s.
+  - Active challenge shows a day-progress bar (e.g. Day 3 / 7) and a "Stop Challenge" confirmation button.
+  - Start flow reads the current notification frequency from prefs and shows the existing rules/rewards dialog before committing.
+
+### Fixed
+- **Ad banner disappeared after second notification question** — `AdService.enterExcludedScreen()` and `exitExcludedScreen()` are called from `initState`/`dispose`, which run during Flutter's build/unmount phases. Synchronously updating the `ValueNotifier` triggered "setState called during build" exceptions, leaving the banner stuck in the hidden state after returning from a question screen. Fixed by deferring the notifier update with `Future.microtask`.
+- **Ads not loading on Xiaomi 12T (free user)** — Both test devices (Xiaomi 15 and Xiaomi 12T) are now registered via `MobileAds.instance.updateRequestConfiguration(RequestConfiguration(testDeviceIds: [...]))` so the SDK serves test ads instead of silently failing with error code 0.
+- **Premium user received "+1 question slot" on challenge completion** — `_isPremium` in `QuestionScreen` and `NotificationQuestionScreen` defaults to `false` and is loaded asynchronously. If the user graded before `_loadInitialSettings()` resolved, `recordChallengeAnswer(isPremiumUser: false)` ran with the wrong value. Fixed by calling `PlanService.isPremium()` fresh at the start of the grading block.
+
+### Changed
+- **Challenge Mode decoupled from timer setting** — The notification timer (0-90 s) is now a pure UX preference. It no longer triggers or gates challenge mode. Notification settings (timer, frequency, active days) are no longer locked while a challenge is active.
+- **Challenge Mode header removed from Notification Settings** — The "Challenge Mode" gradient hero section and fire-emoji display are removed from the notification schedule screen. The screen now shows only notification scheduling controls.
+- **Timer-streak removed** — `StreakService.recordActivity()` is no longer called from question screens. The old 7-day timer-streak card on the home screen (which accumulated a streak based on answering with a ≤ 10 s timer) is replaced by the explicit Challenge Mode card. Bonus questions are now earned exclusively through challenge completion.
+- **ChallengeWarningDialog** — "Timer locked to 5–10 s only" and "Notification frequency locked" rules removed from the warning dialog, as neither constraint applies to the new flow.
+
+---
+
 ## [0.12.0] — 2026-04-26
 
 ### Added
