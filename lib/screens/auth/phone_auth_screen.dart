@@ -70,7 +70,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       phoneNumber: _completePhoneNumber,
       resendToken: isResend ? _resendToken : null,
       onCodeSent: (verificationId, resendToken) {
-        debugPrint('PhoneAuth: onCodeSent — verificationId=$verificationId');
         if (!mounted) return;
         setState(() {
           _verificationId = verificationId;
@@ -96,7 +95,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         }
       },
       onFailed: (e) {
-        debugPrint('PhoneAuth: onFailed — code=${e.code} message=${e.message}');
         if (!mounted) return;
         setState(() {
           _isLoading = false;
