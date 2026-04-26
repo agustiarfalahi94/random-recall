@@ -1,6 +1,6 @@
 name: random_recall
 description: A random recall quiz notification app.
-version: 0.11.3+21
+version: 0.12.0+22
 publish_to: 'none'
 
 environment:
@@ -50,6 +50,9 @@ dependencies:
   android_intent_plus: ^5.0.0
   purchases_flutter: ^9.16.1
   http: ^1.1.0
+
+  # Ads
+  google_mobile_ads: ^5.1.0
 
   # Crash reporting & analytics
   sentry_flutter: ^8.10.1

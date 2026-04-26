@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/ads/ad_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/plan/plan_service.dart';
@@ -53,6 +54,7 @@ class _QuestionScreenState extends State<QuestionScreen>
   @override
   void initState() {
     super.initState();
+    AdService.instance.enterExcludedScreen();
     _revealController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -67,6 +69,7 @@ class _QuestionScreenState extends State<QuestionScreen>
 
   @override
   void dispose() {
+    AdService.instance.exitExcludedScreen();
     _countdownTimer?.cancel();
     _revealController.dispose();
     super.dispose();
@@ -245,6 +248,12 @@ class _QuestionScreenState extends State<QuestionScreen>
           SnackBar(content: Text(l10n.failedToSaveScore(e.toString()))),
         );
       }
+    }
+
+    // Show interstitial ad after every organic answer (frequency cap enforced
+    // inside AdService — max 5/day, min 10 min apart).
+    if (!widget.isPractice) {
+      AdService.instance.showInterstitialAd().ignore();
     }
   }
 
