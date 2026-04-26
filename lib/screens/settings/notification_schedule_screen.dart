@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/notifications/notification_service.dart';
 import '../../core/services/analytics_service.dart';
-import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../../core/utils/battery_optimization.dart';
 import '../../core/utils/device_info.dart';
@@ -16,15 +15,10 @@ class NotificationScheduleScreen extends StatefulWidget {
   const NotificationScheduleScreen({
     super.key,
     this.scrollToTimer = false,
-    this.isStartingChallenge = false,
   });
 
-  /// When true, the screen will auto-scroll to the Challenge Mode section.
+  /// When true, the screen will auto-scroll to the Timer section.
   final bool scrollToTimer;
-
-  /// When true, user is setting up a NEW challenge from the existing streak dialog.
-  /// Pressing save will start the challenge, not just update notification settings.
-  final bool isStartingChallenge;
 
   @override
   State<NotificationScheduleScreen> createState() =>
@@ -58,7 +52,6 @@ class _NotificationScheduleScreenState
   int _savedTimerSeconds = 0;
 
   bool get _hasChanges {
-    if (widget.isStartingChallenge) return true; // always saveable for new challenge
     return _randomAnytime != _savedRandomAnytime ||
         _startTime != _savedStartTime ||
         _endTime != _savedEndTime ||
@@ -142,20 +135,6 @@ class _NotificationScheduleScreenState
       _isLoading = false;
     });
 
-    // If a challenge is active, enforce locked values in the UI.
-    if (StreakService.instance.isChallengeActive) {
-      final lockedAnytime = StreakService.instance.lockedRandomAnytime;
-      final lockedDays = StreakService.instance.lockedActiveDaysCsv;
-      if (mounted) {
-        setState(() {
-          if (lockedAnytime != null) _randomAnytime = lockedAnytime;
-          if (lockedDays != null) {
-            _activeDays = lockedDays.split(',').map(int.parse).toSet();
-          }
-        });
-      }
-    }
-
     // Auto-scroll to timer section if requested
     if (widget.scrollToTimer) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -174,18 +153,6 @@ class _NotificationScheduleScreenState
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
-    final isChallengeActive = StreakService.instance.isChallengeActive;
-
-    // Challenge mode validation: timer must be 5 or 10 seconds only
-    if (widget.isStartingChallenge && (_timerSeconds != 5 && _timerSeconds != 10)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.challengeTimerRequirementSnack),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
 
     // The window must span at least 1 hour. Overnight windows (e.g. 11 PM → 2 AM)
     // are valid — the span wraps around midnight.
@@ -212,43 +179,17 @@ class _NotificationScheduleScreenState
       return;
     }
 
-    // If starting a challenge, show confirmation dialog first
-    if (widget.isStartingChallenge) {
-      final confirmed = await _showChallengeConfirmationDialog();
-      if (!confirmed) return;
-    }
-
     setState(() => _isSaving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Challenge startup: force active days to all 7 days and lock them.
-      if (widget.isStartingChallenge) {
-        _activeDays = {1, 2, 3, 4, 5, 6, 7};
-      }
 
-      // If challenge is active, keep the timing mode locked to whatever was chosen at start.
-      final lockedAnytime = StreakService.instance.lockedRandomAnytime;
-      final effectiveAnytime = isChallengeActive && lockedAnytime != null
-          ? lockedAnytime
-          : _randomAnytime;
-
-      await prefs.setBool('notif_random_anytime', effectiveAnytime);
+      await prefs.setBool('notif_random_anytime', _randomAnytime);
       await prefs.setInt('notif_start_hour', _startTime.hour);
       await prefs.setInt('notif_end_hour', _endTime.hour);
       await prefs.setInt('notif_frequency', _frequency);
       final sortedDays = _activeDays.toList()..sort();
       await prefs.setString('notif_active_days', sortedDays.join(','));
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
-
-      // If starting a challenge, activate it
-      if (widget.isStartingChallenge) {
-        await StreakService.instance.startChallenge(
-          7,
-          _frequency,
-          lockedActiveDaysCsv: '1,2,3,4,5,6,7',
-          lockedRandomAnytime: effectiveAnytime,
-        );
-      }
 
       bool notifScheduledOk = true;
       try {
@@ -285,11 +226,7 @@ class _NotificationScheduleScreenState
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              widget.isStartingChallenge
-                  ? l10n.challengeActivatedSnack(7)
-                  : l10n.scheduleSavedSnack,
-            ),
+            content: Text(l10n.scheduleSavedSnack),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -303,68 +240,6 @@ class _NotificationScheduleScreenState
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
-  }
-
-  Future<bool> _showChallengeConfirmationDialog() async {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.challengeConfirmTitle(7)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.challengeConfirmBody,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(l10n.challengeConfirmRequirementsTitle),
-              const SizedBox(height: 8),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementAnswers),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementTimer(_timerSeconds)),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementFrequency(_frequency)),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementDays(7)),
-              const SizedBox(height: 12),
-              Text(
-                l10n.challengeConfirmFooter,
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Colors.grey.shade600,
-                ),
-              )
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.challengeWarningStart),
-          ),
-        ],
-      ),
-    ) ?? false;
-  }
-
-  Widget _buildRequirementBullet(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 13),
-      ),
-    );
   }
 
   Future<void> _pickTime({required bool isStart}) async {
@@ -440,16 +315,7 @@ class _NotificationScheduleScreenState
     final dayLabels = _getDayLabels(l10n);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final challengeActive = StreakService.instance.isChallengeActive;
-    // If challenge is active, lock the switch to the chosen mode.
-    final lockedAnytime = StreakService.instance.lockedRandomAnytime;
-    final effectiveAnytime = challengeActive && lockedAnytime != null
-        ? lockedAnytime
-        : _randomAnytime;
-    // Disable time pickers when anytime is on, OR when the challenge locked anytime-on.
-    final timePickersDisabled = effectiveAnytime;
-    // Disable the anytime switch while challenge is active (lock-in).
-    final anytimeSwitchDisabled = challengeActive;
+    final timePickersDisabled = _randomAnytime;
 
     return Scaffold(
       appBar: AppBar(
@@ -467,61 +333,8 @@ class _NotificationScheduleScreenState
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
               children: [
-                // ── 🔥 Challenge Mode (top — most exciting feature) ───────────
-                Container(
-                  key: _timerSectionKey,
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.secondaryContainer,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Fire emoji scales up when timer is in the challenge zone
-                      _ChallengeFireDisplay(timerSeconds: _timerSeconds),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.challengeModeName,
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colorScheme.onPrimaryContainer,
-                          height: 1.05,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _timerSeconds == 0
-                            ? l10n.challengeModeOff(
-                                StreakService.challengeThreshold,
-                              )
-                            : _timerSeconds <= StreakService.challengeThreshold
-                            ? l10n.challengeModeActive
-                            : l10n.challengeModeRelaxed(
-                                StreakService.challengeThreshold,
-                              ),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: colorScheme.onPrimaryContainer.withOpacity(
-                            0.85,
-                          ),
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
                 _SettingCard(
+                  key: _timerSectionKey,
                   colorScheme: colorScheme,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,25 +351,15 @@ class _NotificationScheduleScreenState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                if (StreakService.instance.isChallengeActive)
-                                  Text(
-                                    'Warning: Challenge Active - Settings Locked',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: colorScheme.error,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    _timerSeconds == 0
-                                        ? l10n.noTimeLimit
-                                        : l10n.autoMarksWrong,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                                Text(
+                                  _timerSeconds == 0
+                                      ? l10n.noTimeLimit
+                                      : l10n.autoMarksWrong,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
+                                ),
                               ],
                             ),
                           ),
@@ -582,46 +385,29 @@ class _NotificationScheduleScreenState
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if (StreakService.instance.isChallengeActive)
-                        Opacity(
-                          opacity: 0.5,
-                          child: Slider(
-                            value: _timerSeconds.toDouble(),
-                            min: 5,
-                            max: 10,
-                            divisions: 1,
-                            label: _timerSeconds == 0
-                                ? l10n.off
-                                : '$_timerSeconds${l10n.secondsUnit}',
-                            onChanged: null,
-                          ),
-                        )
-                      else
-                        Slider(
-                          value: _timerSeconds.toDouble(),
-                          min: 0,
-                          max: 90,
-                          divisions: 18, // 0, 5, 10 … 90
-                          label: _timerSeconds == 0
-                              ? l10n.off
-                              : '$_timerSeconds${l10n.secondsUnit}',
-                          onChanged: (v) =>
-                              setState(() => _timerSeconds = v.round()),
-                        ),
+                      Slider(
+                        value: _timerSeconds.toDouble(),
+                        min: 0,
+                        max: 90,
+                        divisions: 18, // 0, 5, 10 … 90
+                        label: _timerSeconds == 0
+                            ? l10n.off
+                            : '$_timerSeconds${l10n.secondsUnit}',
+                        onChanged: (v) =>
+                            setState(() => _timerSeconds = v.round()),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            StreakService.instance.isChallengeActive ? '5' : l10n.off,
+                            l10n.off,
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           Text(
-                            StreakService.instance.isChallengeActive
-                                ? '10${l10n.secondsUnit}'
-                                : '90${l10n.secondsUnit}',
+                            '90${l10n.secondsUnit}',
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
@@ -643,28 +429,21 @@ class _NotificationScheduleScreenState
                   colorScheme: colorScheme,
                   child: Column(
                     children: [
-                      // Anytime switch — disabled during challenge mode
-                      Opacity(
-                        opacity: anytimeSwitchDisabled ? 0.35 : 1.0,
-                        child: IgnorePointer(
-                          ignoring: anytimeSwitchDisabled,
-                          child: SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              l10n.sendAtAnyTime,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(
-                              l10n.sendAtAnyTimeSubtitle,
-                              style: TextStyle(
-                                color: colorScheme.onSurfaceVariant,
-                                fontSize: 13,
-                              ),
-                            ),
-                            value: effectiveAnytime,
-                            onChanged: (v) => setState(() => _randomAnytime = v),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          l10n.sendAtAnyTime,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          l10n.sendAtAnyTimeSubtitle,
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 13,
                           ),
                         ),
+                        value: _randomAnytime,
+                        onChanged: (v) => setState(() => _randomAnytime = v),
                       ),
 
                       Divider(
@@ -771,23 +550,13 @@ class _NotificationScheduleScreenState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                if (StreakService.instance.isChallengeActive)
-                                  Text(
-                                    'Locked: ${StreakService.instance.lockedFrequency} questions/day during challenge',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  )
-                                else
-                                  Text(
-                                    _frequencyLabel(_frequency, l10n),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                                Text(
+                                  _frequencyLabel(_frequency, l10n),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
+                                ),
                               ],
                             ),
                           ),
@@ -800,28 +569,15 @@ class _NotificationScheduleScreenState
                           ),
                         ],
                       ),
-                      if (StreakService.instance.isChallengeActive)
-                        Opacity(
-                          opacity: 0.5,
-                          child: Slider(
-                            value: StreakService.instance.lockedFrequency.toDouble(),
-                            min: StreakService.instance.lockedFrequency.toDouble(),
-                            max: StreakService.instance.lockedFrequency.toDouble(),
-                            divisions: 1,
-                            label: '${StreakService.instance.lockedFrequency}',
-                            onChanged: null,
-                          ),
-                        )
-                      else
-                        Slider(
-                          value: _frequency.toDouble(),
-                          min: 1,
-                          max: 50,
-                          divisions: 49,
-                          label: '$_frequency',
-                          onChanged: (v) =>
-                              setState(() => _frequency = v.round()),
-                        ),
+                      Slider(
+                        value: _frequency.toDouble(),
+                        min: 1,
+                        max: 50,
+                        divisions: 49,
+                        label: '$_frequency',
+                        onChanged: (v) =>
+                            setState(() => _frequency = v.round()),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -856,11 +612,7 @@ class _NotificationScheduleScreenState
 
                 _SettingCard(
                   colorScheme: colorScheme,
-                  child: Opacity(
-                    opacity: challengeActive ? 0.5 : 1,
-                    child: IgnorePointer(
-                      ignoring: challengeActive,
-                      child: Column(
+                  child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Quick-select presets
@@ -932,9 +684,7 @@ class _NotificationScheduleScreenState
 
                           // Dynamic label
                           Text(
-                            challengeActive
-                                ? l10n.lockedDuringChallenge
-                                : _activeDaysLabel(l10n),
+                            _activeDaysLabel(l10n),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -943,8 +693,6 @@ class _NotificationScheduleScreenState
                           ),
                         ],
                       ),
-                    ),
-                  ),
                 ),
                 // ── Battery optimisation whitelist ───────────────────────────
                 if (!_isIgnoringBattery) ...[
@@ -1024,44 +772,6 @@ class _NotificationScheduleScreenState
   }
 }
 
-// ── Challenge fire display ────────────────────────────────────────────────────
-
-/// Shows 1, 2, or 3 fire emojis depending on timer intensity.
-/// - 0 (off): one small dimmed fire
-/// - 21–90s (too relaxed): one normal fire
-/// - 5–20s (challenge zone!): THREE large fires side by side
-class _ChallengeFireDisplay extends StatelessWidget {
-  const _ChallengeFireDisplay({required this.timerSeconds});
-  final int timerSeconds;
-
-  @override
-  Widget build(BuildContext context) {
-    final isChallenge =
-        timerSeconds > 0 && timerSeconds <= StreakService.challengeThreshold;
-    final isOff = timerSeconds == 0;
-
-    if (isChallenge) {
-      // Full blaze — three big fires
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Text('🔥', style: TextStyle(fontSize: 52)),
-          SizedBox(width: 2),
-          Text('🔥', style: TextStyle(fontSize: 44)),
-          SizedBox(width: 2),
-          Text('🔥', style: TextStyle(fontSize: 36)),
-        ],
-      );
-    }
-
-    // Single fire: big but dimmed when off, normal when relaxed
-    return Opacity(
-      opacity: isOff ? 0.45 : 0.7,
-      child: Text('🔥', style: TextStyle(fontSize: isOff ? 28 : 36)),
-    );
-  }
-}
-
 // ── Shared widgets ─────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
@@ -1083,7 +793,7 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _SettingCard extends StatelessWidget {
-  const _SettingCard({required this.colorScheme, required this.child});
+  const _SettingCard({super.key, required this.colorScheme, required this.child});
   final ColorScheme colorScheme;
   final Widget child;
 

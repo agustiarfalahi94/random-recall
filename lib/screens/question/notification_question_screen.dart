@@ -195,20 +195,6 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
             .trackQuestionAnswered(isCorrect: isCorrect, fromNotification: true)
             .ignore();
 
-        // Record streak only when timer is ON and ≤ the challenge threshold.
-        if (_timerSeconds > 0 &&
-            _timerSeconds <= StreakService.challengeThreshold) {
-          final result = await StreakService.recordActivity(
-            isPremiumUser: isPremiumNow,
-          );
-          if (result.milestoneReached && !isPremiumNow && mounted) {
-            await showDialog(
-              context: context,
-              builder: (_) => _StreakMilestoneDialog(streak: result.streak),
-            );
-          }
-        }
-
         // NEW Challenge Mode: wrong answer fails; correct answer advances once/day.
         if (StreakService.instance.isChallengeActive) {
           final result = await StreakService.instance.recordChallengeAnswer(

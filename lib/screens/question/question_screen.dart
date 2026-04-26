@@ -186,17 +186,6 @@ class _QuestionScreenState extends State<QuestionScreen>
             )
             .ignore();
 
-        // Record streak only when timer is ON and ≤ the challenge threshold.
-        if (_timerSeconds > 0 &&
-            _timerSeconds <= StreakService.challengeThreshold) {
-          final result = await StreakService.recordActivity(
-            isPremiumUser: isPremiumNow,
-          );
-          if (result.milestoneReached && !isPremiumNow && mounted) {
-            _showStreakMilestoneDialog(result.streak);
-          }
-        }
-
         // NEW Challenge Mode: wrong answer fails; correct answer advances once/day.
         if (streakService.isChallengeActive) {
           final result = await streakService.recordChallengeAnswer(
