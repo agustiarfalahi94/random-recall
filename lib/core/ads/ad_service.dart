@@ -43,6 +43,14 @@ class AdService {
     if (_isPremium) return; // premium users never get ads
 
     await MobileAds.instance.initialize();
+    await MobileAds.instance.updateRequestConfiguration(
+      RequestConfiguration(
+        testDeviceIds: [
+          '83E09F11EC864330DDCC14D0732D7D30', // Xiaomi 15
+          '511C623543A19E3BE41273359A5C2BE8', // Xiaomi 12T
+        ],
+      ),
+    );
     await _loadFrequencyState();
     _loadBannerAd();
     _preloadInterstitialAd();

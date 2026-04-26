@@ -171,6 +171,9 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
     try {
       // Test notifications are practice — don't affect score or streak.
       if (!widget.isPractice) {
+        // Fetch premium status fresh — _isPremium may still be false if
+        // grading happens before _loadInitialSettings() resolves.
+        final isPremiumNow = await PlanService.isPremium();
         final now = DateTime.now();
         _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
           ScoreRecord(
@@ -195,8 +198,10 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
         // Record streak only when timer is ON and ≤ the challenge threshold.
         if (_timerSeconds > 0 &&
             _timerSeconds <= StreakService.challengeThreshold) {
-          final result = await StreakService.recordActivity();
-          if (result.milestoneReached && mounted) {
+          final result = await StreakService.recordActivity(
+            isPremiumUser: isPremiumNow,
+          );
+          if (result.milestoneReached && !isPremiumNow && mounted) {
             await showDialog(
               context: context,
               builder: (_) => _StreakMilestoneDialog(streak: result.streak),
@@ -208,7 +213,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
         if (StreakService.instance.isChallengeActive) {
           final result = await StreakService.instance.recordChallengeAnswer(
             isCorrect: isCorrect,
-            isPremiumUser: _isPremium,
+            isPremiumUser: isPremiumNow,
           );
 
           if (mounted &&

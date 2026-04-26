@@ -160,6 +160,9 @@ class _QuestionScreenState extends State<QuestionScreen>
 
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
+        // Fetch premium status fresh here — _isPremium may still be false if
+        // grading happens before _loadInitialSettings() resolves.
+        final isPremiumNow = await PlanService.isPremium();
         final now = DateTime.now();
         _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
           ScoreRecord(
@@ -187,9 +190,9 @@ class _QuestionScreenState extends State<QuestionScreen>
         if (_timerSeconds > 0 &&
             _timerSeconds <= StreakService.challengeThreshold) {
           final result = await StreakService.recordActivity(
-            isPremiumUser: _isPremium,
+            isPremiumUser: isPremiumNow,
           );
-          if (result.milestoneReached && !_isPremium && mounted) {
+          if (result.milestoneReached && !isPremiumNow && mounted) {
             _showStreakMilestoneDialog(result.streak);
           }
         }
@@ -198,7 +201,7 @@ class _QuestionScreenState extends State<QuestionScreen>
         if (streakService.isChallengeActive) {
           final result = await streakService.recordChallengeAnswer(
             isCorrect: isCorrect,
-            isPremiumUser: _isPremium,
+            isPremiumUser: isPremiumNow,
           );
 
           if (!mounted) return;
