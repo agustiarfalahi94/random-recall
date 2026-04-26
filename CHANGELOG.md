@@ -5,29 +5,47 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.11.3] — 2026-04-26
+
+### Fixed
+- **App Check provider mismatch** — Release builds now use `AndroidProvider.playIntegrity` (production attestation) instead of the debug provider. Debug builds continue to use `AndroidProvider.debug`.
+- **App Check debug token timing** — Token is now seeded via `App.attachBaseContext()` (a custom `Application` subclass), which runs before Firebase's `ContentProvider` auto-initializes. Previous approach via `MainActivity.onCreate()` ran too late and was ignored.
+- **Kotlin build error** — Replaced `BuildConfig.DEBUG` (which required an explicit import) with `ApplicationInfo.FLAG_DEBUGGABLE`, which resolves without any import.
+
+### Changed
+- **Android manifest** — Removed ineffective `meta-data` App Check token entry; seeding is now handled natively in `App.kt`.
+
+---
+
 ## [0.11.2] — 2026-04-26
 
 ### Fixed
-- **Streak milestone reward given to premium users** — `recordActivity()` now accepts `isPremiumUser` and skips the +1 question slot grant for premium accounts. The milestone dialog is also suppressed for premium users (nothing to celebrate there).
-- **App Check debug token** — Token is now seeded directly into Firebase App Check's native SharedPreferences in `MainActivity.onCreate()` before Firebase initializes, guaranteeing the registered token is always used in debug builds regardless of whether app data was cleared.
+- **Streak milestone reward given to premium users** — `StreakService.recordActivity()` now accepts `isPremiumUser`; the +1 question slot is only granted to free-tier users at every 7-day milestone. The milestone dialog is also suppressed for premium users.
+- **App Check debug token** — Initial fix to seed the registered debug token (`F8555F6B-CCF7-450D-9302-3E135386637F`) into Firebase App Check's native SharedPreferences before Firebase initializes. (Superseded by v0.11.3 which corrects the timing.)
 
 ---
 
 ## [0.11.1] — 2026-04-25
 
+### Added
+- **Phone Number Authentication** — Full SMS-based authentication flow alongside existing Google and email sign-in.
+  - `AuthService`: `verifyPhoneNumber`, `signInWithPhone`, `linkPhoneNumber`, `changePhoneNumber`
+  - `PhoneAuthScreen` with three modes: sign-in, link to existing account, change number
+  - `OptionalEmailPromptScreen` — prompts phone-only users to add a recovery email address
+  - Auth gate updated to allow phone-verified users through
+  - Login screen: "Continue with Phone Number" button
+  - Profile screen: auth-driven phone field (shows verified number, link button, or change button)
+  - Delete account: re-authenticates phone users via fresh OTP before deletion
+  - `ProfileService.deleteAccountPhoneAuth()` for phone-based account deletion
+  - Full localization for all phone auth strings in English + Bahasa Indonesia
+- **Notification schedule: exact alarm permission warning** — `exact_alarms_not_permitted` `PlatformException` is now caught and shown as a user-friendly snackbar instead of crashing.
+- **Notification schedule: change detection** — Save button is visually greyed out and shows "No settings were changed" when tapped with no changes; snapshots settings on load for comparison.
+
 ### Fixed
 - **Phone auth input** — Phone number field now accepts digits only, enforces max 13 digits, and requires at least 9 digits before enabling Send OTP.
-- **Exact alarm permission** — Notification schedule save now gracefully handles Android `exact_alarms_not_permitted` and shows a user-friendly warning instead of crashing.
-
-### Improved
-- **Notification schedule save button** — Button is visually greyed out and shows "No settings were changed" snackbar when tapped with no changes, preventing unnecessary saves.
-- **Notification schedule change detection** — Snapshots loaded settings on open and compares before saving.
 
 ### Removed
-- **Auto-show existing streak dialog on home screen** — Dialog was shown every app open which felt intrusive; it is still shown contextually when starting a new challenge.
-
-### Added
-- **Localization completions** — All phone auth and notification schedule strings now present in English + Bahasa Indonesia.
+- **Auto-show existing streak dialog on home screen** — Was shown every app open which felt intrusive. Dialog is still accessible contextually when starting a new challenge via `ChallengeWarningDialog`.
 
 ---
 
