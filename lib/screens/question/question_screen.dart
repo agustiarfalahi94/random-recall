@@ -320,7 +320,12 @@ class _QuestionScreenState extends State<QuestionScreen>
                 children: [
                   Text(_category!.icon, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
-                  Text(_category!.name),
+                  Flexible(
+                    child: Text(
+                      _category!.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               )
             : Text(l10n.appTitle),
