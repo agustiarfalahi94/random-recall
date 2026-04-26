@@ -6,16 +6,13 @@ import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/app_provider.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../main.dart' show navigatorKey;
-import '../../core/plan/plan_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
-import '../challenge/challenge_warning_dialog.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
 import '../profile/profile_screen.dart';
@@ -766,18 +763,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   }
 
   Future<void> _startChallengeFlow(int duration) async {
-    final prefs = await SharedPreferences.getInstance();
-    final frequency = prefs.getInt('notif_frequency') ?? 3;
-    final isPremium = await PlanService.isPremium();
-
-    if (!mounted) return;
-    await showDialog(
-      context: context,
-      builder: (_) => ChallengeWarningDialog(
-        duration: duration,
-        frequency: frequency,
-        isPremiumUser: isPremium,
-        onStartChallenge: _refreshData,
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NotificationScheduleScreen(
+          isStartingChallenge: true,
+          challengeDuration: duration,
+        ),
       ),
     );
     _refreshData();
