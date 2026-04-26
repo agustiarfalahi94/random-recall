@@ -80,18 +80,10 @@ Future<void> main() async {
       await _getOrCreateDeviceId();
       await Firebase.initializeApp();
       await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.debug,
+        androidProvider: kDebugMode
+            ? AndroidProvider.debug
+            : AndroidProvider.playIntegrity,
       );
-      // TEMP: print App Check debug token so it can be registered in Firebase Console.
-      // Remove this after registering the token.
-      if (kDebugMode) {
-        try {
-          final token = await FirebaseAppCheck.instance.getToken(true);
-          debugPrint('AppCheck debug token: $token');
-        } catch (e) {
-          debugPrint('AppCheck getToken failed (expected if not yet registered): $e');
-        }
-      }
 
       // Crashlytics: route Flutter and async errors to Crashlytics + Sentry
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(

@@ -5,11 +5,5 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <application>
-        <!-- Firebase App Check debug token — register this UUID in Firebase Console:
-             App Check → Apps → [Android app] → Manage debug tokens → Add token -->
-        <meta-data
-            android:name="com.google.firebase.appcheck.debug.token"
-            android:value="F8555F6B-CCF7-450D-9302-3E135386637F" />
-    </application>
+
 </manifest>
