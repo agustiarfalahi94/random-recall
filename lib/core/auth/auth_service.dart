@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
+import '../notifications/notification_service.dart';
 import '../services/analytics_service.dart';
 import '../streak/streak_service.dart';
 import '../sync/sync_service.dart';
@@ -206,6 +207,13 @@ class AuthService {
     // (no Firestore) so it is safe to call at startup without a user.
     // loadFromCloud() is the auth-required half — called here after login.
     await StreakService.instance.loadFromCloud();
+
+    // If a challenge was active, the locked notification settings have been
+    // written back to SharedPreferences by loadFromCloud(). Reschedule now so
+    // notifications fire correctly on a fresh install or device switch.
+    if (StreakService.instance.isChallengeActive) {
+      await NotificationService.instance.scheduleNotifications();
+    }
   }
 
   /// Force-reloads the user from Firebase servers.

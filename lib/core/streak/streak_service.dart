@@ -31,6 +31,7 @@ class StreakService {
   static const _keyChallengeLockedFrequency = 'challenge_locked_frequency';
   static const _keyChallengeLockedActiveDays = 'challenge_locked_active_days'; // csv, e.g. 1,2,3,4,5,6,7
   static const _keyChallengeLockedRandomAnytime = 'challenge_locked_random_anytime'; // bool
+  static const _keyChallengeLockedTimerSeconds = 'challenge_locked_timer_seconds'; // int
   static const _keyChallengeLastAnswerDate = 'challenge_last_answer_date';
   static const _keyTotal7DayCompleted = 'total_7day_completed';
   static const _keyTotal14DayCompleted = 'total_14day_completed';
@@ -80,6 +81,7 @@ class StreakService {
   int get lockedFrequency => _prefs.getInt(_keyChallengeLockedFrequency) ?? 0;
   String? get lockedActiveDaysCsv => _prefs.getString(_keyChallengeLockedActiveDays);
   bool? get lockedRandomAnytime => _prefs.getBool(_keyChallengeLockedRandomAnytime);
+  int get lockedTimerSeconds => _prefs.getInt(_keyChallengeLockedTimerSeconds) ?? 5;
   int get total7DayCompleted => _prefs.getInt(_keyTotal7DayCompleted) ?? 0;
   int get total14DayCompleted => _prefs.getInt(_keyTotal14DayCompleted) ?? 0;
   bool get challengeBadgeUnlocked =>
@@ -96,11 +98,13 @@ class StreakService {
     int frequency, {
     String? lockedActiveDaysCsv,
     bool? lockedRandomAnytime,
+    int timerSeconds = 5,
   }) async {
     await _prefs.setBool(_keyChallengeModeActive, true);
     await _prefs.setInt(_keyChallengeDuration, duration);
     await _prefs.setInt(_keyChallengeModeDay, 1);
     await _prefs.setInt(_keyChallengeLockedFrequency, frequency);
+    await _prefs.setInt(_keyChallengeLockedTimerSeconds, timerSeconds);
     if (lockedActiveDaysCsv != null) {
       await _prefs.setString(_keyChallengeLockedActiveDays, lockedActiveDaysCsv);
     }
@@ -309,6 +313,7 @@ class StreakService {
                 'locked_frequency': lockedFrequency,
                 'locked_active_days': lockedActiveDaysCsv,
                 'locked_random_anytime': lockedRandomAnytime,
+                'locked_timer_seconds': lockedTimerSeconds,
                 'start_date': _prefs.getString(_keyChallengeModeStartDate),
                 'last_answer_date': _prefs.getString(_keyChallengeLastAnswerDate),
               },
@@ -349,21 +354,33 @@ class StreakService {
         // Restore challenge data
         if (data['challenge'] != null) {
           final challenge = data['challenge'];
-          await _prefs.setBool(_keyChallengeModeActive, challenge['active'] ?? false);
+          final active = challenge['active'] ?? false;
+          final freq = challenge['locked_frequency'] ?? 0;
+          final daysCsv = challenge['locked_active_days'] as String?;
+          final anytime = challenge['locked_random_anytime'] as bool?;
+          final timer = challenge['locked_timer_seconds'] ?? 5;
+
+          await _prefs.setBool(_keyChallengeModeActive, active);
           await _prefs.setInt(_keyChallengeModeDay, challenge['day'] ?? 0);
           await _prefs.setInt(_keyChallengeDuration, challenge['duration'] ?? 7);
-          await _prefs.setInt(_keyChallengeLockedFrequency, challenge['locked_frequency'] ?? 0);
-          if (challenge['locked_active_days'] != null) {
-            await _prefs.setString(_keyChallengeLockedActiveDays, challenge['locked_active_days']);
-          }
-          if (challenge['locked_random_anytime'] != null) {
-            await _prefs.setBool(_keyChallengeLockedRandomAnytime, challenge['locked_random_anytime'] ?? false);
-          }
+          await _prefs.setInt(_keyChallengeLockedFrequency, freq);
+          await _prefs.setInt(_keyChallengeLockedTimerSeconds, timer);
+          if (daysCsv != null) await _prefs.setString(_keyChallengeLockedActiveDays, daysCsv);
+          if (anytime != null) await _prefs.setBool(_keyChallengeLockedRandomAnytime, anytime);
           if (challenge['start_date'] != null) {
             await _prefs.setString(_keyChallengeModeStartDate, challenge['start_date']);
           }
           if (challenge['last_answer_date'] != null) {
             await _prefs.setString(_keyChallengeLastAnswerDate, challenge['last_answer_date']);
+          }
+
+          // Re-apply locked notification settings to SharedPreferences so
+          // notifications can be rescheduled correctly after a fresh install.
+          if (active && freq > 0) {
+            await _prefs.setInt('notif_frequency', freq);
+            await _prefs.setInt('notif_timer_seconds', timer);
+            if (daysCsv != null) await _prefs.setString('notif_active_days', daysCsv);
+            if (anytime != null) await _prefs.setBool('notif_random_anytime', anytime);
           }
         }
 

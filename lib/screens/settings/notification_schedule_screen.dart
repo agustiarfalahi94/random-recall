@@ -245,13 +245,14 @@ class _NotificationScheduleScreenState
       await prefs.setString('notif_active_days', sortedDays.join(','));
       await prefs.setInt('notif_timer_seconds', _timerSeconds);
 
-      // Activate the challenge, locking frequency, active days, and anytime mode.
+      // Activate the challenge, locking frequency, active days, anytime mode, and timer.
       if (widget.isStartingChallenge) {
         await StreakService.instance.startChallenge(
           widget.challengeDuration,
           _frequency,
           lockedActiveDaysCsv: sortedDays.join(','),
           lockedRandomAnytime: effectiveAnytime,
+          timerSeconds: _timerSeconds,
         );
       }
 
