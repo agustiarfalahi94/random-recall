@@ -5,6 +5,13 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.3] — 2026-04-27
+
+### Fixed
+- **AppBar title overflow in question screen** — When a challenge is active, the action row (day badge + timer badge + skip button) leaves very little space for the title. The category name text now truncates with an ellipsis instead of overflowing 64 px off-screen.
+
+---
+
 ## [0.12.2] — 2026-04-26
 
 ### Fixed
