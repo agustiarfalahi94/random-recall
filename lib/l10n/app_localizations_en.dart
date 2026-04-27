@@ -251,7 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetSuccess =>
-      'Success! Check your email inbox for the reset link.';
+      'If an account exists for this email, a reset link has been sent.';
 
   @override
   String get enterYourEmail => 'Enter your email';

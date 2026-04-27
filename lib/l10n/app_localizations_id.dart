@@ -248,7 +248,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendResetLink => 'Kirim Link Reset';
 
   @override
-  String get resetSuccess => 'Berhasil! Cek inbox email kamu untuk link reset.';
+  String get resetSuccess => 'Jika akun dengan email ini ada, link reset telah dikirim.';
 
   @override
   String get enterYourEmail => 'Masukkan email kamu';

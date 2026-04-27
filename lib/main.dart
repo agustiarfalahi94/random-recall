@@ -64,6 +64,8 @@ Future<void> _getOrCreateDeviceId() async {
   }
 }
 
+/// Runs all pre-runApp initialization. Extracted so integration tests can
+/// call it directly without going through runApp().
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _getOrCreateDeviceId();

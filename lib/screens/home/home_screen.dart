@@ -625,7 +625,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 // ── Home tab with Practice Now button ────────────────────────────────────────
 
 class _HomeTab extends StatefulWidget {
-  const _HomeTab({super.key});
+  const _HomeTab();
 
   @override
   State<_HomeTab> createState() => _HomeTabState();

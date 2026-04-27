@@ -291,13 +291,6 @@ class _QuestionScreenState extends State<QuestionScreen>
     }
   }
 
-  void _showStreakMilestoneDialog(int streak) {
-    showDialog(
-      context: context,
-      builder: (_) => _StreakMilestoneDialog(streak: streak),
-    );
-  }
-
   void _nextQuestion() {
     _stopTimer();
     _revealController.reset();
@@ -655,52 +648,6 @@ class _QuestionScreenState extends State<QuestionScreen>
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-}
-
-// ── Streak milestone dialog ───────────────────────────────────────────────────
-
-class _StreakMilestoneDialog extends StatelessWidget {
-  const _StreakMilestoneDialog({required this.streak});
-  final int streak;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('🔥', style: TextStyle(fontSize: 56)),
-          const SizedBox(height: 12),
-          Text(
-            l10n.streakDayTitle(streak),
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.streakDescription(streak),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.awesome),
-        ),
-      ],
     );
   }
 }

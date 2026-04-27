@@ -63,7 +63,11 @@ class SubscriptionService {
   /// Call this during logout
   Future<void> logOut() async {
     if (_isConfigured && !await Purchases.isAnonymous) {
-      await Purchases.logOut().catchError((_) => null);
+      try {
+        await Purchases.logOut();
+      } catch (e) {
+        debugPrint('RevenueCat logout failed: $e');
+      }
     }
     await PlanService.setPremiumStatus(false);
   }
