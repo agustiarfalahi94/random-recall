@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../providers/app_provider.dart';
 import '../../core/auth/auth_service.dart';
@@ -572,14 +571,6 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
     if (submitted == true && controller.text.trim().isNotEmpty) {
       try {
-        final eventId = await Sentry.captureMessage('User feedback');
-        await Sentry.captureUserFeedback(
-          SentryUserFeedback(
-            eventId: eventId,
-            comments: controller.text.trim(),
-            email: AuthService.instance.currentUser?.email,
-          ),
-        );
         if (context.mounted) {
           ScaffoldMessenger.of(
             context,

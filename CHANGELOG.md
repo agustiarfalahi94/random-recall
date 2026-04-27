@@ -5,7 +5,11 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [0.12.3] — 2026-04-27
+## [0.12.4] — 2026-04-27
+
+### Removed
+- **Sentry** — removed `sentry_flutter` dependency and all Sentry integrations (DSN, navigator observer, user-feedback capture, error forwarding). Crash reporting is handled exclusively by Firebase Crashlytics.
+- **PostHog** — removed `posthog_flutter` dependency and all event-tracking calls. `AnalyticsService` event methods are retained as no-ops so call sites are unaffected; only Crashlytics user identity is still set on login/logout.
 
 ### Fixed
 - **AppBar title overflow in question screen** — When a challenge is active, the action row (day badge + timer badge + skip button) leaves very little space for the title. The category name text now truncates with an ellipsis instead of overflowing 64 px off-screen.
