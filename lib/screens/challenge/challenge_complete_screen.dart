@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 
 class ChallengeCompleteScreen extends StatelessWidget {
   final int duration; // 7 or 14 days
@@ -18,6 +19,7 @@ class ChallengeCompleteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -257,7 +259,7 @@ class ChallengeCompleteScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text('Back to Home'),
+                  child: Text(l10n.backToHome),
                 ),
               ],
             ),

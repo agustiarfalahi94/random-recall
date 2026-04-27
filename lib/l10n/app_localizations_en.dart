@@ -1507,6 +1507,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get existingStreakStart => 'Start Challenge Mode';
 
   @override
+  String get nextButton => 'Next →';
+
+  @override
+  String get updateProfileButton => 'Update Profile';
+
+  @override
+  String get confirmPasswordTitle => 'Confirm Password';
+
+  @override
+  String get enterPasswordHint => 'Enter your password';
+
+  @override
+  String get changePasswordConfirmAction => 'Change';
+
+  @override
+  String get challengeModeCardTitle => 'Challenge Mode';
+
+  @override
+  String challengeDayProgress(int day, int total) {
+    return 'Day $day / $total';
+  }
+
+  @override
+  String get challengeActiveDesc =>
+      'Answer one question correctly every day to keep your streak alive.';
+
+  @override
+  String get challengeInactiveDesc =>
+      'Answer correctly every day for 7 or 14 days to earn rewards. One wrong answer resets the run.';
+
+  @override
+  String get challengeSevenDay => '7-Day';
+
+  @override
+  String get challengeFourteenDay => '14-Day';
+
+  @override
+  String get challengeStopButton => 'Stop Challenge';
+
+  @override
+  String get challengeStopTitle => 'Stop Challenge?';
+
+  @override
+  String get challengeStopBody =>
+      'This will reset your current challenge progress. Are you sure?';
+
+  @override
+  String get challengeStopAction => 'Stop';
+
+  @override
   String get continueWithPhone => 'Continue with Phone Number';
 
   @override

@@ -770,10 +770,8 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Stop Challenge?'),
-        content: const Text(
-          'This will reset your current challenge progress. Are you sure?',
-        ),
+        title: Text(l10n.challengeStopTitle),
+        content: Text(l10n.challengeStopBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -784,7 +782,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: const Text('Stop'),
+            child: Text(l10n.challengeStopAction),
           ),
         ],
       ),
@@ -949,6 +947,7 @@ class _ChallengeModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
     final streakService = StreakService.instance;
@@ -977,7 +976,7 @@ class _ChallengeModeCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Challenge Mode',
+                  l10n.challengeModeCardTitle,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -991,7 +990,7 @@ class _ChallengeModeCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Day $day / $total',
+                    l10n.challengeDayProgress(day, total),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1006,7 +1005,7 @@ class _ChallengeModeCard extends StatelessWidget {
 
           if (isActive) ...[
             Text(
-              'Answer one question correctly every day to keep your streak alive.',
+              l10n.challengeActiveDesc,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.5,
@@ -1044,12 +1043,12 @@ class _ChallengeModeCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Stop Challenge'),
+                child: Text(l10n.challengeStopButton),
               ),
             ),
           ] else ...[
             Text(
-              'Answer correctly every day for 7 or 14 days to earn rewards. One wrong answer resets the run.',
+              l10n.challengeInactiveDesc,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.5,
@@ -1067,7 +1066,7 @@ class _ChallengeModeCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('7-Day'),
+                    child: Text(l10n.challengeSevenDay),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1080,7 +1079,7 @@ class _ChallengeModeCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('14-Day'),
+                    child: Text(l10n.challengeFourteenDay),
                   ),
                 ),
               ],

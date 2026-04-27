@@ -563,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Success! Check your email inbox for the reset link.'**
+  /// **'If an account exists for this email, a reset link has been sent.'**
   String get resetSuccess;
 
   /// No description provided for @enterYourEmail.
@@ -2543,7 +2543,7 @@ abstract class AppLocalizations {
   /// No description provided for @challengeWarningRule2.
   ///
   /// In en, this message translates to:
-  /// **'• Timer locked to 5 or 10 seconds only'**
+  /// **'• Timer locked between 5 - 10 seconds only'**
   String get challengeWarningRule2;
 
   /// No description provided for @challengeWarningRule3.
@@ -2681,13 +2681,13 @@ abstract class AppLocalizations {
   /// No description provided for @challengeConfirmRequirementDays.
   ///
   /// In en, this message translates to:
-  /// **'✓ Complete {days} consecutive days'**
+  /// **'✓ Complete the challenge in {days} consecutive days'**
   String challengeConfirmRequirementDays(int days);
 
   /// No description provided for @challengeConfirmFooter.
   ///
   /// In en, this message translates to:
-  /// **'Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.'**
+  /// **'All of your settings will be locked before the challenge ends, beware of what you choose! For the specific timing settings, start and end time would be customizable throughout the challenge period if Send at any time is switched off.'**
   String get challengeConfirmFooter;
 
   /// No description provided for @existingStreakTitle.
@@ -2719,6 +2719,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Challenge Mode'**
   String get existingStreakStart;
+
+  /// No description provided for @nextButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Next →'**
+  String get nextButton;
+
+  /// No description provided for @updateProfileButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Profile'**
+  String get updateProfileButton;
+
+  /// No description provided for @confirmPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get confirmPasswordTitle;
+
+  /// No description provided for @enterPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get enterPasswordHint;
+
+  /// No description provided for @changePasswordConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get changePasswordConfirmAction;
+
+  /// No description provided for @challengeModeCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Mode'**
+  String get challengeModeCardTitle;
+
+  /// No description provided for @challengeDayProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} / {total}'**
+  String challengeDayProgress(int day, int total);
+
+  /// No description provided for @challengeActiveDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer one question correctly every day to keep your streak alive.'**
+  String get challengeActiveDesc;
+
+  /// No description provided for @challengeInactiveDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer correctly every day for 7 or 14 days to earn rewards. One wrong answer resets the run.'**
+  String get challengeInactiveDesc;
+
+  /// No description provided for @challengeSevenDay.
+  ///
+  /// In en, this message translates to:
+  /// **'7-Day'**
+  String get challengeSevenDay;
+
+  /// No description provided for @challengeFourteenDay.
+  ///
+  /// In en, this message translates to:
+  /// **'14-Day'**
+  String get challengeFourteenDay;
+
+  /// No description provided for @challengeStopButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Challenge'**
+  String get challengeStopButton;
+
+  /// No description provided for @challengeStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Challenge?'**
+  String get challengeStopTitle;
+
+  /// No description provided for @challengeStopBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will reset your current challenge progress. Are you sure?'**
+  String get challengeStopBody;
+
+  /// No description provided for @challengeStopAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get challengeStopAction;
 
   /// No description provided for @continueWithPhone.
   ///

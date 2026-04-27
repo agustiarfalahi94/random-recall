@@ -80,9 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!DisplayNameService.isValidCharacters(trimmedName)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Display name contains invalid characters'),
-          ),
+          SnackBar(content: Text(l10n.displayNameInvalidCharacters)),
         );
       }
       return;
@@ -93,9 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (hasProfanity) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Display name contains inappropriate content'),
-          ),
+          SnackBar(content: Text(l10n.displayNameProfanity)),
         );
       }
       return;
@@ -277,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (newPasswordController.text !=
                   confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Passwords do not match')),
+                  SnackBar(content: Text(l10n.optionalEmailPasswordMismatch)),
                 );
                 return;
               }
@@ -302,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
               }
             },
-            child: const Text('Change'),
+            child: Text(l10n.changePasswordConfirmAction),
           ),
         ],
       ),
@@ -350,11 +346,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Password'),
+        title: Text(l10n.confirmPasswordTitle),
         content: TextField(
           controller: passwordController,
           obscureText: true,
-          decoration: const InputDecoration(hintText: 'Enter your password'),
+          decoration: InputDecoration(hintText: l10n.enterPasswordHint),
         ),
         actions: [
           TextButton(
@@ -388,7 +384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 setState(() => _isLoading = false);
               }
             },
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -612,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: _updateProfile,
-                      child: const Text('Update Profile'),
+                      child: Text(l10n.updateProfileButton),
                     ),
                   ),
                   const SizedBox(height: 16),

@@ -5,6 +5,14 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.6] — 2026-04-27
+
+### Fixed
+- **Challenge Mode card entirely in English** — All strings in the home screen Challenge Mode card were hardcoded English (`"Challenge Mode"`, `"Day X / Y"`, `"7-Day"`, `"14-Day"`, `"Stop Challenge"`, stop dialog title/body/action, active/inactive descriptions). Replaced with proper l10n keys in both `app_en.arb` and `app_id.arb`.
+- **Other hardcoded English strings** — Fixed remaining hardcoded strings across screens: `"Back to Home"` in `challenge_complete_screen.dart`, `"Next →"` in `first_question_page.dart`, and `"Update Profile"`, `"Confirm Password"`, `"Enter your password"`, `"Change"`, `"Delete"`, password-mismatch snackbar, and display name validation snackbars in `profile_screen.dart`.
+
+---
+
 ## [0.12.5] — 2026-04-27
 
 ### Fixed

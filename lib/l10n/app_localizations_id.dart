@@ -1517,6 +1517,56 @@ class AppLocalizationsId extends AppLocalizations {
   String get existingStreakStart => 'Mulai Mode Tantangan';
 
   @override
+  String get nextButton => 'Selanjutnya →';
+
+  @override
+  String get updateProfileButton => 'Perbarui Profil';
+
+  @override
+  String get confirmPasswordTitle => 'Konfirmasi Kata Sandi';
+
+  @override
+  String get enterPasswordHint => 'Masukkan kata sandi kamu';
+
+  @override
+  String get changePasswordConfirmAction => 'Ubah';
+
+  @override
+  String get challengeModeCardTitle => 'Mode Tantangan';
+
+  @override
+  String challengeDayProgress(int day, int total) {
+    return 'Hari $day / $total';
+  }
+
+  @override
+  String get challengeActiveDesc =>
+      'Jawab satu pertanyaan dengan benar setiap hari untuk menjaga streakmu.';
+
+  @override
+  String get challengeInactiveDesc =>
+      'Jawab dengan benar setiap hari selama 7 atau 14 hari untuk mendapatkan hadiah. Satu jawaban salah akan mengulang streak.';
+
+  @override
+  String get challengeSevenDay => '7 Hari';
+
+  @override
+  String get challengeFourteenDay => '14 Hari';
+
+  @override
+  String get challengeStopButton => 'Hentikan Tantangan';
+
+  @override
+  String get challengeStopTitle => 'Hentikan Tantangan?';
+
+  @override
+  String get challengeStopBody =>
+      'Ini akan mereset progres tantangan kamu saat ini. Yakin?';
+
+  @override
+  String get challengeStopAction => 'Hentikan';
+
+  @override
   String get continueWithPhone => 'Lanjutkan dengan Nomor Telepon';
 
   @override
