@@ -5,6 +5,13 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.5] — 2026-04-27
+
+### Fixed
+- **Challenge setup timer not clamped to valid range** — When opening the challenge setup screen (`isStartingChallenge: true`), the timer was initialised from the saved preference (e.g. 15 s), which is outside the 5–10 s challenge range. The slider showed an invalid value. The timer is now clamped to 5–10 s on load when starting a challenge; values below 5 s snap up to 5 s, values above 10 s snap down to 10 s.
+
+---
+
 ## [0.12.4] — 2026-04-27
 
 ### Removed

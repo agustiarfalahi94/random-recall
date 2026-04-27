@@ -134,7 +134,11 @@ class _NotificationScheduleScreenState
       _endTime = loadedEndTime;
       _frequency = loadedFrequency;
       _activeDays = loadedActiveDays;
-      _timerSeconds = loadedTimerSeconds;
+      // When starting a challenge the timer must be 5 or 10 s.
+      // If the current setting is outside that range, clamp to 5 s.
+      _timerSeconds = widget.isStartingChallenge
+          ? loadedTimerSeconds.clamp(5, 10)
+          : loadedTimerSeconds;
 
       // Snapshot for change-detection
       _savedRandomAnytime = loadedRandomAnytime;
