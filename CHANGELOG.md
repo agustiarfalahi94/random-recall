@@ -5,6 +5,13 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.7] — 2026-04-27
+
+### Fixed
+- **Remaining hardcoded English strings** — Password field hints ("Current Password", "New Password", "Confirm Password") in the change-password dialog, the questions list FAB tooltip ("Add"), and the challenge start error snackbar were all hardcoded English. Now wired through ARB keys in both `app_en.arb` and `app_id.arb`.
+
+---
+
 ## [0.12.6] — 2026-04-27
 
 ### Fixed
