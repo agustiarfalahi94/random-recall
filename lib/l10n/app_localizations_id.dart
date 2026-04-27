@@ -248,7 +248,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendResetLink => 'Kirim Link Reset';
 
   @override
-  String get resetSuccess => 'Jika akun dengan email ini ada, link reset telah dikirim.';
+  String get resetSuccess => 'Berhasil! Cek inbox email kamu untuk link reset.';
 
   @override
   String get enterYourEmail => 'Masukkan email kamu';
@@ -1396,7 +1396,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get challengeWarningRule2 =>
-      '• Timer terkunci pada 5 atau 10 detik saja';
+      '• Timer terkunci antara 5 - 10 detik saja';
 
   @override
   String get challengeWarningRule3 =>
@@ -1490,12 +1490,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String challengeConfirmRequirementDays(int days) {
-    return '✓ Selesaikan $days hari berturut-turut';
+    return '✓ Selesaikan tantangan dalam $days hari berturut-turut';
   }
 
   @override
   String get challengeConfirmFooter =>
-      'Pengaturan waktu kamu terkunci selama tantangan. Jika \"Kirim kapan saja\" AKTIF, jendela waktu terkunci. Jika NONAKTIF, kamu bisa mengubah jam mulai/selesai selama tantangan.';
+      'Semua pengaturan akan terkunci selama tantangan berlangsung, perhatikan pilihanmu! Untuk pengaturan waktu spesifik, waktu mulai dan selesai tetap bisa diubah selama tantangan jika Kirim kapan saja dimatikan.';
 
   @override
   String get existingStreakTitle => 'Anda Memiliki Streak Reguler Aktif';

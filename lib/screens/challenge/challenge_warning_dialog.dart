@@ -106,8 +106,6 @@ class _ChallengeWarningDialogState extends State<ChallengeWarningDialog> {
               const SizedBox(height: 8),
               Text(l10n.challengeWarningRule2),
               const SizedBox(height: 8),
-              Text(l10n.challengeWarningRule3),
-              const SizedBox(height: 8),
               Text(l10n.challengeWarningRule4(widget.duration)),
               const SizedBox(height: 8),
               Text(l10n.challengeWarningRule5(widget.duration)),

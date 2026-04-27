@@ -251,7 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetSuccess =>
-      'If an account exists for this email, a reset link has been sent.';
+      'Success! Check your email inbox for the reset link.';
 
   @override
   String get enterYourEmail => 'Enter your email';
@@ -1385,7 +1385,7 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Must answer ALL questions correctly (no mistakes allowed)';
 
   @override
-  String get challengeWarningRule2 => '• Timer locked to 5 or 10 seconds only';
+  String get challengeWarningRule2 => '• Timer locked between 5 - 10 seconds only';
 
   @override
   String get challengeWarningRule3 =>
@@ -1480,12 +1480,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String challengeConfirmRequirementDays(int days) {
-    return '✓ Complete $days consecutive days';
+    return '✓ Complete the challenge in $days consecutive days';
   }
 
   @override
   String get challengeConfirmFooter =>
-      'Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.';
+      'All of your settings will be locked before the challenge ends, beware of what you choose! For the specific timing settings, start and end time would be customizable throughout the challenge period if Send at any time is switched off.';
 
   @override
   String get existingStreakTitle => 'You Have an Active Regular Streak';

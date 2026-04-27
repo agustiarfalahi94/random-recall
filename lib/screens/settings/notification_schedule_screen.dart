@@ -317,7 +317,6 @@ class _NotificationScheduleScreenState
 
   Future<bool> _showChallengeConfirmationDialog() async {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final d = widget.challengeDuration;
 
     return await showDialog<bool>(
@@ -330,18 +329,10 @@ class _NotificationScheduleScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.challengeConfirmBody,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
               Text(l10n.challengeConfirmRequirementsTitle),
               const SizedBox(height: 8),
               _buildRequirementBullet(l10n.challengeConfirmRequirementAnswers),
               _buildRequirementBullet(l10n.challengeConfirmRequirementTimer(_timerSeconds)),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementFrequency(_frequency)),
               _buildRequirementBullet(l10n.challengeConfirmRequirementDays(d)),
               const SizedBox(height: 12),
               Text(
