@@ -89,7 +89,7 @@
   "forgotPasswordTitle": "Forgot Password?",
   "forgotPasswordSubtitle": "Enter your email and we will send you a reset link if the account exists.",
   "sendResetLink": "Send Reset Link",
-  "resetSuccess": "Success! Check your email inbox for the reset link.",
+  "resetSuccess": "If an account exists for this email, a reset link has been sent.",
   "enterYourEmail": "Enter your email",
   "resetError": "An error occurred. Please try again.",
 
@@ -563,7 +563,7 @@
     }
   },
   "challengeWarningRule1": "• Must answer ALL questions correctly (no mistakes allowed)",
-  "challengeWarningRule2": "• Timer locked to 5 or 10 seconds only",
+  "challengeWarningRule2": "• Timer locked between 5 - 10 seconds only",
   "challengeWarningRule3": "• Notification frequency locked (cannot change)",
   "challengeWarningRule4": "• Must complete every day for {duration} consecutive days",
   "@challengeWarningRule4": {
@@ -624,11 +624,11 @@
   "@challengeConfirmRequirementFrequency": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "challengeConfirmRequirementDays": "✓ Complete {days} consecutive days",
+  "challengeConfirmRequirementDays": "✓ Complete the challenge in {days} consecutive days",
   "@challengeConfirmRequirementDays": {
     "placeholders": { "days": { "type": "int" } }
   },
-  "challengeConfirmFooter": "Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.",
+  "challengeConfirmFooter": "All of your settings will be locked before the challenge ends, beware of what you choose! For the specific timing settings, start and end time would be customizable throughout the challenge period if Send at any time is switched off.",
   "existingStreakTitle": "You Have an Active Regular Streak",
   "existingStreakMessage": "You currently have a {streak}-day regular streak! Keep improving or try the new Challenge Mode.",
   "@existingStreakMessage": {

@@ -251,7 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetSuccess =>
-      'Success! Check your email inbox for the reset link.';
+      'If an account exists for this email, a reset link has been sent.';
 
   @override
   String get enterYourEmail => 'Enter your email';
@@ -1385,7 +1385,8 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Must answer ALL questions correctly (no mistakes allowed)';
 
   @override
-  String get challengeWarningRule2 => '• Timer locked between 5 - 10 seconds only';
+  String get challengeWarningRule2 =>
+      '• Timer locked between 5 - 10 seconds only';
 
   @override
   String get challengeWarningRule3 =>

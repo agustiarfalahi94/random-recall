@@ -89,7 +89,7 @@
   "forgotPasswordTitle": "Lupa Kata Sandi?",
   "forgotPasswordSubtitle": "Masukkan email kamu dan kami akan mengirim link reset jika akun tersebut ada.",
   "sendResetLink": "Kirim Link Reset",
-  "resetSuccess": "Berhasil! Cek inbox email kamu untuk link reset.",
+  "resetSuccess": "Jika akun dengan email ini ada, link reset telah dikirim.",
   "enterYourEmail": "Masukkan email kamu",
   "resetError": "Terjadi kesalahan. Coba lagi.",
 
@@ -563,7 +563,7 @@
     }
   },
   "challengeWarningRule1": "• Harus menjawab SEMUA pertanyaan dengan benar (tidak ada kesalahan)",
-  "challengeWarningRule2": "• Timer terkunci pada 5 atau 10 detik saja",
+  "challengeWarningRule2": "• Timer terkunci antara 5 - 10 detik saja",
   "challengeWarningRule3": "• Frekuensi notifikasi terkunci (tidak dapat diubah)",
   "challengeWarningRule4": "• Harus menyelesaikan setiap hari selama {duration} hari berturut-turut",
   "@challengeWarningRule4": {
@@ -624,11 +624,11 @@
   "@challengeConfirmRequirementFrequency": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "challengeConfirmRequirementDays": "✓ Selesaikan {days} hari berturut-turut",
+  "challengeConfirmRequirementDays": "✓ Selesaikan tantangan dalam {days} hari berturut-turut",
   "@challengeConfirmRequirementDays": {
     "placeholders": { "days": { "type": "int" } }
   },
-  "challengeConfirmFooter": "Pengaturan waktu kamu terkunci selama tantangan. Jika \"Kirim kapan saja\" AKTIF, jendela waktu terkunci. Jika NONAKTIF, kamu bisa mengubah jam mulai/selesai selama tantangan.",
+  "challengeConfirmFooter": "Semua pengaturan akan terkunci selama tantangan berlangsung, perhatikan pilihanmu! Untuk pengaturan waktu spesifik, waktu mulai dan selesai tetap bisa diubah selama tantangan jika Kirim kapan saja dimatikan.",
   "existingStreakTitle": "Anda Memiliki Streak Reguler Aktif",
   "existingStreakMessage": "Anda saat ini memiliki streak reguler {streak} hari! Terus tingkatkan atau coba Mode Tantangan baru.",
   "@existingStreakMessage": {
