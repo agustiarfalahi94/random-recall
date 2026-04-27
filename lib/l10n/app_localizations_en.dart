@@ -1522,6 +1522,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changePasswordConfirmAction => 'Change';
 
   @override
+  String get currentPasswordHint => 'Current Password';
+
+  @override
+  String get newPasswordHint => 'New Password';
+
+  @override
+  String get confirmPasswordHint => 'Confirm Password';
+
+  @override
+  String get addTooltip => 'Add';
+
+  @override
+  String challengeStartError(String error) {
+    return 'Error starting challenge: $error';
+  }
+
+  @override
   String get challengeModeCardTitle => 'Challenge Mode';
 
   @override

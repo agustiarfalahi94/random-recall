@@ -398,7 +398,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
         onPressed: pillIsError ? null : _showAddMenu,
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        tooltip: 'Add',
+        tooltip: l10n.addTooltip,
         child: const Icon(Icons.add_rounded, size: 28),
       ),
     );

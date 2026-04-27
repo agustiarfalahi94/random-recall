@@ -1532,6 +1532,23 @@ class AppLocalizationsId extends AppLocalizations {
   String get changePasswordConfirmAction => 'Ubah';
 
   @override
+  String get currentPasswordHint => 'Kata Sandi Lama';
+
+  @override
+  String get newPasswordHint => 'Kata Sandi Baru';
+
+  @override
+  String get confirmPasswordHint => 'Konfirmasi Kata Sandi';
+
+  @override
+  String get addTooltip => 'Tambah';
+
+  @override
+  String challengeStartError(String error) {
+    return 'Gagal memulai tantangan: $error';
+  }
+
+  @override
   String get challengeModeCardTitle => 'Mode Tantangan';
 
   @override

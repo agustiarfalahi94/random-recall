@@ -245,21 +245,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: currentPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(hintText: 'Current Password'),
+              decoration: InputDecoration(hintText: l10n.currentPasswordHint),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: newPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(hintText: 'New Password'),
+              decoration: InputDecoration(hintText: l10n.newPasswordHint),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: confirmPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(hintText: 'Confirm Password'),
+              decoration: InputDecoration(hintText: l10n.confirmPasswordHint),
             ),
           ],
         ),

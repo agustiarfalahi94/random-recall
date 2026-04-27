@@ -645,6 +645,14 @@
   "confirmPasswordTitle": "Confirm Password",
   "enterPasswordHint": "Enter your password",
   "changePasswordConfirmAction": "Change",
+  "currentPasswordHint": "Current Password",
+  "newPasswordHint": "New Password",
+  "confirmPasswordHint": "Confirm Password",
+  "addTooltip": "Add",
+  "challengeStartError": "Error starting challenge: {error}",
+  "@challengeStartError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
 
   "challengeModeCardTitle": "Challenge Mode",
   "challengeDayProgress": "Day {day} / {total}",

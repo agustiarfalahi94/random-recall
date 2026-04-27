@@ -645,6 +645,14 @@
   "confirmPasswordTitle": "Konfirmasi Kata Sandi",
   "enterPasswordHint": "Masukkan kata sandi kamu",
   "changePasswordConfirmAction": "Ubah",
+  "currentPasswordHint": "Kata Sandi Lama",
+  "newPasswordHint": "Kata Sandi Baru",
+  "confirmPasswordHint": "Konfirmasi Kata Sandi",
+  "addTooltip": "Tambah",
+  "challengeStartError": "Gagal memulai tantangan: {error}",
+  "@challengeStartError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
 
   "challengeModeCardTitle": "Mode Tantangan",
   "challengeDayProgress": "Hari {day} / {total}",

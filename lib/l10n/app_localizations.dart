@@ -2750,6 +2750,36 @@ abstract class AppLocalizations {
   /// **'Change'**
   String get changePasswordConfirmAction;
 
+  /// No description provided for @currentPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Password'**
+  String get currentPasswordHint;
+
+  /// No description provided for @newPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get newPasswordHint;
+
+  /// No description provided for @confirmPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get confirmPasswordHint;
+
+  /// No description provided for @addTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addTooltip;
+
+  /// No description provided for @challengeStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error starting challenge: {error}'**
+  String challengeStartError(String error);
+
   /// No description provided for @challengeModeCardTitle.
   ///
   /// In en, this message translates to:
