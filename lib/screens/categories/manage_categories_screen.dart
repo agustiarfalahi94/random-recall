@@ -413,7 +413,11 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
           updatedAt: DateTime.now(),
         ),
       );
-      AnalyticsService.instance.trackCategoryCreated().ignore();
+      final totalCategories =
+          (await DatabaseHelper.instance.getAllCategories()).length;
+      AnalyticsService.instance
+          .trackCategoryCreated(totalCategories: totalCategories)
+          .ignore();
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {

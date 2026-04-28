@@ -5,6 +5,22 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.2] — 2026-04-28
+
+### Improved
+- **Firebase Analytics — complete event parameters** — All events now carry the richest possible context:
+  - `app_open_detail` — adds `hour_of_day`, `day_of_week`
+  - `question_answered` — adds `timer_seconds`, `time_to_answer_seconds` (-1 when no timer), `hour_of_day`, `day_of_week`
+  - `onboarding_completed` — adds `auth_method` (google / password / phone)
+  - `notification_tapped` — adds `hour_of_day`, `day_of_week`
+  - `question_created` — adds `total_questions` (count after creation)
+  - `category_created` — adds `total_categories` (count after creation)
+  - `schedule_changed` — adds `active_days_count`
+  - `challenge_started` — adds `timer_seconds` (locked timer)
+  - `challenge_failed` — adds `duration_days` (which challenge type was abandoned)
+
+---
+
 ## [0.13.1] — 2026-04-28
 
 ### Added

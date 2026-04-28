@@ -184,6 +184,10 @@ class _QuestionScreenState extends State<QuestionScreen>
             .trackQuestionAnswered(
               isCorrect: isCorrect,
               fromNotification: false,
+              timerSeconds: _timerSeconds,
+              timeToAnswerSeconds: _timerSeconds > 0
+                  ? _timerSeconds - _remaining
+                  : -1,
             )
             .ignore();
 

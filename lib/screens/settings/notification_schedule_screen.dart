@@ -286,6 +286,7 @@ class _NotificationScheduleScreenState
             frequency: _frequency,
             randomAnytime: _randomAnytime,
             timerSeconds: _timerSeconds,
+            activeDaysCount: _activeDays.length,
           )
           .ignore();
 

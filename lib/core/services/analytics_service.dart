@@ -8,6 +8,11 @@ class AnalyticsService {
 
   final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  static int _hourOfDay() => DateTime.now().hour;
+  static int _dayOfWeek() => DateTime.now().weekday; // 1=Mon … 7=Sun
+
   // ── Identity ──────────────────────────────────────────────────────────────
 
   Future<void> identify(String userId, {String? email}) async {
@@ -37,6 +42,13 @@ class AnalyticsService {
   Future<void> trackAppOpen() async {
     try {
       await _analytics.logAppOpen();
+      await _analytics.logEvent(
+        name: 'app_open_detail',
+        parameters: {
+          'hour_of_day': _hourOfDay(),
+          'day_of_week': _dayOfWeek(),
+        },
+      );
     } catch (e) {
       debugPrint('AnalyticsService.trackAppOpen error: $e');
     }
@@ -61,6 +73,8 @@ class AnalyticsService {
   Future<void> trackQuestionAnswered({
     required bool isCorrect,
     required bool fromNotification,
+    required int timerSeconds,
+    required int timeToAnswerSeconds,
   }) async {
     try {
       await _analytics.logEvent(
@@ -68,6 +82,10 @@ class AnalyticsService {
         parameters: {
           'correct': isCorrect,
           'from_notification': fromNotification,
+          'timer_seconds': timerSeconds,
+          'time_to_answer_seconds': timeToAnswerSeconds,
+          'hour_of_day': _hourOfDay(),
+          'day_of_week': _dayOfWeek(),
         },
       );
     } catch (e) {
@@ -75,9 +93,12 @@ class AnalyticsService {
     }
   }
 
-  Future<void> trackOnboardingCompleted() async {
+  Future<void> trackOnboardingCompleted({required String authMethod}) async {
     try {
-      await _analytics.logEvent(name: 'onboarding_completed');
+      await _analytics.logEvent(
+        name: 'onboarding_completed',
+        parameters: {'auth_method': authMethod},
+      );
     } catch (e) {
       debugPrint('AnalyticsService.trackOnboardingCompleted error: $e');
     }
@@ -85,23 +106,35 @@ class AnalyticsService {
 
   Future<void> trackNotificationTapped() async {
     try {
-      await _analytics.logEvent(name: 'notification_tapped');
+      await _analytics.logEvent(
+        name: 'notification_tapped',
+        parameters: {
+          'hour_of_day': _hourOfDay(),
+          'day_of_week': _dayOfWeek(),
+        },
+      );
     } catch (e) {
       debugPrint('AnalyticsService.trackNotificationTapped error: $e');
     }
   }
 
-  Future<void> trackQuestionCreated() async {
+  Future<void> trackQuestionCreated({required int totalQuestions}) async {
     try {
-      await _analytics.logEvent(name: 'question_created');
+      await _analytics.logEvent(
+        name: 'question_created',
+        parameters: {'total_questions': totalQuestions},
+      );
     } catch (e) {
       debugPrint('AnalyticsService.trackQuestionCreated error: $e');
     }
   }
 
-  Future<void> trackCategoryCreated() async {
+  Future<void> trackCategoryCreated({required int totalCategories}) async {
     try {
-      await _analytics.logEvent(name: 'category_created');
+      await _analytics.logEvent(
+        name: 'category_created',
+        parameters: {'total_categories': totalCategories},
+      );
     } catch (e) {
       debugPrint('AnalyticsService.trackCategoryCreated error: $e');
     }
@@ -111,6 +144,7 @@ class AnalyticsService {
     required int frequency,
     required bool randomAnytime,
     required int timerSeconds,
+    required int activeDaysCount,
   }) async {
     try {
       await _analytics.logEvent(
@@ -119,6 +153,7 @@ class AnalyticsService {
           'frequency': frequency,
           'random_anytime': randomAnytime,
           'timer_seconds': timerSeconds,
+          'active_days_count': activeDaysCount,
         },
       );
     } catch (e) {
@@ -126,11 +161,17 @@ class AnalyticsService {
     }
   }
 
-  Future<void> trackChallengeStarted({required int duration}) async {
+  Future<void> trackChallengeStarted({
+    required int duration,
+    required int timerSeconds,
+  }) async {
     try {
       await _analytics.logEvent(
         name: 'challenge_started',
-        parameters: {'duration_days': duration},
+        parameters: {
+          'duration_days': duration,
+          'timer_seconds': timerSeconds,
+        },
       );
     } catch (e) {
       debugPrint('AnalyticsService.trackChallengeStarted error: $e');
@@ -148,11 +189,17 @@ class AnalyticsService {
     }
   }
 
-  Future<void> trackChallengeFailed({required int dayReached}) async {
+  Future<void> trackChallengeFailed({
+    required int dayReached,
+    required int durationDays,
+  }) async {
     try {
       await _analytics.logEvent(
         name: 'challenge_failed',
-        parameters: {'day_reached': dayReached},
+        parameters: {
+          'day_reached': dayReached,
+          'duration_days': durationDays,
+        },
       );
     } catch (e) {
       debugPrint('AnalyticsService.trackChallengeFailed error: $e');

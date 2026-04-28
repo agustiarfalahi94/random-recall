@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -148,7 +149,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         prefs.remove(_kOnboardingCategoryId),
       ]);
 
-      AnalyticsService.instance.trackOnboardingCompleted().ignore();
+      final user = FirebaseAuth.instance.currentUser;
+      final authMethod = user?.providerData
+              .map((p) => p.providerId)
+              .firstWhere(
+                (id) => id != 'firebase',
+                orElse: () => 'unknown',
+              ) ??
+          'unknown';
+      AnalyticsService.instance
+          .trackOnboardingCompleted(authMethod: authMethod)
+          .ignore();
 
       if (!mounted) return;
 
