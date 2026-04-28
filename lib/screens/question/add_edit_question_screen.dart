@@ -82,7 +82,10 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
             updatedAt: DateTime.now(),
           ),
         );
-        AnalyticsService.instance.trackQuestionCreated().ignore();
+        final totalQuestions = await db.getQuestionCount();
+        AnalyticsService.instance
+            .trackQuestionCreated(totalQuestions: totalQuestions)
+            .ignore();
       }
 
       if (!mounted) return;

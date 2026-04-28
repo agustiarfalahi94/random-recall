@@ -116,7 +116,10 @@ class StreakService {
     }
     await _prefs.setString(_keyChallengeModeStartDate, DateTime.now().toIso8601String());
     await _saveToFirestore();
-    AnalyticsService.instance.trackChallengeStarted(duration: duration).ignore();
+    AnalyticsService.instance.trackChallengeStarted(
+      duration: duration,
+      timerSeconds: timerSeconds,
+    ).ignore();
   }
 
   Future<void> incrementChallengeDay() async {
@@ -226,7 +229,10 @@ class StreakService {
       await _prefs.setInt(_keyStreak, 0);
       await resetChallenge();
       await _saveToFirestore();
-      AnalyticsService.instance.trackChallengeFailed(dayReached: dayReached).ignore();
+      AnalyticsService.instance.trackChallengeFailed(
+        dayReached: dayReached,
+        durationDays: challengeDuration,
+      ).ignore();
     }
   }
 

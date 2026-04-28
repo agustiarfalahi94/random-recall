@@ -194,7 +194,14 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
         );
 
         AnalyticsService.instance
-            .trackQuestionAnswered(isCorrect: isCorrect, fromNotification: true)
+            .trackQuestionAnswered(
+              isCorrect: isCorrect,
+              fromNotification: true,
+              timerSeconds: _timerSeconds,
+              timeToAnswerSeconds: _timerSeconds > 0
+                  ? _timerSeconds - _remaining
+                  : -1,
+            )
             .ignore();
 
         // NEW Challenge Mode: wrong answer fails; correct answer advances once/day.
