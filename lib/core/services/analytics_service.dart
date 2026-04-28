@@ -80,8 +80,8 @@ class AnalyticsService {
       await _analytics.logEvent(
         name: 'question_answered',
         parameters: {
-          'correct': isCorrect,
-          'from_notification': fromNotification,
+          'correct': isCorrect ? 1 : 0,
+          'from_notification': fromNotification ? 1 : 0,
           'timer_seconds': timerSeconds,
           'time_to_answer_seconds': timeToAnswerSeconds,
           'hour_of_day': _hourOfDay(),
@@ -151,7 +151,7 @@ class AnalyticsService {
         name: 'schedule_changed',
         parameters: {
           'frequency': frequency,
-          'random_anytime': randomAnytime,
+          'random_anytime': randomAnytime ? 1 : 0,
           'timer_seconds': timerSeconds,
           'active_days_count': activeDaysCount,
         },
