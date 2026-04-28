@@ -22,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   late TextEditingController _nameController;
+  late TextEditingController _emailController;
 
   bool _isEmailUser = false;
   bool _isPhoneUser = false;
@@ -34,6 +35,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _emailController = TextEditingController(
+      text: _auth.currentUser?.email ?? '',
+    );
     _loadProfileData();
   }
 
@@ -80,9 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!DisplayNameService.isValidCharacters(trimmedName)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Display name contains invalid characters'),
-          ),
+          SnackBar(content: Text(l10n.displayNameInvalidCharacters)),
         );
       }
       return;
@@ -93,9 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (hasProfanity) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Display name contains inappropriate content'),
-          ),
+          SnackBar(content: Text(l10n.displayNameProfanity)),
         );
       }
       return;
@@ -239,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.changePasswordButton),
@@ -249,21 +249,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: currentPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(hintText: 'Current Password'),
+              decoration: InputDecoration(hintText: l10n.currentPasswordHint),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: newPasswordController,
               obscureText: true,
-              decoration: const InputDecoration(hintText: 'New Password'),
+              decoration: InputDecoration(hintText: l10n.newPasswordHint),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: confirmPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(hintText: 'Confirm Password'),
+              decoration: InputDecoration(hintText: l10n.confirmPasswordHint),
             ),
           ],
         ),
@@ -277,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (newPasswordController.text !=
                   confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Passwords do not match')),
+                  SnackBar(content: Text(l10n.optionalEmailPasswordMismatch)),
                 );
                 return;
               }
@@ -302,11 +300,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
               }
             },
-            child: const Text('Change'),
+            child: Text(l10n.changePasswordConfirmAction),
           ),
         ],
       ),
     );
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
   }
 
   Future<void> _deleteAccount() async {
@@ -347,14 +348,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     final passwordController = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Password'),
+        title: Text(l10n.confirmPasswordTitle),
         content: TextField(
           controller: passwordController,
           obscureText: true,
-          decoration: const InputDecoration(hintText: 'Enter your password'),
+          decoration: InputDecoration(hintText: l10n.enterPasswordHint),
         ),
         actions: [
           TextButton(
@@ -388,11 +389,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 setState(() => _isLoading = false);
               }
             },
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
     );
+    passwordController.dispose();
   }
 
   Future<void> _reauthenticateGoogle() async {
@@ -512,6 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       );
+      codeController.dispose();
 
       if (smsCode != null && smsCode.length == 6 && mounted) {
         try {
@@ -568,9 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Email (read-only)
                   TextField(
-                    controller: TextEditingController(
-                      text: _auth.currentUser?.email ?? '',
-                    ),
+                    controller: _emailController,
                     readOnly: true,
                     decoration: InputDecoration(
                       labelText: l10n.emailLabel,
@@ -612,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: _updateProfile,
-                      child: const Text('Update Profile'),
+                      child: Text(l10n.updateProfileButton),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -648,6 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 }

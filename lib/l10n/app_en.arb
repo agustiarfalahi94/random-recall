@@ -89,7 +89,7 @@
   "forgotPasswordTitle": "Forgot Password?",
   "forgotPasswordSubtitle": "Enter your email and we will send you a reset link if the account exists.",
   "sendResetLink": "Send Reset Link",
-  "resetSuccess": "Success! Check your email inbox for the reset link.",
+  "resetSuccess": "If an account exists for this email, a reset link has been sent.",
   "enterYourEmail": "Enter your email",
   "resetError": "An error occurred. Please try again.",
 
@@ -563,7 +563,7 @@
     }
   },
   "challengeWarningRule1": "• Must answer ALL questions correctly (no mistakes allowed)",
-  "challengeWarningRule2": "• Timer locked to 5 or 10 seconds only",
+  "challengeWarningRule2": "• Timer locked between 5 - 10 seconds only",
   "challengeWarningRule3": "• Notification frequency locked (cannot change)",
   "challengeWarningRule4": "• Must complete every day for {duration} consecutive days",
   "@challengeWarningRule4": {
@@ -624,11 +624,11 @@
   "@challengeConfirmRequirementFrequency": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "challengeConfirmRequirementDays": "✓ Complete {days} consecutive days",
+  "challengeConfirmRequirementDays": "✓ Complete the challenge in {days} consecutive days",
   "@challengeConfirmRequirementDays": {
     "placeholders": { "days": { "type": "int" } }
   },
-  "challengeConfirmFooter": "Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.",
+  "challengeConfirmFooter": "All of your settings will be locked before the challenge ends, beware of what you choose! For the specific timing settings, start and end time would be customizable throughout the challenge period if Send at any time is switched off.",
   "existingStreakTitle": "You Have an Active Regular Streak",
   "existingStreakMessage": "You currently have a {streak}-day regular streak! Keep improving or try the new Challenge Mode.",
   "@existingStreakMessage": {
@@ -639,6 +639,70 @@
   "existingStreakWarning": "⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5–10s timer only\n• Active days locked during challenge\n• Timing settings locked for the whole challenge\n• Missing one = restart\n• Win = Reward badge + free questions",
   "existingStreakKeep": "Keep Regular Streak",
   "existingStreakStart": "Start Challenge Mode",
+
+  "nextButton": "Next →",
+  "updateProfileButton": "Update Profile",
+  "confirmPasswordTitle": "Confirm Password",
+  "enterPasswordHint": "Enter your password",
+  "changePasswordConfirmAction": "Change",
+  "currentPasswordHint": "Current Password",
+  "newPasswordHint": "New Password",
+  "confirmPasswordHint": "Confirm Password",
+  "addTooltip": "Add",
+  "challengeStartError": "Error starting challenge: {error}",
+
+  "challengeCompleteTitle": "Challenge Complete!",
+  "challengeCompletedDaysLabel": "You completed the {duration}-day challenge!",
+  "@challengeCompletedDaysLabel": {
+    "placeholders": { "duration": { "type": "int" } }
+  },
+  "challengeRewardsEarnedLabel": "Rewards Earned:",
+  "challengeRewardQuestionSlotsLabel": "+{count} Question Slot{plural}",
+  "@challengeRewardQuestionSlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardQuestionsDesc": "Permanently unlock more questions",
+  "challengeRewardCategorySlotsLabel": "+{count} Category Slot{plural}",
+  "@challengeRewardCategorySlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardCategoriesDesc": "Create more custom categories",
+  "challengeRewardBadgeUnlockedLabel": "Challenge Badge Unlocked",
+  "challengeRewardBadgeDesc": "Show off your achievement",
+  "challengeRewardTitleLabel": "Title: {title}",
+  "@challengeRewardTitleLabel": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "challengeRewardTitleDesc": "Premium exclusive achievement",
+  "challengeTitleChallenger": "Challenger",
+  "challengeTitleChampion": "Champion",
+  "challengeTitleLegend": "Legend",
+  "@challengeStartError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "challengeModeCardTitle": "Challenge Mode",
+  "challengeDayProgress": "Day {day} / {total}",
+  "@challengeDayProgress": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "challengeActiveDesc": "Answer one question correctly every day to keep your streak alive.",
+  "challengeInactiveDesc": "Answer correctly every day for 7 or 14 days to earn rewards. One wrong answer resets the run.",
+  "challengeSevenDay": "7-Day",
+  "challengeFourteenDay": "14-Day",
+  "challengeStopButton": "Stop Challenge",
+  "challengeStopTitle": "Stop Challenge?",
+  "challengeStopBody": "This will reset your current challenge progress. Are you sure?",
+  "challengeStopAction": "Stop",
 
   "continueWithPhone": "Continue with Phone Number",
   "phoneAuthTitle": "Phone Number",

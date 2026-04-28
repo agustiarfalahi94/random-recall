@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
+import '../notifications/notification_service.dart';
 import '../services/analytics_service.dart';
 import '../streak/streak_service.dart';
 import '../sync/sync_service.dart';
@@ -206,6 +207,13 @@ class AuthService {
     // (no Firestore) so it is safe to call at startup without a user.
     // loadFromCloud() is the auth-required half — called here after login.
     await StreakService.instance.loadFromCloud();
+
+    // If a challenge was active, the locked notification settings have been
+    // written back to SharedPreferences by loadFromCloud(). Reschedule now so
+    // notifications fire correctly on a fresh install or device switch.
+    if (StreakService.instance.isChallengeActive) {
+      await NotificationService.instance.scheduleNotifications();
+    }
   }
 
   /// Force-reloads the user from Firebase servers.
@@ -213,31 +221,12 @@ class AuthService {
     await _auth.currentUser?.reload();
   }
 
-  /// Sends a password reset email after verifying the user exists in Auth and Firestore.
+  /// Sends a password reset email.
+  /// Per Firebase's email enumeration protection guidance, we do not check
+  /// whether the email is registered before sending — the response is always
+  /// "if an account exists you'll receive a link", which prevents attackers
+  /// from probing which emails are registered.
   Future<void> sendPasswordResetEmail(String email) async {
-    // 1. Check if email exists in Firebase Authentication
-    final methods = await _auth.fetchSignInMethodsForEmail(email);
-    if (methods.isEmpty) {
-      throw FirebaseAuthException(
-        code: 'user-not-found',
-        message: 'No account found with this email address.',
-      );
-    }
-
-    // 2. Check if user document exists in Firestore database
-    final userQuery = await _db
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
-    if (userQuery.docs.isEmpty) {
-      throw FirebaseAuthException(
-        code: 'user-not-found',
-        message: 'User record not found in database.',
-      );
-    }
-
-    // 3. Trigger Firebase reset email
     await _auth.sendPasswordResetEmail(email: email);
   }
 

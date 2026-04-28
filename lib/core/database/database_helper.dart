@@ -27,6 +27,12 @@ class DatabaseHelper {
     _updateController.add(null);
   }
 
+  Future<void> dispose() async {
+    await _updateController.close();
+    await _db?.close();
+    _db = null;
+  }
+
   Database? _db;
 
   Future<Database> get database async {

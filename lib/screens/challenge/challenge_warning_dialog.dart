@@ -39,7 +39,7 @@ class _ChallengeWarningDialogState extends State<ChallengeWarningDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error starting challenge: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.challengeStartError(e.toString()))),
         );
       }
     } finally {
@@ -105,8 +105,6 @@ class _ChallengeWarningDialogState extends State<ChallengeWarningDialog> {
               Text(l10n.challengeWarningRule1),
               const SizedBox(height: 8),
               Text(l10n.challengeWarningRule2),
-              const SizedBox(height: 8),
-              Text(l10n.challengeWarningRule3),
               const SizedBox(height: 8),
               Text(l10n.challengeWarningRule4(widget.duration)),
               const SizedBox(height: 8),

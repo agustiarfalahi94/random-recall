@@ -1,14 +1,12 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../providers/app_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/auth/auth_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
@@ -574,24 +572,22 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
     if (submitted == true && controller.text.trim().isNotEmpty) {
       try {
-        final eventId = await Sentry.captureMessage('User feedback');
-        await Sentry.captureUserFeedback(
-          SentryUserFeedback(
-            eventId: eventId,
-            comments: controller.text.trim(),
-            email: AuthService.instance.currentUser?.email,
-          ),
-        );
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        await FirebaseFirestore.instance.collection('feedback').add({
+          'uid': uid,
+          'message': controller.text.trim(),
+          'submitted_at': FieldValue.serverTimestamp(),
+        });
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.feedbackSentSnack)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.feedbackSentSnack)),
+          );
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.feedbackFailedSnack)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.feedbackFailedSnack)),
+          );
         }
       }
     }
@@ -636,17 +632,15 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 // ── Home tab with Practice Now button ────────────────────────────────────────
 
 class _HomeTab extends StatefulWidget {
-  const _HomeTab({super.key});
+  const _HomeTab();
 
   @override
   State<_HomeTab> createState() => _HomeTabState();
 }
 
 class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
-  int _streak = 0;
-  int _timerSeconds = 0;
-  int _bonusQuestions = 0;
   int _unansweredCount = 0;
+  bool _displayNamePromptShown = false;
 
   StreamSubscription<void>? _answeredSub;
   StreamSubscription<void>? _databaseUpdateSub;
@@ -678,9 +672,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     });
 
     // Check if challenge daily requirement is met
-    StreakService.instance.checkChallengeDailyRequirement().ignore();
+    StreakService.instance.checkChallengeDailyRequirement().catchError(
+      (e) => debugPrint('HomeTab: Daily challenge check failed: $e'),
+    );
 
-    // Check if user has set a display name, prompt if not
+    // Check if user has set a display name, prompt if not (once per session)
     _checkAndShowDisplayNamePrompt();
 
   }
@@ -696,10 +692,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   }
 
   Future<void> _checkAndShowDisplayNamePrompt() async {
+    if (_displayNamePromptShown) return;
     final user = FirebaseAuth.instance.currentUser;
     debugPrint('HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"');
 
     if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+      _displayNamePromptShown = true;
       debugPrint('HomeTab: Showing display name setup dialog');
       // Show display name setup screen
       if (mounted) {
@@ -732,16 +730,10 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final streak = await StreakService.getStreak();
-    final bonus = await StreakService.getBonusQuestions();
     final unanswered = await NotificationService.instance.getUnansweredCount();
 
     if (mounted) {
       setState(() {
-        _streak = streak;
-        _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
-        _bonusQuestions = bonus;
         _unansweredCount = unanswered;
       });
     }
@@ -770,6 +762,46 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('HomeTab: badge timer setup error: $e');
+    }
+  }
+
+  Future<void> _startChallengeFlow(int duration) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NotificationScheduleScreen(
+          isStartingChallenge: true,
+          challengeDuration: duration,
+        ),
+      ),
+    );
+    _refreshData();
+  }
+
+  Future<void> _stopChallengeFlow() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.challengeStopTitle),
+        content: Text(l10n.challengeStopBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: Text(l10n.challengeStopAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await StreakService.instance.resetChallenge();
+      _refreshData();
     }
   }
 
@@ -903,20 +935,10 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
 
           const SizedBox(height: 32),
 
-          // ── Timer challenge card ─────────────────────────────────────────
-          _TimerChallengeCard(
-            streak: _streak,
-            timerSeconds: _timerSeconds,
-            bonusQuestions: _bonusQuestions,
-            onSetTimer: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const NotificationScheduleScreen(scrollToTimer: true),
-                ),
-              );
-              _refreshData();
-            },
+          // ── Challenge mode card ──────────────────────────────────────────
+          _ChallengeModeCard(
+            onStartChallenge: _startChallengeFlow,
+            onStopChallenge: _stopChallengeFlow,
           ),
         ],
       ),
@@ -924,164 +946,159 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   }
 }
 
-// ── Timer challenge card ──────────────────────────────────────────────────────
+// ── Challenge mode card ───────────────────────────────────────────────────────
 
-class _TimerChallengeCard extends StatelessWidget {
-  const _TimerChallengeCard({
-    required this.streak,
-    required this.timerSeconds,
-    required this.bonusQuestions,
-    required this.onSetTimer,
+class _ChallengeModeCard extends StatelessWidget {
+  const _ChallengeModeCard({
+    required this.onStartChallenge,
+    required this.onStopChallenge,
   });
 
-  final int streak;
-  final int timerSeconds;
-  final int bonusQuestions;
-  final VoidCallback onSetTimer;
+  final void Function(int duration) onStartChallenge;
+  final VoidCallback onStopChallenge;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
-    final timerOn = timerSeconds > 0;
-    // Challenge is only active when timer is ≤ threshold — relaxed timers don't count
-    final challengeActive =
-        timerSeconds > 0 && timerSeconds <= StreakService.challengeThreshold;
-    final daysToNext = challengeActive ? (7 - (streak % 7)) : 7;
-    final progressInCycle = challengeActive ? (streak % 7) : 0;
+    final streakService = StreakService.instance;
+    final isActive = streakService.isChallengeActive;
+    final day = streakService.challengeDay;
+    final total = streakService.challengeDuration;
 
-    return GestureDetector(
-      onTap: onSetTimer,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: timerOn
-                ? colorScheme.primary.withOpacity(0.3)
-                : colorScheme.outlineVariant.withOpacity(0.4),
-          ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isActive
+              ? colorScheme.primary.withValues(alpha: 0.4)
+              : colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text('🔥', style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 10),
-                Expanded(
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🏆', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.challengeModeCardTitle,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (isActive)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Text(
-                    l10n.timerChallengeTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    l10n.challengeDayProgress(day, total),
+                    style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
+                      color: colorScheme.onPrimaryContainer,
                     ),
                   ),
                 ),
-                if (bonusQuestions > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l10n.bonusCountLabel(bonusQuestions),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-                  ),
-                if (timerOn) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 16,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 8),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          if (isActive) ...[
             Text(
-              timerOn
-                  ? (timerSeconds <= StreakService.challengeThreshold
-                        ? l10n.timerChallengeActiveDesc(timerSeconds)
-                        : l10n.timerChallengeRelaxedDesc(
-                            timerSeconds,
-                            StreakService.challengeThreshold,
-                          ))
-                  : l10n.timerChallengeOffDesc(
-                      StreakService.challengeThreshold,
-                    ),
+              l10n.challengeActiveDesc,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
             ),
-
-            if (challengeActive) ...[
-              const SizedBox(height: 16),
-              // Progress bar: days in current 7-day cycle
-              Row(
-                children: List.generate(7, (i) {
-                  final filled = i < progressInCycle;
-                  return Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 4),
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: filled
-                            ? colorScheme.primary
-                            : colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                streak == 0
-                    ? l10n.streakStart
-                    : l10n.streakProgress(
-                        streak,
-                        streak == 1 ? '' : 's',
-                        daysToNext,
-                      ),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onSetTimer,
-                  icon: const Icon(Icons.timer_outlined, size: 18),
-                  label: Text(l10n.setATimer),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 44),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 16),
+            // Progress bar
+            Row(
+              children: List.generate(total, (i) {
+                final filled = i < day;
+                return Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(right: i < total - 1 ? 4 : 0),
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: filled
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
+                );
+              }),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: onStopChallenge,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
+                  minimumSize: const Size(0, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                child: Text(l10n.challengeStopButton),
               ),
-            ],
+            ),
+          ] else ...[
+            Text(
+              l10n.challengeInactiveDesc,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => onStartChallenge(7),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(l10n.challengeSevenDay),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => onStartChallenge(14),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(l10n.challengeFourteenDay),
+                  ),
+                ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
-    ); // GestureDetector + Container
+    );
   }
 }

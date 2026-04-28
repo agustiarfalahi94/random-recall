@@ -31,6 +31,7 @@ class StreakService {
   static const _keyChallengeLockedFrequency = 'challenge_locked_frequency';
   static const _keyChallengeLockedActiveDays = 'challenge_locked_active_days'; // csv, e.g. 1,2,3,4,5,6,7
   static const _keyChallengeLockedRandomAnytime = 'challenge_locked_random_anytime'; // bool
+  static const _keyChallengeLockedTimerSeconds = 'challenge_locked_timer_seconds'; // int
   static const _keyChallengeLastAnswerDate = 'challenge_last_answer_date';
   static const _keyTotal7DayCompleted = 'total_7day_completed';
   static const _keyTotal14DayCompleted = 'total_14day_completed';
@@ -80,6 +81,7 @@ class StreakService {
   int get lockedFrequency => _prefs.getInt(_keyChallengeLockedFrequency) ?? 0;
   String? get lockedActiveDaysCsv => _prefs.getString(_keyChallengeLockedActiveDays);
   bool? get lockedRandomAnytime => _prefs.getBool(_keyChallengeLockedRandomAnytime);
+  int get lockedTimerSeconds => _prefs.getInt(_keyChallengeLockedTimerSeconds) ?? 5;
   int get total7DayCompleted => _prefs.getInt(_keyTotal7DayCompleted) ?? 0;
   int get total14DayCompleted => _prefs.getInt(_keyTotal14DayCompleted) ?? 0;
   bool get challengeBadgeUnlocked =>
@@ -96,11 +98,13 @@ class StreakService {
     int frequency, {
     String? lockedActiveDaysCsv,
     bool? lockedRandomAnytime,
+    int timerSeconds = 5,
   }) async {
     await _prefs.setBool(_keyChallengeModeActive, true);
     await _prefs.setInt(_keyChallengeDuration, duration);
     await _prefs.setInt(_keyChallengeModeDay, 1);
     await _prefs.setInt(_keyChallengeLockedFrequency, frequency);
+    await _prefs.setInt(_keyChallengeLockedTimerSeconds, timerSeconds);
     if (lockedActiveDaysCsv != null) {
       await _prefs.setString(_keyChallengeLockedActiveDays, lockedActiveDaysCsv);
     }
@@ -226,12 +230,13 @@ class StreakService {
     final lastAnswerDateStr = _prefs.getString(_keyChallengeLastAnswerDate);
     if (lastAnswerDateStr == null) return;
 
-    final lastAnswerDate = DateTime.parse(lastAnswerDateStr);
     final now = DateTime.now();
-    final daysDiff = now.difference(lastAnswerDate).inDays;
+    final lastAnswerKey = lastAnswerDateStr.substring(0, 10); // 'yyyy-MM-dd'
+    final yesterdayKey = _dateKey(now.subtract(const Duration(days: 1)));
 
-    // If more than 1 day since last answer, challenge failed
-    if (daysDiff > 1) {
+    // Fail if the last answer was before yesterday (missed a calendar day).
+    // Using date strings avoids the 24h-period pitfall of .difference().inDays.
+    if (lastAnswerKey.compareTo(yesterdayKey) < 0) {
       await failChallenge();
     }
   }
@@ -309,6 +314,7 @@ class StreakService {
                 'locked_frequency': lockedFrequency,
                 'locked_active_days': lockedActiveDaysCsv,
                 'locked_random_anytime': lockedRandomAnytime,
+                'locked_timer_seconds': lockedTimerSeconds,
                 'start_date': _prefs.getString(_keyChallengeModeStartDate),
                 'last_answer_date': _prefs.getString(_keyChallengeLastAnswerDate),
               },
@@ -349,21 +355,33 @@ class StreakService {
         // Restore challenge data
         if (data['challenge'] != null) {
           final challenge = data['challenge'];
-          await _prefs.setBool(_keyChallengeModeActive, challenge['active'] ?? false);
+          final active = challenge['active'] ?? false;
+          final freq = challenge['locked_frequency'] ?? 0;
+          final daysCsv = challenge['locked_active_days'] as String?;
+          final anytime = challenge['locked_random_anytime'] as bool?;
+          final timer = challenge['locked_timer_seconds'] ?? 5;
+
+          await _prefs.setBool(_keyChallengeModeActive, active);
           await _prefs.setInt(_keyChallengeModeDay, challenge['day'] ?? 0);
           await _prefs.setInt(_keyChallengeDuration, challenge['duration'] ?? 7);
-          await _prefs.setInt(_keyChallengeLockedFrequency, challenge['locked_frequency'] ?? 0);
-          if (challenge['locked_active_days'] != null) {
-            await _prefs.setString(_keyChallengeLockedActiveDays, challenge['locked_active_days']);
-          }
-          if (challenge['locked_random_anytime'] != null) {
-            await _prefs.setBool(_keyChallengeLockedRandomAnytime, challenge['locked_random_anytime'] ?? false);
-          }
+          await _prefs.setInt(_keyChallengeLockedFrequency, freq);
+          await _prefs.setInt(_keyChallengeLockedTimerSeconds, timer);
+          if (daysCsv != null) await _prefs.setString(_keyChallengeLockedActiveDays, daysCsv);
+          if (anytime != null) await _prefs.setBool(_keyChallengeLockedRandomAnytime, anytime);
           if (challenge['start_date'] != null) {
             await _prefs.setString(_keyChallengeModeStartDate, challenge['start_date']);
           }
           if (challenge['last_answer_date'] != null) {
             await _prefs.setString(_keyChallengeLastAnswerDate, challenge['last_answer_date']);
+          }
+
+          // Re-apply locked notification settings to SharedPreferences so
+          // notifications can be rescheduled correctly after a fresh install.
+          if (active && freq > 0) {
+            await _prefs.setInt('notif_frequency', freq);
+            await _prefs.setInt('notif_timer_seconds', timer);
+            if (daysCsv != null) await _prefs.setString('notif_active_days', daysCsv);
+            if (anytime != null) await _prefs.setBool('notif_random_anytime', anytime);
           }
         }
 
@@ -382,44 +400,6 @@ class StreakService {
     } catch (e) {
       debugPrint('Error loading streak data from Firestore: $e');
     }
-  }
-
-  // ── Record an activity (call when user grades a question with timer on) ────
-
-  static Future<StreakResult> recordActivity({
-    bool isPremiumUser = false,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = _dateKey(DateTime.now());
-    final lastDate = prefs.getString(_keyLastDate) ?? '';
-    final current = prefs.getInt(_keyStreak) ?? 0;
-
-    // Already counted today → no change
-    if (lastDate == today) {
-      return StreakResult(streak: current, milestoneReached: false);
-    }
-
-    final yesterday = _dateKey(
-      DateTime.now().subtract(const Duration(days: 1)),
-    );
-
-    // Consecutive day → increment; otherwise reset to 1
-    final newStreak = (lastDate == yesterday) ? current + 1 : 1;
-
-    await prefs.setInt(_keyStreak, newStreak);
-    await prefs.setString(_keyLastDate, today);
-
-    // Every 7 days grant a bonus question slot (free-tier only)
-    bool milestone = false;
-    if (newStreak % 7 == 0) {
-      if (!isPremiumUser) {
-        final earned = prefs.getInt(_keyBonusQuestions) ?? 0;
-        await prefs.setInt(_keyBonusQuestions, earned + 1);
-      }
-      milestone = true;
-    }
-
-    return StreakResult(streak: newStreak, milestoneReached: milestone);
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -456,13 +436,6 @@ class StreakService {
 
   static String _dateKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-}
-
-class StreakResult {
-  final int streak;
-  final bool milestoneReached;
-
-  const StreakResult({required this.streak, required this.milestoneReached});
 }
 
 enum ChallengeAnswerOutcome { noChallenge, alreadyCompletedToday, progressed, completed, failed }

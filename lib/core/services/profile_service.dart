@@ -153,13 +153,38 @@ class ProfileService {
     }
   }
 
-  /// Helper: Delete all user data from Firestore
+  /// Helper: Delete all user data from Firestore, including subcollections.
+  /// Firestore does not cascade-delete subcollections when a parent document
+  /// is deleted, so each subcollection must be explicitly cleared first.
   Future<void> _deleteUserData(String userId) async {
     try {
-      await _firestore.collection('users').doc(userId).delete();
+      final userDoc = _firestore.collection('users').doc(userId);
+
+      // Delete all documents in each subcollection before removing the root doc.
+      // Uses batched deletes (max 500 writes per batch) to handle large datasets.
+      await _deleteSubcollection(userDoc.collection('questions'));
+      await _deleteSubcollection(userDoc.collection('categories'));
+      await _deleteSubcollection(userDoc.collection('score_records'));
+      await _deleteSubcollection(userDoc.collection('private'));
+
+      await userDoc.delete();
     } catch (e) {
       debugPrint('ProfileService: Delete Firestore data failed: $e');
       rethrow;
     }
+  }
+
+  Future<void> _deleteSubcollection(CollectionReference ref) async {
+    const batchSize = 400;
+    QuerySnapshot snapshot;
+    do {
+      snapshot = await ref.limit(batchSize).get();
+      if (snapshot.docs.isEmpty) break;
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } while (snapshot.docs.length == batchSize);
   }
 }

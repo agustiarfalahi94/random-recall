@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/utils/battery_optimization.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 class DebugNotificationScreen extends StatefulWidget {
   const DebugNotificationScreen({super.key});

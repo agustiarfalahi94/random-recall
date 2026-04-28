@@ -5,6 +5,117 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.0] — 2026-04-28
+
+### Added
+- **Feedback now submitted to Firestore** — Feedback dialog previously showed "Feedback sent!" but made no network call (remnant of removed Sentry integration). Now writes to a `feedback` Firestore collection with UID and timestamp.
+
+### Fixed
+- **`ChallengeCompleteScreen` entirely hardcoded English** — All strings ("Challenge Complete!", "You completed the X-day challenge!", "Rewards Earned:", reward labels and descriptions) now go through l10n keys in both `app_en.arb` and `app_id.arb`.
+- **Challenge titles stored as English strings displayed untranslated** — "Challenger", "Champion", "Legend" were stored as raw English in prefs/Firestore and passed directly to the UI. Now localised at display time via a key lookup in `ChallengeCompleteScreen`.
+
+### Improved
+- **`AppProvider` notification strings** — Replaced `if/else` locale check with a language-code lookup map. Adding a new locale now requires one entry here instead of hunting through the provider logic.
+- **Stream controller `dispose()` methods** — Added `dispose()` to `DatabaseHelper` and `NotificationService` singletons so stream controllers are cleanly closeable in tests.
+- **Extracted shared question widgets** — `_TimerBadge`, `_GradeButton`, `QuestionCard`, and `AnswerCard` were duplicated identically across `question_screen.dart` and `notification_question_screen.dart`. Extracted to `question_widgets.dart`; both screens now import from a single source.
+
+---
+
+## [0.12.9] — 2026-04-28
+
+### Fixed
+- **Unsafe CSV parsing crashes notification scheduler** — `int.parse` on persisted active-days CSV would throw `FormatException` on any corrupted or empty value, killing the notification scheduler. Replaced with `int.tryParse` + fallback to all-days in `notification_service.dart` and `notification_schedule_screen.dart`.
+- **Phone users excluded from startup restore** — `main.dart` startup flow checked `user.emailVerified` before calling `performRestore`, excluding phone-authenticated users. Now uses `emailVerified || phoneNumber != null`.
+- **Device ID check could use stale Firestore cache** — `_checkActiveDevice` read the device ID from Firestore's local cache, which could sign out users on fresh install with a stale hit. Now forces a server read with `GetOptions(source: Source.server)`.
+- **Challenge daily check used 24h period instead of calendar-day boundary** — `now.difference(lastAnswerDate).inDays` counts 24-hour periods, not calendar-day crossings. A user answering at 11:59 PM and missing the next calendar day would not fail. Fixed by comparing ISO date strings (`yyyy-MM-dd`).
+- **`TextEditingController` leaks in dialogs** — Password change, email re-auth, and phone re-auth dialogs created controllers but never disposed them. Now awaits the dialog and disposes immediately after close.
+- **Email field leaked a new `TextEditingController` on every build** — `ProfileScreen` created a controller inline in `build()` with no reference. Moved to a state field initialised in `initState` and disposed in `dispose`.
+- **Display name prompt shown on every `initState`** — Dialog could appear multiple times per session on tab re-parenting or app resume. Added `_displayNamePromptShown` session guard.
+- **`checkChallengeDailyRequirement` errors silently swallowed** — `.ignore()` hid Firestore write failures that could desync challenge state. Replaced with `.catchError` debug logging.
+- **Test ad unit IDs could ship to production** — Ad IDs were always the Google test IDs with no release-mode guard. Added `kReleaseMode` switch; release builds use placeholder real IDs (to be replaced before AdMob account is ready).
+- **Dead code removed** — `StreakService.recordActivity` static method and its `StreakResult` class had no callers. Removed entirely.
+- **Duplicate `_initCompleter` null check** — Second dead guard in `NotificationService.init()` removed.
+- **`MediaQuery.of(context)` called 3× in one build** — Extracted to local `mq` variable in `_AdBannerWrapper.build`.
+- **`.ignore()` on fire-and-forget restore** — Made explicit with `.ignore()` to suppress linter warning.
+
+---
+
+## [0.12.8] — 2026-04-28
+
+### Fixed
+- **Phone users excluded from cloud sync** — `performBackup` and `performRestore` guarded with `emailVerified` only, permanently blocking phone-authenticated users from cloud backup and restore (data loss). Now accepts phone auth users via `user.phoneNumber != null` check.
+- **Account deletion orphaned all Firestore subcollections** — Deleting an account only removed the root `/users/{uid}` document; `questions`, `categories`, `score_records`, and `private` subcollections were left behind (GDPR violation). `_deleteUserData` now batch-deletes all subcollection documents before removing the root doc.
+- **Silent data loss on score save failure** — `_grade()` in `NotificationQuestionScreen` swallowed all exceptions with `catch (_) {}`, meaning a failed DB write showed a success state to the user with no error reported to Crashlytics. Now reports to Crashlytics and shows a snackbar.
+- **`StreakService._prefs` accessed before `initialize()` in background isolate** — WorkManager's `callbackDispatcher` called `NotificationService.scheduleNotifications()` which reads `StreakService.isChallengeActive` before `StreakService.initialize()` was called, causing a `LateInitializationError` crash in the background. Now initialises `StreakService` first.
+
+---
+
+## [0.12.7] — 2026-04-27
+
+### Fixed
+- **Remaining hardcoded English strings** — Password field hints ("Current Password", "New Password", "Confirm Password") in the change-password dialog, the questions list FAB tooltip ("Add"), and the challenge start error snackbar were all hardcoded English. Now wired through ARB keys in both `app_en.arb` and `app_id.arb`.
+
+---
+
+## [0.12.6] — 2026-04-27
+
+### Fixed
+- **Challenge Mode card entirely in English** — All strings in the home screen Challenge Mode card were hardcoded English (`"Challenge Mode"`, `"Day X / Y"`, `"7-Day"`, `"14-Day"`, `"Stop Challenge"`, stop dialog title/body/action, active/inactive descriptions). Replaced with proper l10n keys in both `app_en.arb` and `app_id.arb`.
+- **Other hardcoded English strings** — Fixed remaining hardcoded strings across screens: `"Back to Home"` in `challenge_complete_screen.dart`, `"Next →"` in `first_question_page.dart`, and `"Update Profile"`, `"Confirm Password"`, `"Enter your password"`, `"Change"`, `"Delete"`, password-mismatch snackbar, and display name validation snackbars in `profile_screen.dart`.
+
+---
+
+## [0.12.5] — 2026-04-27
+
+### Fixed
+- **Challenge setup timer not clamped to valid range** — When opening the challenge setup screen (`isStartingChallenge: true`), the timer was initialised from the saved preference (e.g. 15 s), which is outside the 5–10 s challenge range. The slider showed an invalid value. The timer is now clamped to 5–10 s on load when starting a challenge; values below 5 s snap up to 5 s, values above 10 s snap down to 10 s.
+
+---
+
+## [0.12.4] — 2026-04-27
+
+### Removed
+- **Sentry** — removed `sentry_flutter` dependency and all Sentry integrations (DSN, navigator observer, user-feedback capture, error forwarding). Crash reporting is handled exclusively by Firebase Crashlytics.
+- **PostHog** — removed `posthog_flutter` dependency and all event-tracking calls. `AnalyticsService` event methods are retained as no-ops so call sites are unaffected; only Crashlytics user identity is still set on login/logout.
+
+### Fixed
+- **AppBar title overflow in question screen** — When a challenge is active, the action row (day badge + timer badge + skip button) leaves very little space for the title. The category name text now truncates with an ellipsis instead of overflowing 64 px off-screen.
+
+---
+
+## [0.12.2] — 2026-04-26
+
+### Fixed
+- **Challenge locked settings incorrectly removed** — v0.12.1 mistakenly stripped all challenge mechanics from the notification settings screen (locked timer, frequency, active days). This is now restored: challenge setup still requires a 5 or 10 s timer, and frequency/active days/anytime mode are locked for the full challenge period.
+- **Challenge not fully restored after reinstall** — On a fresh install or clear-data, re-login would restore the challenge active/day/duration from Firestore but would not re-apply the locked notification settings to SharedPreferences, so no notifications would fire. Fixed: `locked_timer_seconds` is now persisted to Firestore; `_loadFromFirestore()` writes all locked settings back to SharedPreferences; and `initializeUserSession()` reschedules notifications immediately after cloud restore when a challenge is active.
+
+### Changed
+- **Challenge entry point moved to home screen** — The old implicit trigger (setting timer ≤ 10 s in notification settings auto-activated challenge mode) is removed. Challenge is now started exclusively via the "7-Day" / "14-Day" buttons on the home screen Challenge Mode card, which opens the notification settings screen in challenge-setup mode (`isStartingChallenge: true`).
+- **Home screen: Challenge Mode card** — Replaces the old Timer Challenge card. Shows "7-Day" and "14-Day" start buttons when no challenge is running. Shows day-progress bar and "Stop Challenge" button when one is active.
+- **Timer setting decoupled from challenge trigger** — The notification timer (0–90 s) is now a pure UX preference outside of challenge mode. It does not activate or gate any challenge behaviour. During an active challenge the timer remains locked to the chosen 5 or 10 s value.
+
+---
+
+## [0.12.1] — 2026-04-26
+
+### Added
+- **Explicit Challenge Mode entry point** — Home screen now has a dedicated Challenge Mode card with "7-Day" and "14-Day" start buttons. Users opt in deliberately rather than triggering challenge mode implicitly by setting the timer to ≤ 10 s.
+  - Active challenge shows a day-progress bar (e.g. Day 3 / 7) and a "Stop Challenge" confirmation button.
+  - Start flow reads the current notification frequency from prefs and shows the existing rules/rewards dialog before committing.
+
+### Fixed
+- **Ad banner disappeared after second notification question** — `AdService.enterExcludedScreen()` and `exitExcludedScreen()` are called from `initState`/`dispose`, which run during Flutter's build/unmount phases. Synchronously updating the `ValueNotifier` triggered "setState called during build" exceptions, leaving the banner stuck in the hidden state after returning from a question screen. Fixed by deferring the notifier update with `Future.microtask`.
+- **Ads not loading on Xiaomi 12T (free user)** — Both test devices (Xiaomi 15 and Xiaomi 12T) are now registered via `MobileAds.instance.updateRequestConfiguration(RequestConfiguration(testDeviceIds: [...]))` so the SDK serves test ads instead of silently failing with error code 0.
+- **Premium user received "+1 question slot" on challenge completion** — `_isPremium` in `QuestionScreen` and `NotificationQuestionScreen` defaults to `false` and is loaded asynchronously. If the user graded before `_loadInitialSettings()` resolved, `recordChallengeAnswer(isPremiumUser: false)` ran with the wrong value. Fixed by calling `PlanService.isPremium()` fresh at the start of the grading block.
+
+### Changed
+- **Challenge Mode decoupled from timer setting** — The notification timer (0-90 s) is now a pure UX preference. It no longer triggers or gates challenge mode. Notification settings (timer, frequency, active days) are no longer locked while a challenge is active.
+- **Challenge Mode header removed from Notification Settings** — The "Challenge Mode" gradient hero section and fire-emoji display are removed from the notification schedule screen. The screen now shows only notification scheduling controls.
+- **Timer-streak removed** — `StreakService.recordActivity()` is no longer called from question screens. The old 7-day timer-streak card on the home screen (which accumulated a streak based on answering with a ≤ 10 s timer) is replaced by the explicit Challenge Mode card. Bonus questions are now earned exclusively through challenge completion.
+- **ChallengeWarningDialog** — "Timer locked to 5–10 s only" and "Notification frequency locked" rules removed from the warning dialog, as neither constraint applies to the new flow.
+
+---
+
 ## [0.12.0] — 2026-04-26
 
 ### Added

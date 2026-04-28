@@ -206,7 +206,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                 ),
 
               const SizedBox(height: 40),
-              ElevatedButton(onPressed: _submit, child: const Text('Next →')),
+              ElevatedButton(onPressed: _submit, child: Text(l10n.nextButton)),
               const SizedBox(height: 32),
             ],
           ),

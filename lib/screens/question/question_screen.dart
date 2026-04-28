@@ -14,6 +14,7 @@ import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/score_record.dart';
 import '../challenge/challenge_complete_screen.dart';
+import 'question_widgets.dart';
 
 class QuestionScreen extends StatefulWidget {
   /// Pass a specific questionId when coming from a notification tap.
@@ -160,6 +161,9 @@ class _QuestionScreenState extends State<QuestionScreen>
 
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
+        // Fetch premium status fresh here — _isPremium may still be false if
+        // grading happens before _loadInitialSettings() resolves.
+        final isPremiumNow = await PlanService.isPremium();
         final now = DateTime.now();
         _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
           ScoreRecord(
@@ -183,22 +187,11 @@ class _QuestionScreenState extends State<QuestionScreen>
             )
             .ignore();
 
-        // Record streak only when timer is ON and ≤ the challenge threshold.
-        if (_timerSeconds > 0 &&
-            _timerSeconds <= StreakService.challengeThreshold) {
-          final result = await StreakService.recordActivity(
-            isPremiumUser: _isPremium,
-          );
-          if (result.milestoneReached && !_isPremium && mounted) {
-            _showStreakMilestoneDialog(result.streak);
-          }
-        }
-
         // NEW Challenge Mode: wrong answer fails; correct answer advances once/day.
         if (streakService.isChallengeActive) {
           final result = await streakService.recordChallengeAnswer(
             isCorrect: isCorrect,
-            isPremiumUser: _isPremium,
+            isPremiumUser: isPremiumNow,
           );
 
           if (!mounted) return;
@@ -299,13 +292,6 @@ class _QuestionScreenState extends State<QuestionScreen>
     }
   }
 
-  void _showStreakMilestoneDialog(int streak) {
-    showDialog(
-      context: context,
-      builder: (_) => _StreakMilestoneDialog(streak: streak),
-    );
-  }
-
   void _nextQuestion() {
     _stopTimer();
     _revealController.reset();
@@ -328,7 +314,12 @@ class _QuestionScreenState extends State<QuestionScreen>
                 children: [
                   Text(_category!.icon, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
-                  Text(_category!.name),
+                  Flexible(
+                    child: Text(
+                      _category!.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               )
             : Text(l10n.appTitle),
@@ -360,7 +351,7 @@ class _QuestionScreenState extends State<QuestionScreen>
               ),
             ),
           if (_timerSeconds > 0 && !_graded && !_isLoading)
-            _TimerBadge(remaining: _remaining, total: _timerSeconds),
+            QuestionTimerBadge(remaining: _remaining, total: _timerSeconds),
           // Next question button
           IconButton(
             icon: const Icon(Icons.skip_next_rounded),
@@ -422,50 +413,9 @@ class _QuestionScreenState extends State<QuestionScreen>
           const SizedBox(height: 8),
 
           // ── Question card ────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.questionLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onPrimary,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _question!.question,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
+          QuestionCard(
+            questionText: _question!.question,
+            label: l10n.questionLabel,
           ),
 
           const SizedBox(height: 24),
@@ -479,61 +429,10 @@ class _QuestionScreenState extends State<QuestionScreen>
             )
           else ...[
             // Answer card with fade-in animation
-            FadeTransition(
-              opacity: _revealAnim,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 0.1),
-                  end: Offset.zero,
-                ).animate(_revealAnim),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondaryContainer.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: colorScheme.secondary.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.secondary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              l10n.answerLabel,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onSecondary,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _question!.answer,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            AnswerCard(
+              answerText: _question!.answer,
+              label: l10n.answerLabel,
+              revealAnim: _revealAnim,
             ),
 
             const SizedBox(height: 32),
@@ -553,7 +452,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                 children: [
                   // ❌ Didn't know it
                   Expanded(
-                    child: _GradeButton(
+                    child: QuestionGradeButton(
                       label: l10n.didntKnowIt,
                       emoji: '❌',
                       color: colorScheme.errorContainer,
@@ -564,7 +463,7 @@ class _QuestionScreenState extends State<QuestionScreen>
                   const SizedBox(width: 12),
                   // ✅ Knew it
                   Expanded(
-                    child: _GradeButton(
+                    child: QuestionGradeButton(
                       label: l10n.knewIt,
                       emoji: '✅',
                       color: const Color(0xFFD4EDDA),
@@ -662,139 +561,3 @@ class _QuestionScreenState extends State<QuestionScreen>
   }
 }
 
-// ── Streak milestone dialog ───────────────────────────────────────────────────
-
-class _StreakMilestoneDialog extends StatelessWidget {
-  const _StreakMilestoneDialog({required this.streak});
-  final int streak;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('🔥', style: TextStyle(fontSize: 56)),
-          const SizedBox(height: 12),
-          Text(
-            l10n.streakDayTitle(streak),
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.streakDescription(streak),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.awesome),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Timer badge widget ────────────────────────────────────────────────────────
-
-class _TimerBadge extends StatelessWidget {
-  const _TimerBadge({required this.remaining, required this.total});
-  final int remaining;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final fraction = total > 0 ? remaining / total : 0.0;
-    final color = fraction > 0.5
-        ? Colors.green
-        : fraction > 0.25
-        ? Colors.orange
-        : Colors.red;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox(
-            width: 36,
-            height: 36,
-            child: CircularProgressIndicator(
-              value: fraction.clamp(0.0, 1.0),
-              strokeWidth: 3,
-              backgroundColor: color.withOpacity(0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-            ),
-          ),
-          Text(
-            '$remaining',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Grade button widget ───────────────────────────────────────────────────────
-
-class _GradeButton extends StatelessWidget {
-  const _GradeButton({
-    required this.label,
-    required this.emoji,
-    required this.color,
-    required this.textColor,
-    required this.onTap,
-  });
-
-  final String label;
-  final String emoji;
-  final Color color;
-  final Color textColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: textColor,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

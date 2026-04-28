@@ -46,7 +46,9 @@ class SyncService {
   /// pushing them to the user's private collection using a write batch.
   Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
-    if (user == null || !user.emailVerified || (_isSyncing && !force)) return;
+    final isVerified = user != null &&
+        (user.emailVerified || user.phoneNumber != null);
+    if (!isVerified || (_isSyncing && !force)) return;
 
     _isSyncing = true;
     debugPrint('SyncService: Starting backup for user ${user.uid}...');
@@ -141,7 +143,9 @@ class SyncService {
     bool isInitialLogin = false,
   }) async {
     final user = AuthService.instance.currentUser;
-    if (user == null || !user.emailVerified) return;
+    final isVerifiedRestore = user != null &&
+        (user.emailVerified || user.phoneNumber != null);
+    if (!isVerifiedRestore) return;
 
     // If a restore is already running, wait for it rather than silently
     // dropping this call. This prevents the race condition where _HomeGate

@@ -251,7 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetSuccess =>
-      'Success! Check your email inbox for the reset link.';
+      'If an account exists for this email, a reset link has been sent.';
 
   @override
   String get enterYourEmail => 'Enter your email';
@@ -1385,7 +1385,8 @@ class AppLocalizationsEn extends AppLocalizations {
       '• Must answer ALL questions correctly (no mistakes allowed)';
 
   @override
-  String get challengeWarningRule2 => '• Timer locked to 5 or 10 seconds only';
+  String get challengeWarningRule2 =>
+      '• Timer locked between 5 - 10 seconds only';
 
   @override
   String get challengeWarningRule3 =>
@@ -1480,12 +1481,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String challengeConfirmRequirementDays(int days) {
-    return '✓ Complete $days consecutive days';
+    return '✓ Complete the challenge in $days consecutive days';
   }
 
   @override
   String get challengeConfirmFooter =>
-      'Your timing settings are locked for the whole challenge. If \"Send at any time\" is ON, the time window is locked. If it is OFF, you can adjust start/end time during the challenge.';
+      'All of your settings will be locked before the challenge ends, beware of what you choose! For the specific timing settings, start and end time would be customizable throughout the challenge period if Send at any time is switched off.';
 
   @override
   String get existingStreakTitle => 'You Have an Active Regular Streak';
@@ -1504,6 +1505,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get existingStreakStart => 'Start Challenge Mode';
+
+  @override
+  String get nextButton => 'Next →';
+
+  @override
+  String get updateProfileButton => 'Update Profile';
+
+  @override
+  String get confirmPasswordTitle => 'Confirm Password';
+
+  @override
+  String get enterPasswordHint => 'Enter your password';
+
+  @override
+  String get changePasswordConfirmAction => 'Change';
+
+  @override
+  String get currentPasswordHint => 'Current Password';
+
+  @override
+  String get newPasswordHint => 'New Password';
+
+  @override
+  String get confirmPasswordHint => 'Confirm Password';
+
+  @override
+  String get addTooltip => 'Add';
+
+  @override
+  String challengeStartError(String error) {
+    return 'Error starting challenge: $error';
+  }
+
+  @override
+  String get challengeCompleteTitle => 'Challenge Complete!';
+
+  @override
+  String challengeCompletedDaysLabel(int duration) {
+    return 'You completed the $duration-day challenge!';
+  }
+
+  @override
+  String get challengeRewardsEarnedLabel => 'Rewards Earned:';
+
+  @override
+  String challengeRewardQuestionSlotsLabel(int count, String plural) {
+    return '+$count Question Slot$plural';
+  }
+
+  @override
+  String get challengeRewardQuestionsDesc =>
+      'Permanently unlock more questions';
+
+  @override
+  String challengeRewardCategorySlotsLabel(int count, String plural) {
+    return '+$count Category Slot$plural';
+  }
+
+  @override
+  String get challengeRewardCategoriesDesc => 'Create more custom categories';
+
+  @override
+  String get challengeRewardBadgeUnlockedLabel => 'Challenge Badge Unlocked';
+
+  @override
+  String get challengeRewardBadgeDesc => 'Show off your achievement';
+
+  @override
+  String challengeRewardTitleLabel(String title) {
+    return 'Title: $title';
+  }
+
+  @override
+  String get challengeRewardTitleDesc => 'Premium exclusive achievement';
+
+  @override
+  String get challengeTitleChallenger => 'Challenger';
+
+  @override
+  String get challengeTitleChampion => 'Champion';
+
+  @override
+  String get challengeTitleLegend => 'Legend';
+
+  @override
+  String get challengeModeCardTitle => 'Challenge Mode';
+
+  @override
+  String challengeDayProgress(int day, int total) {
+    return 'Day $day / $total';
+  }
+
+  @override
+  String get challengeActiveDesc =>
+      'Answer one question correctly every day to keep your streak alive.';
+
+  @override
+  String get challengeInactiveDesc =>
+      'Answer correctly every day for 7 or 14 days to earn rewards. One wrong answer resets the run.';
+
+  @override
+  String get challengeSevenDay => '7-Day';
+
+  @override
+  String get challengeFourteenDay => '14-Day';
+
+  @override
+  String get challengeStopButton => 'Stop Challenge';
+
+  @override
+  String get challengeStopTitle => 'Stop Challenge?';
+
+  @override
+  String get challengeStopBody =>
+      'This will reset your current challenge progress. Are you sure?';
+
+  @override
+  String get challengeStopAction => 'Stop';
 
   @override
   String get continueWithPhone => 'Continue with Phone Number';

@@ -23,12 +23,20 @@ class AdService {
   int _adsShownToday = 0;
   DateTime? _lastAdTime;
 
-  // ── Ad unit IDs (test IDs — swap for real ones when account is ready) ──────
-
-  static const String _bannerAdUnitId =
+  // ── Ad unit IDs ────────────────────────────────────────────────────────────
+  // TODO: replace placeholder values with real AdMob IDs before going live.
+  // The current values are Google's public test IDs and serve no real revenue.
+  static const String _realBannerAdUnitId = 'ca-app-pub-REPLACE/REPLACE';
+  static const String _realInterstitialAdUnitId = 'ca-app-pub-REPLACE/REPLACE';
+  static const String _testBannerAdUnitId =
       'ca-app-pub-3940256099942544/6300978111';
-  static const String _interstitialAdUnitId =
+  static const String _testInterstitialAdUnitId =
       'ca-app-pub-3940256099942544/1033173712';
+
+  static String get _bannerAdUnitId =>
+      kReleaseMode ? _realBannerAdUnitId : _testBannerAdUnitId;
+  static String get _interstitialAdUnitId =>
+      kReleaseMode ? _realInterstitialAdUnitId : _testInterstitialAdUnitId;
 
   static const int _maxAdsPerDay = 5;
   static const Duration _minAdGap = Duration(minutes: 10);
@@ -43,6 +51,14 @@ class AdService {
     if (_isPremium) return; // premium users never get ads
 
     await MobileAds.instance.initialize();
+    await MobileAds.instance.updateRequestConfiguration(
+      RequestConfiguration(
+        testDeviceIds: [
+          '83E09F11EC864330DDCC14D0732D7D30', // Xiaomi 15
+          '511C623543A19E3BE41273359A5C2BE8', // Xiaomi 12T
+        ],
+      ),
+    );
     await _loadFrequencyState();
     _loadBannerAd();
     _preloadInterstitialAd();
@@ -78,7 +94,10 @@ class AdService {
   }
 
   void _refreshBannerVisible() {
-    bannerVisible.value = !_isPremium && !_onExcludedScreen && _bannerLoaded;
+    final next = !_isPremium && !_onExcludedScreen && _bannerLoaded;
+    if (bannerVisible.value == next) return;
+    // Defer to avoid markNeedsBuild during build (called from initState/dispose).
+    Future.microtask(() => bannerVisible.value = next);
   }
 
   // ── Banner ad loading ──────────────────────────────────────────────────────

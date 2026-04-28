@@ -248,7 +248,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendResetLink => 'Kirim Link Reset';
 
   @override
-  String get resetSuccess => 'Berhasil! Cek inbox email kamu untuk link reset.';
+  String get resetSuccess =>
+      'Jika akun dengan email ini ada, link reset telah dikirim.';
 
   @override
   String get enterYourEmail => 'Masukkan email kamu';
@@ -1396,7 +1397,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get challengeWarningRule2 =>
-      '• Timer terkunci pada 5 atau 10 detik saja';
+      '• Timer terkunci antara 5 - 10 detik saja';
 
   @override
   String get challengeWarningRule3 =>
@@ -1490,12 +1491,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String challengeConfirmRequirementDays(int days) {
-    return '✓ Selesaikan $days hari berturut-turut';
+    return '✓ Selesaikan tantangan dalam $days hari berturut-turut';
   }
 
   @override
   String get challengeConfirmFooter =>
-      'Pengaturan waktu kamu terkunci selama tantangan. Jika \"Kirim kapan saja\" AKTIF, jendela waktu terkunci. Jika NONAKTIF, kamu bisa mengubah jam mulai/selesai selama tantangan.';
+      'Semua pengaturan akan terkunci selama tantangan berlangsung, perhatikan pilihanmu! Untuk pengaturan waktu spesifik, waktu mulai dan selesai tetap bisa diubah selama tantangan jika Kirim kapan saja dimatikan.';
 
   @override
   String get existingStreakTitle => 'Anda Memiliki Streak Reguler Aktif';
@@ -1514,6 +1515,125 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get existingStreakStart => 'Mulai Mode Tantangan';
+
+  @override
+  String get nextButton => 'Selanjutnya →';
+
+  @override
+  String get updateProfileButton => 'Perbarui Profil';
+
+  @override
+  String get confirmPasswordTitle => 'Konfirmasi Kata Sandi';
+
+  @override
+  String get enterPasswordHint => 'Masukkan kata sandi kamu';
+
+  @override
+  String get changePasswordConfirmAction => 'Ubah';
+
+  @override
+  String get currentPasswordHint => 'Kata Sandi Lama';
+
+  @override
+  String get newPasswordHint => 'Kata Sandi Baru';
+
+  @override
+  String get confirmPasswordHint => 'Konfirmasi Kata Sandi';
+
+  @override
+  String get addTooltip => 'Tambah';
+
+  @override
+  String challengeStartError(String error) {
+    return 'Gagal memulai tantangan: $error';
+  }
+
+  @override
+  String get challengeCompleteTitle => 'Tantangan Selesai!';
+
+  @override
+  String challengeCompletedDaysLabel(int duration) {
+    return 'Kamu menyelesaikan tantangan $duration hari!';
+  }
+
+  @override
+  String get challengeRewardsEarnedLabel => 'Hadiah yang Diperoleh:';
+
+  @override
+  String challengeRewardQuestionSlotsLabel(int count, String plural) {
+    return '+$count Slot Pertanyaan$plural';
+  }
+
+  @override
+  String get challengeRewardQuestionsDesc =>
+      'Buka lebih banyak pertanyaan secara permanen';
+
+  @override
+  String challengeRewardCategorySlotsLabel(int count, String plural) {
+    return '+$count Slot Kategori$plural';
+  }
+
+  @override
+  String get challengeRewardCategoriesDesc =>
+      'Buat lebih banyak kategori kustom';
+
+  @override
+  String get challengeRewardBadgeUnlockedLabel => 'Lencana Tantangan Terbuka';
+
+  @override
+  String get challengeRewardBadgeDesc => 'Tunjukkan pencapaianmu';
+
+  @override
+  String challengeRewardTitleLabel(String title) {
+    return 'Gelar: $title';
+  }
+
+  @override
+  String get challengeRewardTitleDesc => 'Pencapaian eksklusif premium';
+
+  @override
+  String get challengeTitleChallenger => 'Penantang';
+
+  @override
+  String get challengeTitleChampion => 'Juara';
+
+  @override
+  String get challengeTitleLegend => 'Legenda';
+
+  @override
+  String get challengeModeCardTitle => 'Mode Tantangan';
+
+  @override
+  String challengeDayProgress(int day, int total) {
+    return 'Hari $day / $total';
+  }
+
+  @override
+  String get challengeActiveDesc =>
+      'Jawab satu pertanyaan dengan benar setiap hari untuk menjaga streakmu.';
+
+  @override
+  String get challengeInactiveDesc =>
+      'Jawab dengan benar setiap hari selama 7 atau 14 hari untuk mendapatkan hadiah. Satu jawaban salah akan mengulang streak.';
+
+  @override
+  String get challengeSevenDay => '7 Hari';
+
+  @override
+  String get challengeFourteenDay => '14 Hari';
+
+  @override
+  String get challengeStopButton => 'Hentikan Tantangan';
+
+  @override
+  String get challengeStopTitle => 'Hentikan Tantangan?';
+
+  @override
+  String get challengeStopBody =>
+      'Ini akan mereset progres tantangan kamu saat ini. Yakin?';
+
+  @override
+  String get challengeStopAction => 'Hentikan';
 
   @override
   String get continueWithPhone => 'Lanjutkan dengan Nomor Telepon';

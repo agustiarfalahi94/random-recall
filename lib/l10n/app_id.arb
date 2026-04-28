@@ -89,7 +89,7 @@
   "forgotPasswordTitle": "Lupa Kata Sandi?",
   "forgotPasswordSubtitle": "Masukkan email kamu dan kami akan mengirim link reset jika akun tersebut ada.",
   "sendResetLink": "Kirim Link Reset",
-  "resetSuccess": "Berhasil! Cek inbox email kamu untuk link reset.",
+  "resetSuccess": "Jika akun dengan email ini ada, link reset telah dikirim.",
   "enterYourEmail": "Masukkan email kamu",
   "resetError": "Terjadi kesalahan. Coba lagi.",
 
@@ -563,7 +563,7 @@
     }
   },
   "challengeWarningRule1": "• Harus menjawab SEMUA pertanyaan dengan benar (tidak ada kesalahan)",
-  "challengeWarningRule2": "• Timer terkunci pada 5 atau 10 detik saja",
+  "challengeWarningRule2": "• Timer terkunci antara 5 - 10 detik saja",
   "challengeWarningRule3": "• Frekuensi notifikasi terkunci (tidak dapat diubah)",
   "challengeWarningRule4": "• Harus menyelesaikan setiap hari selama {duration} hari berturut-turut",
   "@challengeWarningRule4": {
@@ -624,11 +624,11 @@
   "@challengeConfirmRequirementFrequency": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "challengeConfirmRequirementDays": "✓ Selesaikan {days} hari berturut-turut",
+  "challengeConfirmRequirementDays": "✓ Selesaikan tantangan dalam {days} hari berturut-turut",
   "@challengeConfirmRequirementDays": {
     "placeholders": { "days": { "type": "int" } }
   },
-  "challengeConfirmFooter": "Pengaturan waktu kamu terkunci selama tantangan. Jika \"Kirim kapan saja\" AKTIF, jendela waktu terkunci. Jika NONAKTIF, kamu bisa mengubah jam mulai/selesai selama tantangan.",
+  "challengeConfirmFooter": "Semua pengaturan akan terkunci selama tantangan berlangsung, perhatikan pilihanmu! Untuk pengaturan waktu spesifik, waktu mulai dan selesai tetap bisa diubah selama tantangan jika Kirim kapan saja dimatikan.",
   "existingStreakTitle": "Anda Memiliki Streak Reguler Aktif",
   "existingStreakMessage": "Anda saat ini memiliki streak reguler {streak} hari! Terus tingkatkan atau coba Mode Tantangan baru.",
   "@existingStreakMessage": {
@@ -639,6 +639,70 @@
   "existingStreakWarning": "⚠️ Pilih Jalur Anda:\n\n📊 STREAK REGULER (Pertahankan):\n• Jawab setiap hari dengan timer apa saja\n• Kecepatan lambat, menyesuaikan\n• Bangun konsistensi\n\n🔥 MODE TANTANGAN (Baru):\n• Mode intensif 7 hari\n• HARUS jawab SEMUA dengan benar\n• HARUS gunakan timer 5–10 detik saja\n• Hari aktif terkunci selama tantangan\n• Pengaturan waktu terkunci selama tantangan\n• Ketinggalan satu = ulang\n• Menang = Lencana + pertanyaan gratis",
   "existingStreakKeep": "Pertahankan Streak Reguler",
   "existingStreakStart": "Mulai Mode Tantangan",
+
+  "nextButton": "Selanjutnya →",
+  "updateProfileButton": "Perbarui Profil",
+  "confirmPasswordTitle": "Konfirmasi Kata Sandi",
+  "enterPasswordHint": "Masukkan kata sandi kamu",
+  "changePasswordConfirmAction": "Ubah",
+  "currentPasswordHint": "Kata Sandi Lama",
+  "newPasswordHint": "Kata Sandi Baru",
+  "confirmPasswordHint": "Konfirmasi Kata Sandi",
+  "addTooltip": "Tambah",
+  "challengeStartError": "Gagal memulai tantangan: {error}",
+
+  "challengeCompleteTitle": "Tantangan Selesai!",
+  "challengeCompletedDaysLabel": "Kamu menyelesaikan tantangan {duration} hari!",
+  "@challengeCompletedDaysLabel": {
+    "placeholders": { "duration": { "type": "int" } }
+  },
+  "challengeRewardsEarnedLabel": "Hadiah yang Diperoleh:",
+  "challengeRewardQuestionSlotsLabel": "+{count} Slot Pertanyaan{plural}",
+  "@challengeRewardQuestionSlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardQuestionsDesc": "Buka lebih banyak pertanyaan secara permanen",
+  "challengeRewardCategorySlotsLabel": "+{count} Slot Kategori{plural}",
+  "@challengeRewardCategorySlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardCategoriesDesc": "Buat lebih banyak kategori kustom",
+  "challengeRewardBadgeUnlockedLabel": "Lencana Tantangan Terbuka",
+  "challengeRewardBadgeDesc": "Tunjukkan pencapaianmu",
+  "challengeRewardTitleLabel": "Gelar: {title}",
+  "@challengeRewardTitleLabel": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "challengeRewardTitleDesc": "Pencapaian eksklusif premium",
+  "challengeTitleChallenger": "Penantang",
+  "challengeTitleChampion": "Juara",
+  "challengeTitleLegend": "Legenda",
+  "@challengeStartError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "challengeModeCardTitle": "Mode Tantangan",
+  "challengeDayProgress": "Hari {day} / {total}",
+  "@challengeDayProgress": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "challengeActiveDesc": "Jawab satu pertanyaan dengan benar setiap hari untuk menjaga streakmu.",
+  "challengeInactiveDesc": "Jawab dengan benar setiap hari selama 7 atau 14 hari untuk mendapatkan hadiah. Satu jawaban salah akan mengulang streak.",
+  "challengeSevenDay": "7 Hari",
+  "challengeFourteenDay": "14 Hari",
+  "challengeStopButton": "Hentikan Tantangan",
+  "challengeStopTitle": "Hentikan Tantangan?",
+  "challengeStopBody": "Ini akan mereset progres tantangan kamu saat ini. Yakin?",
+  "challengeStopAction": "Hentikan",
 
   "continueWithPhone": "Lanjutkan dengan Nomor Telepon",
   "phoneAuthTitle": "Nomor Telepon",

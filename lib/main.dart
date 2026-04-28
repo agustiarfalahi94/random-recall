@@ -11,9 +11,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/notifications/background_worker.dart';
@@ -66,172 +64,143 @@ Future<void> _getOrCreateDeviceId() async {
   }
 }
 
+/// Runs all pre-runApp initialization. Extracted so integration tests can
+/// call it directly without going through runApp().
 Future<void> main() async {
-  await SentryFlutter.init(
-    (options) {
-      options.dsn =
-          'https://0d061b8b4d28f29b194f9a44075ae8da@o4511217533190144.ingest.us.sentry.io/4511217537318912';
-      options.tracesSampleRate = 0.2; // capture 20% of sessions for performance
-      options.profilesSampleRate = 0.0; // profiling disabled — not needed yet
-      options.enableAutoSessionTracking = true;
-      options.attachScreenshot =
-          false; // off — questions contain user-created PII
-      options.sendDefaultPii = false; // never send emails / Firebase tokens
-    },
-    appRunner: () async {
-      WidgetsFlutterBinding.ensureInitialized();
-      await _getOrCreateDeviceId();
-      await Firebase.initializeApp();
-      await FirebaseAppCheck.instance.activate(
-        androidProvider: kDebugMode
-            ? AndroidProvider.debug
-            : AndroidProvider.playIntegrity,
-      );
-
-      // Crashlytics: route Flutter and async errors to Crashlytics + Sentry
-      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-        !kDebugMode,
-      );
-      FlutterError.onError = (details) {
-        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-        Sentry.captureException(details.exception, stackTrace: details.stack);
-      };
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        Sentry.captureException(error, stackTrace: stack);
-        return true;
-      };
-
-      // Performance Monitoring: disable collection in debug builds
-      await FirebasePerformance.instance.setPerformanceCollectionEnabled(
-        !kDebugMode,
-      );
-
-      // Remote Config: set defaults that mirror current hardcoded values,
-      // then fetch latest in the background (applied next cold start)
-      final rc = FirebaseRemoteConfig.instance;
-      await rc.setConfigSettings(
-        RemoteConfigSettings(
-          fetchTimeout: const Duration(seconds: 10),
-          minimumFetchInterval: const Duration(hours: 1),
-        ),
-      );
-      await rc.setDefaults(const {
-        'notif_frequency_free': 3,
-        'notif_frequency_premium': 6,
-        'notif_start_hour': 8,
-        'notif_end_hour': 20,
-        'free_question_base': 20,
-        'free_max_custom_categories': 1,
-        'premium_max_custom_categories': 20,
-        'premium_question_limit': 200,
-        'category_warning_threshold': 18,
-        'question_warning_threshold': 195,
-      });
-      rc
-          .fetchAndActivate()
-          .ignore(); // non-blocking; defaults used this session
-
-      // PostHog: initialise after Firebase, before runApp
-      final postHogConfig =
-          PostHogConfig('phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv')
-            ..host = 'https://us.i.posthog.com'
-            ..flushAt =
-                5 // batch up to 5 events per network request
-            ..flushInterval =
-                const Duration(seconds: 10) // also flush every 10 s
-            ..debug =
-                kDebugMode; // log PostHog events to console in debug builds
-      await Posthog().setup(postHogConfig);
-
-      // Start In-App Purchase listener
-      SubscriptionService.instance.init();
-
-      // Initialize StreakService local cache (SharedPreferences only — no Firestore).
-      // Firestore sync happens in initializeUserSession() after auth is confirmed.
-      await StreakService.instance.initialize();
-
-      // Wire up navigator key so notification taps can navigate
-      NotificationService.instance.navigatorKey = navigatorKey;
-
-      // Initialize AdService — premium check happens here so ads are never
-      // shown to premium users from the very first frame.
-      final isPremium = await PlanService.isPremium();
-      await AdService.instance.initialize(isPremium: isPremium);
-
-      runApp(const RandomRecallApp());
-
-      // Handle cold-start from notification tap (navigator not ready during init)
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final startupTrace = FirebasePerformance.instance.newTrace(
-          'cold_start_post_frame',
-        );
-        await startupTrace.start();
-        try {
-          // Initialize service and check launch details
-          await NotificationService.instance.init();
-
-          // Proactively prompt for permission on startup if missing
-          if (!await NotificationService.instance.hasPermission()) {
-            await NotificationService.instance.requestPermission();
-          }
-
-          // Clear any mirror-log entries for questions deleted since last run
-          // so the badge doesn't stay stuck after deletions.
-          await NotificationService.instance.cleanStaleMirrorEntries();
-
-          await NotificationService.instance.handleNotificationLaunch();
-
-          final prefs = await SharedPreferences.getInstance();
-          final onboardingComplete =
-              prefs.getBool('onboarding_complete') ?? false;
-
-          // Reload user on startup safely
-          final currentUser = AuthService.instance.currentUser;
-          if (currentUser != null) {
-            try {
-              await currentUser.reload();
-            } catch (e) {
-              // If reload fails for any reason (e.g., token expired, user deleted),
-              // treat it as a sign-out event to clear the local session.
-              debugPrint('main.dart: User reload failed: $e. Signing out...');
-              // Explicitly call signOut to ensure all local state is cleared.
-              // The authStateChanges stream will then handle navigation to LoginScreen.
-              await AuthService.instance.signOut();
-            }
-          }
-
-          final user = AuthService.instance.currentUser;
-
-          if (onboardingComplete && user != null && user.emailVerified) {
-            SyncService.instance.performRestore();
-            await registerNotificationWorker().catchError(
-              (e) => debugPrint('WorkManager failed: $e'),
-            );
-          }
-
-          // Track app open once the frame is fully live
-          AnalyticsService.instance.trackAppOpen().ignore();
-        } catch (e) {
-          debugPrint('Startup background tasks failed: $e');
-        } finally {
-          await startupTrace.stop();
-        }
-
-        // For existing users who updated the app: silently request battery
-        // optimisation whitelist if not already granted. The system dialog only
-        // appears once and is non-blocking — no UX disruption.
-        final prefs = await SharedPreferences.getInstance();
-        final onboardingComplete =
-            prefs.getBool('onboarding_complete') ?? false;
-        if (onboardingComplete) {
-          isIgnoringBatteryOptimizations().then((isIgnoring) {
-            if (!isIgnoring) requestIgnoreBatteryOptimizations();
-          });
-        }
-      });
-    },
+  WidgetsFlutterBinding.ensureInitialized();
+  await _getOrCreateDeviceId();
+  await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode
+        ? AndroidProvider.debug
+        : AndroidProvider.playIntegrity,
   );
+
+  // Crashlytics: route Flutter and async errors to Crashlytics
+  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+    !kDebugMode,
+  );
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  // Performance Monitoring: disable collection in debug builds
+  await FirebasePerformance.instance.setPerformanceCollectionEnabled(
+    !kDebugMode,
+  );
+
+  // Remote Config: set defaults that mirror current hardcoded values,
+  // then fetch latest in the background (applied next cold start)
+  final rc = FirebaseRemoteConfig.instance;
+  await rc.setConfigSettings(
+    RemoteConfigSettings(
+      fetchTimeout: const Duration(seconds: 10),
+      minimumFetchInterval: const Duration(hours: 1),
+    ),
+  );
+  await rc.setDefaults(const {
+    'notif_frequency_free': 3,
+    'notif_frequency_premium': 6,
+    'notif_start_hour': 8,
+    'notif_end_hour': 20,
+    'free_question_base': 20,
+    'free_max_custom_categories': 1,
+    'premium_max_custom_categories': 20,
+    'premium_question_limit': 200,
+    'category_warning_threshold': 18,
+    'question_warning_threshold': 195,
+  });
+  rc.fetchAndActivate().ignore(); // non-blocking; defaults used this session
+
+  // Start In-App Purchase listener
+  SubscriptionService.instance.init();
+
+  // Initialize StreakService local cache (SharedPreferences only — no Firestore).
+  // Firestore sync happens in initializeUserSession() after auth is confirmed.
+  await StreakService.instance.initialize();
+
+  // Wire up navigator key so notification taps can navigate
+  NotificationService.instance.navigatorKey = navigatorKey;
+
+  // Initialize AdService — premium check happens here so ads are never
+  // shown to premium users from the very first frame.
+  final isPremium = await PlanService.isPremium();
+  await AdService.instance.initialize(isPremium: isPremium);
+
+  runApp(const RandomRecallApp());
+
+  // Handle cold-start from notification tap (navigator not ready during init)
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final startupTrace = FirebasePerformance.instance.newTrace(
+      'cold_start_post_frame',
+    );
+    await startupTrace.start();
+    try {
+      // Initialize service and check launch details
+      await NotificationService.instance.init();
+
+      // Proactively prompt for permission on startup if missing
+      if (!await NotificationService.instance.hasPermission()) {
+        await NotificationService.instance.requestPermission();
+      }
+
+      // Clear any mirror-log entries for questions deleted since last run
+      // so the badge doesn't stay stuck after deletions.
+      await NotificationService.instance.cleanStaleMirrorEntries();
+
+      await NotificationService.instance.handleNotificationLaunch();
+
+      final prefs = await SharedPreferences.getInstance();
+      final onboardingComplete =
+          prefs.getBool('onboarding_complete') ?? false;
+
+      // Reload user on startup safely
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null) {
+        try {
+          await currentUser.reload();
+        } catch (e) {
+          // If reload fails for any reason (e.g., token expired, user deleted),
+          // treat it as a sign-out event to clear the local session.
+          debugPrint('main.dart: User reload failed: $e. Signing out...');
+          // Explicitly call signOut to ensure all local state is cleared.
+          // The authStateChanges stream will then handle navigation to LoginScreen.
+          await AuthService.instance.signOut();
+        }
+      }
+
+      final user = AuthService.instance.currentUser;
+
+      final isVerified = user != null &&
+          (user.emailVerified || user.phoneNumber != null);
+      if (onboardingComplete && isVerified) {
+        SyncService.instance.performRestore().ignore();
+        await registerNotificationWorker().catchError(
+          (e) => debugPrint('WorkManager failed: $e'),
+        );
+      }
+
+      // Track app open once the frame is fully live
+      AnalyticsService.instance.trackAppOpen().ignore();
+    } catch (e) {
+      debugPrint('Startup background tasks failed: $e');
+    } finally {
+      await startupTrace.stop();
+    }
+
+    // For existing users who updated the app: silently request battery
+    // optimisation whitelist if not already granted. The system dialog only
+    // appears once and is non-blocking — no UX disruption.
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    if (onboardingComplete) {
+      isIgnoringBatteryOptimizations().then((isIgnoring) {
+        if (!isIgnoring) requestIgnoreBatteryOptimizations();
+      });
+    }
+  });
 }
 
 class RandomRecallApp extends StatefulWidget {
@@ -288,7 +257,7 @@ class _RandomRecallAppState extends State<RandomRecallApp>
             title: 'Random Recall',
             debugShowCheckedModeBanner: false,
             navigatorKey: navigatorKey,
-            navigatorObservers: [SentryNavigatorObserver()],
+            navigatorObservers: [],
             locale: locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -526,7 +495,7 @@ class _HomeGateState extends State<_HomeGate> {
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
-          .get();
+          .get(const GetOptions(source: Source.server));
 
       if (!userDoc.exists) return;
 
@@ -577,9 +546,8 @@ class _AdBannerWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewPadding = MediaQuery.of(context).viewPadding;
-    final viewInsets = MediaQuery.of(context).viewInsets;
-    final keyboardVisible = viewInsets.bottom > 0;
+    final mq = MediaQuery.of(context);
+    final keyboardVisible = mq.viewInsets.bottom > 0;
 
     return ValueListenableBuilder<bool>(
       valueListenable: AdService.instance.bannerVisible,
@@ -593,9 +561,9 @@ class _AdBannerWrapper extends StatelessWidget {
           children: [
             // Propagate extra bottom padding so Scaffolds leave room for banner
             MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                padding: MediaQuery.of(context).padding.copyWith(
-                  bottom: MediaQuery.of(context).padding.bottom + bottomPad,
+              data: mq.copyWith(
+                padding: mq.padding.copyWith(
+                  bottom: mq.padding.bottom + bottomPad,
                 ),
               ),
               child: child,
@@ -607,7 +575,7 @@ class _AdBannerWrapper extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: viewPadding.bottom,
+                bottom: mq.viewPadding.bottom,
                 child: const AdBannerWidget(),
               ),
           ],
