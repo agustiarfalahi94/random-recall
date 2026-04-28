@@ -1205,14 +1205,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqA7 =>
-      'The free tier starts with 20 question slots. You can earn additional slots by completing the 7-day Challenge streak (+1 slot per streak). Premium removes the limit entirely.';
+      'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium removes all limits entirely.';
 
   @override
   String get faqQ8 => 'How many custom categories can I create for free?';
 
   @override
   String get faqA8 =>
-      'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. Premium gives unlimited categories.';
+      'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium gives unlimited categories.';
 
   @override
   String get faqQ9 => 'What is the daily Undo?';
@@ -1226,14 +1226,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqA10 =>
-      'Start the NEW Challenge Mode from Notification Schedule. It requires a 5–10 second timer and perfect answers. Answer at least one notification per day for 7 consecutive days to complete it. Missing a day or answering incorrectly fails the challenge.';
+      'Start Challenge Mode from Notification Schedule. Choose between a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and require correct answers on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing the 7-day challenge earns +1 question slot (free users) or a badge + title (premium). Completing the 14-day challenge earns +1 question slot and +1 category slot (free users) or a badge + title (premium).';
 
   @override
   String get faqQ11 => 'Does the timer affect my score if it runs out?';
 
   @override
   String get faqA11 =>
-      'Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. Set the timer to 0 in settings to disable it and answer at your own pace.';
+      'Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. You can set the timer to 0 in Notification Schedule settings to disable it and answer at your own pace. Note: during an active Challenge Mode, the timer is locked between 5–10 seconds and cannot be disabled.';
 
   @override
   String get faqQ12 => 'Do my questions sync across devices?';

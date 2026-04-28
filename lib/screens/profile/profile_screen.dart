@@ -27,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEmailUser = false;
   bool _isPhoneUser = false;
   bool _isPremium = false;
-  bool _isLoading = false;
+  bool _isLoading = true; // true until _loadProfileData() completes
   String? _linkedPhoneNumber;
   int _phoneOnlyPrompted = 0;
 
@@ -61,10 +61,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _phoneOnlyPrompted =
               (profile?['phone_only_prompted'] as int?) ?? 0;
           _isPremium = isPremium;
+          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('ProfileScreen: Load profile failed: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

@@ -5,6 +5,20 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.4] — 2026-04-28
+
+### Fixed
+- **Profile screen shows empty form while data loads** — `_isLoading` was initialised as `false`, so the profile screen displayed an empty name field and default subscription status for ~0.5 s while Firestore data was fetching in the background. Now initialised as `true` and cleared inside `_loadProfileData()` — a loading spinner is shown until data is ready, matching every other screen in the app.
+
+### Changed
+- **FAQ updated for accuracy** — Four entries were stale or misleading after recent feature work:
+  - **Q7** (free question limit) — now mentions both 7-day (+1 question) and 14-day (+1 question +1 category) challenge rewards
+  - **Q8** (free category limit) — now mentions the extra category slot earned from the 14-day challenge
+  - **Q10** (Challenge Mode) — now describes both 7-day and 14-day options with their respective rewards, instead of only mentioning 7 days
+  - **Q11** (timer) — now notes that during an active Challenge Mode the timer is locked between 5–10 s and cannot be disabled
+
+---
+
 ## [0.13.3] — 2026-04-28
 
 ### Fixed
