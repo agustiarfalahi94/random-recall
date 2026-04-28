@@ -1,5 +1,6 @@
 import 'package:workmanager/workmanager.dart';
 
+import '../streak/streak_service.dart';
 import 'notification_service.dart';
 
 const _kTaskName = 'reschedule_notifications';
@@ -14,8 +15,9 @@ void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
     try {
       // Re-initialise everything needed in this background isolate.
-      // NotificationService.init() sets up timezone + flutter_local_notifications.
-      // DatabaseHelper opens lazily on first query — no extra init needed.
+      // StreakService must be initialised before NotificationService.scheduleNotifications()
+      // because it reads isChallengeActive / lockedActiveDaysCsv via the late _prefs field.
+      await StreakService.instance.initialize();
       await NotificationService.instance.init();
       await NotificationService.instance.scheduleNotifications();
       return true;

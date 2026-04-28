@@ -5,6 +5,16 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.8] — 2026-04-28
+
+### Fixed
+- **Phone users excluded from cloud sync** — `performBackup` and `performRestore` guarded with `emailVerified` only, permanently blocking phone-authenticated users from cloud backup and restore (data loss). Now accepts phone auth users via `user.phoneNumber != null` check.
+- **Account deletion orphaned all Firestore subcollections** — Deleting an account only removed the root `/users/{uid}` document; `questions`, `categories`, `score_records`, and `private` subcollections were left behind (GDPR violation). `_deleteUserData` now batch-deletes all subcollection documents before removing the root doc.
+- **Silent data loss on score save failure** — `_grade()` in `NotificationQuestionScreen` swallowed all exceptions with `catch (_) {}`, meaning a failed DB write showed a success state to the user with no error reported to Crashlytics. Now reports to Crashlytics and shows a snackbar.
+- **`StreakService._prefs` accessed before `initialize()` in background isolate** — WorkManager's `callbackDispatcher` called `NotificationService.scheduleNotifications()` which reads `StreakService.isChallengeActive` before `StreakService.initialize()` was called, causing a `LateInitializationError` crash in the background. Now initialises `StreakService` first.
+
+---
+
 ## [0.12.7] — 2026-04-27
 
 ### Fixed

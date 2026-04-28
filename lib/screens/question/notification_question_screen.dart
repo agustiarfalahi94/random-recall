@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
@@ -229,7 +230,14 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
           }
         }
       }
-    } catch (_) {}
+    } catch (e, st) {
+      FirebaseCrashlytics.instance.recordError(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToSaveScore(e.toString()))),
+        );
+      }
+    }
 
     // Show interstitial ad after every organic answer (test notifications skip).
     // Frequency cap (max 5/day, min 10 min apart) is enforced inside AdService.
