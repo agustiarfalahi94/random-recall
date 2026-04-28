@@ -22,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   late TextEditingController _nameController;
+  late TextEditingController _emailController;
 
   bool _isEmailUser = false;
   bool _isPhoneUser = false;
@@ -34,6 +35,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController();
+    _emailController = TextEditingController(
+      text: _auth.currentUser?.email ?? '',
+    );
     _loadProfileData();
   }
 
@@ -235,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.changePasswordButton),
@@ -301,6 +305,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
   }
 
   Future<void> _deleteAccount() async {
@@ -341,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     final passwordController = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.confirmPasswordTitle),
@@ -387,6 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+    passwordController.dispose();
   }
 
   Future<void> _reauthenticateGoogle() async {
@@ -506,6 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       );
+      codeController.dispose();
 
       if (smsCode != null && smsCode.length == 6 && mounted) {
         try {
@@ -562,9 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Email (read-only)
                   TextField(
-                    controller: TextEditingController(
-                      text: _auth.currentUser?.email ?? '',
-                    ),
+                    controller: _emailController,
                     readOnly: true,
                     decoration: InputDecoration(
                       labelText: l10n.emailLabel,
@@ -642,6 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 }

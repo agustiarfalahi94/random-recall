@@ -173,8 +173,10 @@ Future<void> main() async {
 
       final user = AuthService.instance.currentUser;
 
-      if (onboardingComplete && user != null && user.emailVerified) {
-        SyncService.instance.performRestore();
+      final isVerified = user != null &&
+          (user.emailVerified || user.phoneNumber != null);
+      if (onboardingComplete && isVerified) {
+        SyncService.instance.performRestore().ignore();
         await registerNotificationWorker().catchError(
           (e) => debugPrint('WorkManager failed: $e'),
         );
@@ -493,7 +495,7 @@ class _HomeGateState extends State<_HomeGate> {
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
-          .get();
+          .get(const GetOptions(source: Source.server));
 
       if (!userDoc.exists) return;
 
@@ -544,9 +546,8 @@ class _AdBannerWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewPadding = MediaQuery.of(context).viewPadding;
-    final viewInsets = MediaQuery.of(context).viewInsets;
-    final keyboardVisible = viewInsets.bottom > 0;
+    final mq = MediaQuery.of(context);
+    final keyboardVisible = mq.viewInsets.bottom > 0;
 
     return ValueListenableBuilder<bool>(
       valueListenable: AdService.instance.bannerVisible,
@@ -560,9 +561,9 @@ class _AdBannerWrapper extends StatelessWidget {
           children: [
             // Propagate extra bottom padding so Scaffolds leave room for banner
             MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                padding: MediaQuery.of(context).padding.copyWith(
-                  bottom: MediaQuery.of(context).padding.bottom + bottomPad,
+              data: mq.copyWith(
+                padding: mq.padding.copyWith(
+                  bottom: mq.padding.bottom + bottomPad,
                 ),
               ),
               child: child,
@@ -574,7 +575,7 @@ class _AdBannerWrapper extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: viewPadding.bottom,
+                bottom: mq.viewPadding.bottom,
                 child: const AdBannerWidget(),
               ),
           ],

@@ -125,7 +125,12 @@ class _NotificationScheduleScreenState
     final loadedStartTime = TimeOfDay(hour: prefs.getInt('notif_start_hour') ?? 8, minute: 0);
     final loadedEndTime = TimeOfDay(hour: prefs.getInt('notif_end_hour') ?? 20, minute: 0);
     final loadedFrequency = (prefs.getInt('notif_frequency') ?? 3).clamp(1, 10);
-    final loadedActiveDays = daysStr.split(',').map(int.parse).toSet();
+    final loadedActiveDays = daysStr
+        .split(',')
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
+    if (loadedActiveDays.isEmpty) loadedActiveDays.addAll({1, 2, 3, 4, 5, 6, 7});
     final loadedTimerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
 
     setState(() {
@@ -159,7 +164,12 @@ class _NotificationScheduleScreenState
         setState(() {
           if (lockedAnytime != null) _randomAnytime = lockedAnytime;
           if (lockedDays != null) {
-            _activeDays = lockedDays.split(',').map(int.parse).toSet();
+            final parsed = lockedDays
+                .split(',')
+                .map(int.tryParse)
+                .whereType<int>()
+                .toSet();
+            _activeDays = parsed.isEmpty ? {1, 2, 3, 4, 5, 6, 7} : parsed;
           }
           // Timer is also locked when challenge active
           if (StreakService.instance.isChallengeActive) {

@@ -633,6 +633,7 @@ class _HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _unansweredCount = 0;
+  bool _displayNamePromptShown = false;
 
   StreamSubscription<void>? _answeredSub;
   StreamSubscription<void>? _databaseUpdateSub;
@@ -664,9 +665,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     });
 
     // Check if challenge daily requirement is met
-    StreakService.instance.checkChallengeDailyRequirement().ignore();
+    StreakService.instance.checkChallengeDailyRequirement().catchError(
+      (e) => debugPrint('HomeTab: Daily challenge check failed: $e'),
+    );
 
-    // Check if user has set a display name, prompt if not
+    // Check if user has set a display name, prompt if not (once per session)
     _checkAndShowDisplayNamePrompt();
 
   }
@@ -682,10 +685,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   }
 
   Future<void> _checkAndShowDisplayNamePrompt() async {
+    if (_displayNamePromptShown) return;
     final user = FirebaseAuth.instance.currentUser;
     debugPrint('HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"');
 
     if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+      _displayNamePromptShown = true;
       debugPrint('HomeTab: Showing display name setup dialog');
       // Show display name setup screen
       if (mounted) {

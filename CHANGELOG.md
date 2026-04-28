@@ -5,6 +5,25 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.12.9] — 2026-04-28
+
+### Fixed
+- **Unsafe CSV parsing crashes notification scheduler** — `int.parse` on persisted active-days CSV would throw `FormatException` on any corrupted or empty value, killing the notification scheduler. Replaced with `int.tryParse` + fallback to all-days in `notification_service.dart` and `notification_schedule_screen.dart`.
+- **Phone users excluded from startup restore** — `main.dart` startup flow checked `user.emailVerified` before calling `performRestore`, excluding phone-authenticated users. Now uses `emailVerified || phoneNumber != null`.
+- **Device ID check could use stale Firestore cache** — `_checkActiveDevice` read the device ID from Firestore's local cache, which could sign out users on fresh install with a stale hit. Now forces a server read with `GetOptions(source: Source.server)`.
+- **Challenge daily check used 24h period instead of calendar-day boundary** — `now.difference(lastAnswerDate).inDays` counts 24-hour periods, not calendar-day crossings. A user answering at 11:59 PM and missing the next calendar day would not fail. Fixed by comparing ISO date strings (`yyyy-MM-dd`).
+- **`TextEditingController` leaks in dialogs** — Password change, email re-auth, and phone re-auth dialogs created controllers but never disposed them. Now awaits the dialog and disposes immediately after close.
+- **Email field leaked a new `TextEditingController` on every build** — `ProfileScreen` created a controller inline in `build()` with no reference. Moved to a state field initialised in `initState` and disposed in `dispose`.
+- **Display name prompt shown on every `initState`** — Dialog could appear multiple times per session on tab re-parenting or app resume. Added `_displayNamePromptShown` session guard.
+- **`checkChallengeDailyRequirement` errors silently swallowed** — `.ignore()` hid Firestore write failures that could desync challenge state. Replaced with `.catchError` debug logging.
+- **Test ad unit IDs could ship to production** — Ad IDs were always the Google test IDs with no release-mode guard. Added `kReleaseMode` switch; release builds use placeholder real IDs (to be replaced before AdMob account is ready).
+- **Dead code removed** — `StreakService.recordActivity` static method and its `StreakResult` class had no callers. Removed entirely.
+- **Duplicate `_initCompleter` null check** — Second dead guard in `NotificationService.init()` removed.
+- **`MediaQuery.of(context)` called 3× in one build** — Extracted to local `mq` variable in `_AdBannerWrapper.build`.
+- **`.ignore()` on fire-and-forget restore** — Made explicit with `.ignore()` to suppress linter warning.
+
+---
+
 ## [0.12.8] — 2026-04-28
 
 ### Fixed

@@ -60,10 +60,6 @@ class NotificationService {
     });
 
     if (_initCompleter != null) return _initCompleter!.future;
-    // If init is already in progress, return its future to avoid re-entering.
-    // This is crucial to prevent multiple initializations if called concurrently.
-    if (_initCompleter != null && !_initCompleter!.isCompleted)
-      return _initCompleter!.future;
 
     final completer = Completer<void>();
     _initCompleter = completer;
@@ -332,7 +328,12 @@ class NotificationService {
       'startHour=$startHour, endHour=$endHour, frequency=$frequency, '
       'activeDays=$activeDaysStr',
     );
-    final activeDays = activeDaysStr.split(',').map(int.parse).toSet();
+    final activeDays = activeDaysStr
+        .split(',')
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
+    if (activeDays.isEmpty) activeDays.addAll({1, 2, 3, 4, 5, 6, 7});
 
     // Fetch all questions once; the scheduler picks from them.
     final questions = await DatabaseHelper.instance.getAllQuestions();

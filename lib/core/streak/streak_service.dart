@@ -230,12 +230,13 @@ class StreakService {
     final lastAnswerDateStr = _prefs.getString(_keyChallengeLastAnswerDate);
     if (lastAnswerDateStr == null) return;
 
-    final lastAnswerDate = DateTime.parse(lastAnswerDateStr);
     final now = DateTime.now();
-    final daysDiff = now.difference(lastAnswerDate).inDays;
+    final lastAnswerKey = lastAnswerDateStr.substring(0, 10); // 'yyyy-MM-dd'
+    final yesterdayKey = _dateKey(now.subtract(const Duration(days: 1)));
 
-    // If more than 1 day since last answer, challenge failed
-    if (daysDiff > 1) {
+    // Fail if the last answer was before yesterday (missed a calendar day).
+    // Using date strings avoids the 24h-period pitfall of .difference().inDays.
+    if (lastAnswerKey.compareTo(yesterdayKey) < 0) {
       await failChallenge();
     }
   }
@@ -401,44 +402,6 @@ class StreakService {
     }
   }
 
-  // ── Record an activity (call when user grades a question with timer on) ────
-
-  static Future<StreakResult> recordActivity({
-    bool isPremiumUser = false,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = _dateKey(DateTime.now());
-    final lastDate = prefs.getString(_keyLastDate) ?? '';
-    final current = prefs.getInt(_keyStreak) ?? 0;
-
-    // Already counted today → no change
-    if (lastDate == today) {
-      return StreakResult(streak: current, milestoneReached: false);
-    }
-
-    final yesterday = _dateKey(
-      DateTime.now().subtract(const Duration(days: 1)),
-    );
-
-    // Consecutive day → increment; otherwise reset to 1
-    final newStreak = (lastDate == yesterday) ? current + 1 : 1;
-
-    await prefs.setInt(_keyStreak, newStreak);
-    await prefs.setString(_keyLastDate, today);
-
-    // Every 7 days grant a bonus question slot (free-tier only)
-    bool milestone = false;
-    if (newStreak % 7 == 0) {
-      if (!isPremiumUser) {
-        final earned = prefs.getInt(_keyBonusQuestions) ?? 0;
-        await prefs.setInt(_keyBonusQuestions, earned + 1);
-      }
-      milestone = true;
-    }
-
-    return StreakResult(streak: newStreak, milestoneReached: milestone);
-  }
-
   // ── Getters ────────────────────────────────────────────────────────────────
 
   static Future<int> getStreak() async {
@@ -473,13 +436,6 @@ class StreakService {
 
   static String _dateKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-}
-
-class StreakResult {
-  final int streak;
-  final bool milestoneReached;
-
-  const StreakResult({required this.streak, required this.milestoneReached});
 }
 
 enum ChallengeAnswerOutcome { noChallenge, alreadyCompletedToday, progressed, completed, failed }
