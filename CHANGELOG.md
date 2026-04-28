@@ -5,6 +5,15 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.3] — 2026-04-28
+
+### Fixed
+- **`challenge_failed` always reported `duration_days: 7`** — `failChallenge()` read `challengeDuration` after calling `resetChallenge()`, which removes the duration key from SharedPreferences. The getter then fell back to its default (7), so every 14-day challenge failure was recorded as a 7-day failure. Now captures the duration before resetting.
+- **Boolean parameters silently dropped in Firebase Analytics** — Firebase Analytics on Android only accepts `String`, `long`, and `double` in event bundles. `bool` is not a native type and may be dropped by the plugin bridge. Converted `correct`, `from_notification` (in `question_answered`) and `random_anytime` (in `schedule_changed`) to `int` (1/0).
+- **Auth method inconsistency between `login` and `onboarding_completed`** — `trackLogin()` sends `'google'`/`'email'`/`'phone'`, but `onboarding_completed` was deriving the method directly from Firebase's `providerId` (`'google.com'`/`'password'`), causing two different values for the same provider in the dashboard. Now normalised with a switch to match `trackLogin()`.
+
+---
+
 ## [0.13.2] — 2026-04-28
 
 ### Improved

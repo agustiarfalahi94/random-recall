@@ -226,12 +226,13 @@ class StreakService {
   Future<void> failChallenge() async {
     if (isChallengeActive) {
       final dayReached = challengeDay;
+      final durationDays = challengeDuration; // capture before resetChallenge() removes the key
       await _prefs.setInt(_keyStreak, 0);
       await resetChallenge();
       await _saveToFirestore();
       AnalyticsService.instance.trackChallengeFailed(
         dayReached: dayReached,
-        durationDays: challengeDuration,
+        durationDays: durationDays,
       ).ignore();
     }
   }
