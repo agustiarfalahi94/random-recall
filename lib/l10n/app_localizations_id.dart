@@ -1549,6 +1549,58 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get challengeCompleteTitle => 'Tantangan Selesai!';
+
+  @override
+  String challengeCompletedDaysLabel(int duration) {
+    return 'Kamu menyelesaikan tantangan $duration hari!';
+  }
+
+  @override
+  String get challengeRewardsEarnedLabel => 'Hadiah yang Diperoleh:';
+
+  @override
+  String challengeRewardQuestionSlotsLabel(int count, String plural) {
+    return '+$count Slot Pertanyaan$plural';
+  }
+
+  @override
+  String get challengeRewardQuestionsDesc =>
+      'Buka lebih banyak pertanyaan secara permanen';
+
+  @override
+  String challengeRewardCategorySlotsLabel(int count, String plural) {
+    return '+$count Slot Kategori$plural';
+  }
+
+  @override
+  String get challengeRewardCategoriesDesc =>
+      'Buat lebih banyak kategori kustom';
+
+  @override
+  String get challengeRewardBadgeUnlockedLabel => 'Lencana Tantangan Terbuka';
+
+  @override
+  String get challengeRewardBadgeDesc => 'Tunjukkan pencapaianmu';
+
+  @override
+  String challengeRewardTitleLabel(String title) {
+    return 'Gelar: $title';
+  }
+
+  @override
+  String get challengeRewardTitleDesc => 'Pencapaian eksklusif premium';
+
+  @override
+  String get challengeTitleChallenger => 'Penantang';
+
+  @override
+  String get challengeTitleChampion => 'Juara';
+
+  @override
+  String get challengeTitleLegend => 'Legenda';
+
+  @override
   String get challengeModeCardTitle => 'Mode Tantangan';
 
   @override

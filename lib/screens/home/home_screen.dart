@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
@@ -571,16 +572,22 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
     if (submitted == true && controller.text.trim().isNotEmpty) {
       try {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        await FirebaseFirestore.instance.collection('feedback').add({
+          'uid': uid,
+          'message': controller.text.trim(),
+          'submitted_at': FieldValue.serverTimestamp(),
+        });
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.feedbackSentSnack)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.feedbackSentSnack)),
+          );
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.feedbackFailedSnack)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.feedbackFailedSnack)),
+          );
         }
       }
     }

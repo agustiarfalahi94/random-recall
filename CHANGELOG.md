@@ -5,6 +5,22 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.0] — 2026-04-28
+
+### Added
+- **Feedback now submitted to Firestore** — Feedback dialog previously showed "Feedback sent!" but made no network call (remnant of removed Sentry integration). Now writes to a `feedback` Firestore collection with UID and timestamp.
+
+### Fixed
+- **`ChallengeCompleteScreen` entirely hardcoded English** — All strings ("Challenge Complete!", "You completed the X-day challenge!", "Rewards Earned:", reward labels and descriptions) now go through l10n keys in both `app_en.arb` and `app_id.arb`.
+- **Challenge titles stored as English strings displayed untranslated** — "Challenger", "Champion", "Legend" were stored as raw English in prefs/Firestore and passed directly to the UI. Now localised at display time via a key lookup in `ChallengeCompleteScreen`.
+
+### Improved
+- **`AppProvider` notification strings** — Replaced `if/else` locale check with a language-code lookup map. Adding a new locale now requires one entry here instead of hunting through the provider logic.
+- **Stream controller `dispose()` methods** — Added `dispose()` to `DatabaseHelper` and `NotificationService` singletons so stream controllers are cleanly closeable in tests.
+- **Extracted shared question widgets** — `_TimerBadge`, `_GradeButton`, `QuestionCard`, and `AnswerCard` were duplicated identically across `question_screen.dart` and `notification_question_screen.dart`. Extracted to `question_widgets.dart`; both screens now import from a single source.
+
+---
+
 ## [0.12.9] — 2026-04-28
 
 ### Fixed

@@ -650,6 +650,39 @@
   "confirmPasswordHint": "Konfirmasi Kata Sandi",
   "addTooltip": "Tambah",
   "challengeStartError": "Gagal memulai tantangan: {error}",
+
+  "challengeCompleteTitle": "Tantangan Selesai!",
+  "challengeCompletedDaysLabel": "Kamu menyelesaikan tantangan {duration} hari!",
+  "@challengeCompletedDaysLabel": {
+    "placeholders": { "duration": { "type": "int" } }
+  },
+  "challengeRewardsEarnedLabel": "Hadiah yang Diperoleh:",
+  "challengeRewardQuestionSlotsLabel": "+{count} Slot Pertanyaan{plural}",
+  "@challengeRewardQuestionSlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardQuestionsDesc": "Buka lebih banyak pertanyaan secara permanen",
+  "challengeRewardCategorySlotsLabel": "+{count} Slot Kategori{plural}",
+  "@challengeRewardCategorySlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardCategoriesDesc": "Buat lebih banyak kategori kustom",
+  "challengeRewardBadgeUnlockedLabel": "Lencana Tantangan Terbuka",
+  "challengeRewardBadgeDesc": "Tunjukkan pencapaianmu",
+  "challengeRewardTitleLabel": "Gelar: {title}",
+  "@challengeRewardTitleLabel": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "challengeRewardTitleDesc": "Pencapaian eksklusif premium",
+  "challengeTitleChallenger": "Penantang",
+  "challengeTitleChampion": "Juara",
+  "challengeTitleLegend": "Legenda",
   "@challengeStartError": {
     "placeholders": { "error": { "type": "String" } }
   },

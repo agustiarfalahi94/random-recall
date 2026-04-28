@@ -36,6 +36,10 @@ class NotificationService {
       StreamController<void>.broadcast();
   Stream<void> get onNotificationAnswered => _answeredController.stream;
 
+  Future<void> dispose() async {
+    await _answeredController.close();
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   Future<void> init() async {

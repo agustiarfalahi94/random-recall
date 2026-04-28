@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
 class ChallengeCompleteScreen extends StatelessWidget {
-  final int duration; // 7 or 14 days
+  final int duration;
   final int questionsEarned;
   final int categoriesEarned;
   final bool isBadgeUnlocked;
@@ -16,6 +16,18 @@ class ChallengeCompleteScreen extends StatelessWidget {
     required this.isBadgeUnlocked,
     this.title,
   });
+
+  /// Localise the stored title key ('Challenger', 'Champion', 'Legend').
+  String _localiseTitle(AppLocalizations l10n, String key) {
+    switch (key) {
+      case 'Legend':
+        return l10n.challengeTitleLegend;
+      case 'Champion':
+        return l10n.challengeTitleChampion;
+      default:
+        return l10n.challengeTitleChallenger;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,17 +53,13 @@ class ChallengeCompleteScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Header
                 Column(
                   children: [
                     const SizedBox(height: 24),
-                    const Text(
-                      '🎉',
-                      style: TextStyle(fontSize: 80),
-                    ),
+                    const Text('🎉', style: TextStyle(fontSize: 80)),
                     const SizedBox(height: 24),
                     Text(
-                      'Challenge Complete!',
+                      l10n.challengeCompleteTitle,
                       style: theme.textTheme.displaySmall?.copyWith(
                         fontWeight: FontWeight.w900,
                         color: colorScheme.onPrimaryContainer,
@@ -60,33 +68,30 @@ class ChallengeCompleteScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'You completed the $duration-day challenge!',
+                      l10n.challengeCompletedDaysLabel(duration),
                       style: TextStyle(
                         fontSize: 16,
-                        color: colorScheme.onPrimaryContainer.withOpacity(0.85),
+                        color: colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ],
                 ),
 
-                // Rewards Section
                 Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface.withOpacity(0.9),
+                        color: colorScheme.surface.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: colorScheme.outlineVariant,
-                        ),
+                        border: Border.all(color: colorScheme.outlineVariant),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Rewards Earned:',
+                            l10n.challengeRewardsEarnedLabel,
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: colorScheme.onSurface,
@@ -94,163 +99,57 @@ class ChallengeCompleteScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
 
-                          // Question slots
                           if (questionsEarned > 0) ...[
-                            Row(
-                              children: [
-                                const Text(
-                                  '✨',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '+$questionsEarned Question Slot${questionsEarned > 1 ? 's' : ''}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Permanently unlock more questions',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color:
-                                              colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                            _RewardRow(
+                              emoji: '✨',
+                              label: l10n.challengeRewardQuestionSlotsLabel(
+                                questionsEarned,
+                                questionsEarned > 1 ? 's' : '',
+                              ),
+                              description: l10n.challengeRewardQuestionsDesc,
+                              colorScheme: colorScheme,
                             ),
                             const SizedBox(height: 16),
                           ],
 
-                          // Category slots
                           if (categoriesEarned > 0) ...[
-                            Row(
-                              children: [
-                                const Text(
-                                  '🎯',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '+$categoriesEarned Category Slot${categoriesEarned > 1 ? 's' : ''}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Create more custom categories',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color:
-                                              colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                            _RewardRow(
+                              emoji: '🎯',
+                              label: l10n.challengeRewardCategorySlotsLabel(
+                                categoriesEarned,
+                                categoriesEarned > 1 ? 's' : '',
+                              ),
+                              description: l10n.challengeRewardCategoriesDesc,
+                              colorScheme: colorScheme,
                             ),
                             const SizedBox(height: 16),
                           ],
 
-                          // Badge
                           if (isBadgeUnlocked) ...[
-                            Row(
-                              children: [
-                                const Text(
-                                  '🏆',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Challenge Badge Unlocked',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Show off your achievement',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color:
-                                              colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                            _RewardRow(
+                              emoji: '🏆',
+                              label: l10n.challengeRewardBadgeUnlockedLabel,
+                              description: l10n.challengeRewardBadgeDesc,
+                              colorScheme: colorScheme,
                             ),
                             const SizedBox(height: 16),
                           ],
 
-                          // Title
-                          if (title != null && title!.isNotEmpty) ...[
-                            Row(
-                              children: [
-                                const Text(
-                                  '👑',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Title: $title',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Premium exclusive achievement',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color:
-                                              colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                          if (title != null && title!.isNotEmpty)
+                            _RewardRow(
+                              emoji: '👑',
+                              label: l10n.challengeRewardTitleLabel(
+                                _localiseTitle(l10n, title!),
+                              ),
+                              description: l10n.challengeRewardTitleDesc,
+                              colorScheme: colorScheme,
                             ),
-                          ],
                         ],
                       ),
                     ),
                   ],
                 ),
 
-                // Back button
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: FilledButton.styleFrom(
@@ -266,6 +165,49 @@ class ChallengeCompleteScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RewardRow extends StatelessWidget {
+  const _RewardRow({
+    required this.emoji,
+    required this.label,
+    required this.description,
+    required this.colorScheme,
+  });
+
+  final String emoji;
+  final String label;
+  final String description;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              Text(
+                description,
+                style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

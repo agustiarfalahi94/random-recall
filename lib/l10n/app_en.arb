@@ -650,6 +650,39 @@
   "confirmPasswordHint": "Confirm Password",
   "addTooltip": "Add",
   "challengeStartError": "Error starting challenge: {error}",
+
+  "challengeCompleteTitle": "Challenge Complete!",
+  "challengeCompletedDaysLabel": "You completed the {duration}-day challenge!",
+  "@challengeCompletedDaysLabel": {
+    "placeholders": { "duration": { "type": "int" } }
+  },
+  "challengeRewardsEarnedLabel": "Rewards Earned:",
+  "challengeRewardQuestionSlotsLabel": "+{count} Question Slot{plural}",
+  "@challengeRewardQuestionSlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardQuestionsDesc": "Permanently unlock more questions",
+  "challengeRewardCategorySlotsLabel": "+{count} Category Slot{plural}",
+  "@challengeRewardCategorySlotsLabel": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "plural": { "type": "String" }
+    }
+  },
+  "challengeRewardCategoriesDesc": "Create more custom categories",
+  "challengeRewardBadgeUnlockedLabel": "Challenge Badge Unlocked",
+  "challengeRewardBadgeDesc": "Show off your achievement",
+  "challengeRewardTitleLabel": "Title: {title}",
+  "@challengeRewardTitleLabel": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "challengeRewardTitleDesc": "Premium exclusive achievement",
+  "challengeTitleChallenger": "Challenger",
+  "challengeTitleChampion": "Champion",
+  "challengeTitleLegend": "Legend",
   "@challengeStartError": {
     "placeholders": { "error": { "type": "String" } }
   },

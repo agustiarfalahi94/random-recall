@@ -2780,6 +2780,90 @@ abstract class AppLocalizations {
   /// **'Error starting challenge: {error}'**
   String challengeStartError(String error);
 
+  /// No description provided for @challengeCompleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Complete!'**
+  String get challengeCompleteTitle;
+
+  /// No description provided for @challengeCompletedDaysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'You completed the {duration}-day challenge!'**
+  String challengeCompletedDaysLabel(int duration);
+
+  /// No description provided for @challengeRewardsEarnedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards Earned:'**
+  String get challengeRewardsEarnedLabel;
+
+  /// No description provided for @challengeRewardQuestionSlotsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} Question Slot{plural}'**
+  String challengeRewardQuestionSlotsLabel(int count, String plural);
+
+  /// No description provided for @challengeRewardQuestionsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently unlock more questions'**
+  String get challengeRewardQuestionsDesc;
+
+  /// No description provided for @challengeRewardCategorySlotsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} Category Slot{plural}'**
+  String challengeRewardCategorySlotsLabel(int count, String plural);
+
+  /// No description provided for @challengeRewardCategoriesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Create more custom categories'**
+  String get challengeRewardCategoriesDesc;
+
+  /// No description provided for @challengeRewardBadgeUnlockedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Badge Unlocked'**
+  String get challengeRewardBadgeUnlockedLabel;
+
+  /// No description provided for @challengeRewardBadgeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Show off your achievement'**
+  String get challengeRewardBadgeDesc;
+
+  /// No description provided for @challengeRewardTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title: {title}'**
+  String challengeRewardTitleLabel(String title);
+
+  /// No description provided for @challengeRewardTitleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium exclusive achievement'**
+  String get challengeRewardTitleDesc;
+
+  /// No description provided for @challengeTitleChallenger.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenger'**
+  String get challengeTitleChallenger;
+
+  /// No description provided for @challengeTitleChampion.
+  ///
+  /// In en, this message translates to:
+  /// **'Champion'**
+  String get challengeTitleChampion;
+
+  /// No description provided for @challengeTitleLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Legend'**
+  String get challengeTitleLegend;
+
   /// No description provided for @challengeModeCardTitle.
   ///
   /// In en, this message translates to:

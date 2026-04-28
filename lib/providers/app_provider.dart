@@ -1,6 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Notification strings stored in SharedPreferences for use by the background
+// isolate (no BuildContext available there). Values must stay in sync with
+// the corresponding keys in app_en.arb / app_id.arb.
+// When adding a new locale, add an entry here and in both ARB files.
+const _notifStrings = {
+  'en': {
+    'notif_title': 'Time for a quick recall! 🧠',
+    'notif_body': 'Tap to answer the question',
+    'test_notif_title': 'Test Notification 🧪',
+    'test_notif_body': 'Tap to answer the question',
+  },
+  'id': {
+    'notif_title': 'Saatnya mengingat kembali! 🧠',
+    'notif_body': 'Tap untuk menjawab pertanyaan',
+    'test_notif_title': 'Notifikasi Pengujian 🧪',
+    'test_notif_body': 'Tap untuk menjawab pertanyaan',
+  },
+};
+
 class AppProvider extends ChangeNotifier {
   bool _isLoading = false;
   Locale? _locale;
@@ -18,42 +37,18 @@ class AppProvider extends ChangeNotifier {
     if (langCode != null) {
       _locale = Locale(langCode);
       notifyListeners();
-      // Ensure notification strings are set for the loaded locale
       await _updateNotificationStrings(langCode);
     } else {
-      // Set default (English) notification strings
       await _updateNotificationStrings('en');
     }
   }
 
   Future<void> _updateNotificationStrings(String languageCode) async {
+    final strings = _notifStrings[languageCode] ?? _notifStrings['en']!;
     final prefs = await SharedPreferences.getInstance();
-    final isIndonesian = languageCode == 'id';
-
-    await Future.wait([
-      prefs.setString(
-        'notif_title',
-        isIndonesian
-            ? 'Saatnya mengingat kembali! 🧠'
-            : 'Time for a quick recall! 🧠',
-      ),
-      prefs.setString(
-        'notif_body',
-        isIndonesian
-            ? 'Tap untuk menjawab pertanyaan'
-            : 'Tap to answer the question',
-      ),
-      prefs.setString(
-        'test_notif_title',
-        isIndonesian ? 'Notifikasi Pengujian 🧪' : 'Test Notification 🧪',
-      ),
-      prefs.setString(
-        'test_notif_body',
-        isIndonesian
-            ? 'Tap untuk menjawab pertanyaan'
-            : 'Tap to answer the question',
-      ),
-    ]);
+    await Future.wait(
+      strings.entries.map((e) => prefs.setString(e.key, e.value)),
+    );
   }
 
   Future<void> setLocale(Locale locale) async {
@@ -61,7 +56,6 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_locale', locale.languageCode);
-    // Update notification strings for background service
     await _updateNotificationStrings(locale.languageCode);
   }
 

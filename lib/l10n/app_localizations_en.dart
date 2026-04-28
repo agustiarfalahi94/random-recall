@@ -1539,6 +1539,57 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get challengeCompleteTitle => 'Challenge Complete!';
+
+  @override
+  String challengeCompletedDaysLabel(int duration) {
+    return 'You completed the $duration-day challenge!';
+  }
+
+  @override
+  String get challengeRewardsEarnedLabel => 'Rewards Earned:';
+
+  @override
+  String challengeRewardQuestionSlotsLabel(int count, String plural) {
+    return '+$count Question Slot$plural';
+  }
+
+  @override
+  String get challengeRewardQuestionsDesc =>
+      'Permanently unlock more questions';
+
+  @override
+  String challengeRewardCategorySlotsLabel(int count, String plural) {
+    return '+$count Category Slot$plural';
+  }
+
+  @override
+  String get challengeRewardCategoriesDesc => 'Create more custom categories';
+
+  @override
+  String get challengeRewardBadgeUnlockedLabel => 'Challenge Badge Unlocked';
+
+  @override
+  String get challengeRewardBadgeDesc => 'Show off your achievement';
+
+  @override
+  String challengeRewardTitleLabel(String title) {
+    return 'Title: $title';
+  }
+
+  @override
+  String get challengeRewardTitleDesc => 'Premium exclusive achievement';
+
+  @override
+  String get challengeTitleChallenger => 'Challenger';
+
+  @override
+  String get challengeTitleChampion => 'Champion';
+
+  @override
+  String get challengeTitleLegend => 'Legend';
+
+  @override
   String get challengeModeCardTitle => 'Challenge Mode';
 
   @override
