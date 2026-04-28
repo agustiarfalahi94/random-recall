@@ -5,6 +5,22 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.1] — 2026-04-28
+
+### Added
+- **Firebase Analytics implemented** — `AnalyticsService` event methods were all no-ops since PostHog was removed. Now wired to Firebase Analytics with the following events:
+  - `app_open` — every app launch
+  - `login` / `logout` — with auth method
+  - `question_answered` — with `correct` and `from_notification` parameters
+  - `notification_tapped` — organic notification opens
+  - `question_created` / `category_created` — content additions
+  - `schedule_changed` — with frequency, random_anytime, timer_seconds
+  - `onboarding_completed`
+  - `challenge_started` / `challenge_completed` / `challenge_failed` — with duration/day_reached parameters
+- **Firebase Analytics dependency added** — `firebase_analytics: ^11.3.3`
+
+---
+
 ## [0.13.0] — 2026-04-28
 
 ### Added
