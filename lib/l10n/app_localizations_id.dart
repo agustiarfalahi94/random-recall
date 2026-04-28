@@ -1212,7 +1212,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA7 =>
-      'Paket gratis mulai dengan 20 slot pertanyaan. Kamu bisa mendapatkan slot tambahan dengan menyelesaikan streak Tantangan 7 hari (+1 slot per streak). Premium menghapus batas sepenuhnya.';
+      'Paket gratis mulai dengan 20 slot pertanyaan. Kamu bisa mendapatkan slot tambahan melalui Mode Tantangan: menyelesaikan tantangan 7 hari mendapatkan +1 slot pertanyaan, dan menyelesaikan tantangan 14 hari mendapatkan +1 slot pertanyaan dan +1 slot kategori. Premium menghapus semua batas sepenuhnya.';
 
   @override
   String get faqQ8 =>
@@ -1220,7 +1220,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA8 =>
-      'Akun gratis dapat membuat 1 kategori kustom. Kategori bawaan \"General\" dan \"Work\" tidak dihitung terhadap batas ini. Premium memberikan kategori tak terbatas.';
+      'Akun gratis dapat membuat 1 kategori kustom. Kategori bawaan \"General\" dan \"Work\" tidak dihitung terhadap batas ini. Kamu bisa mendapatkan slot kategori tambahan dengan menyelesaikan Mode Tantangan 14 hari. Premium memberikan kategori tak terbatas.';
 
   @override
   String get faqQ9 => 'Apa itu Batal harian?';
@@ -1234,14 +1234,14 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA10 =>
-      'Mulai Mode Tantangan BARU dari Jadwal Notifikasi. Mode ini mewajibkan timer 5–10 detik dan jawaban sempurna. Jawab minimal satu notifikasi per hari selama 7 hari berturut-turut untuk menyelesaikan tantangan. Melewatkan satu hari atau menjawab salah akan menggagalkan tantangan.';
+      'Mulai Mode Tantangan dari Jadwal Notifikasi. Pilih antara tantangan 7 hari atau 14 hari — keduanya mengunci timer ke 5–10 detik dan mewajibkan jawaban benar pada setiap pertanyaan. Jawab minimal satu notifikasi per hari selama durasi penuh. Melewatkan satu hari atau menjawab salah akan menggagalkan tantangan. Menyelesaikan tantangan 7 hari mendapatkan +1 slot pertanyaan (pengguna gratis) atau lencana + gelar (premium). Menyelesaikan tantangan 14 hari mendapatkan +1 slot pertanyaan dan +1 slot kategori (pengguna gratis) atau lencana + gelar (premium).';
 
   @override
   String get faqQ11 => 'Apakah timer mempengaruhi skor saya jika habis?';
 
   @override
   String get faqA11 =>
-      'Ya — jika hitungan mundur mencapai nol sebelum kamu menjawab, pertanyaan secara otomatis ditandai salah. Atur timer ke 0 di pengaturan untuk menonaktifkannya dan menjawab sesuai kecepatan kamu.';
+      'Ya — jika hitungan mundur mencapai nol sebelum kamu menjawab, pertanyaan secara otomatis ditandai salah. Kamu bisa mengatur timer ke 0 di pengaturan Jadwal Notifikasi untuk menonaktifkannya dan menjawab sesuai kecepatan kamu. Catatan: saat Mode Tantangan aktif, timer terkunci antara 5–10 detik dan tidak dapat dinonaktifkan.';
 
   @override
   String get faqQ12 =>

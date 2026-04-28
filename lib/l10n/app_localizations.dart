@@ -2225,7 +2225,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA7.
   ///
   /// In en, this message translates to:
-  /// **'The free tier starts with 20 question slots. You can earn additional slots by completing the 7-day Challenge streak (+1 slot per streak). Premium removes the limit entirely.'**
+  /// **'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium removes all limits entirely.'**
   String get faqA7;
 
   /// No description provided for @faqQ8.
@@ -2237,7 +2237,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA8.
   ///
   /// In en, this message translates to:
-  /// **'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. Premium gives unlimited categories.'**
+  /// **'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium gives unlimited categories.'**
   String get faqA8;
 
   /// No description provided for @faqQ9.
@@ -2261,7 +2261,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA10.
   ///
   /// In en, this message translates to:
-  /// **'Start the NEW Challenge Mode from Notification Schedule. It requires a 5–10 second timer and perfect answers. Answer at least one notification per day for 7 consecutive days to complete it. Missing a day or answering incorrectly fails the challenge.'**
+  /// **'Start Challenge Mode from Notification Schedule. Choose between a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and require correct answers on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing the 7-day challenge earns +1 question slot (free users) or a badge + title (premium). Completing the 14-day challenge earns +1 question slot and +1 category slot (free users) or a badge + title (premium).'**
   String get faqA10;
 
   /// No description provided for @faqQ11.
@@ -2273,7 +2273,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA11.
   ///
   /// In en, this message translates to:
-  /// **'Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. Set the timer to 0 in settings to disable it and answer at your own pace.'**
+  /// **'Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. You can set the timer to 0 in Notification Schedule settings to disable it and answer at your own pace. Note: during an active Challenge Mode, the timer is locked between 5–10 seconds and cannot be disabled.'**
   String get faqA11;
 
   /// No description provided for @faqQ12.
