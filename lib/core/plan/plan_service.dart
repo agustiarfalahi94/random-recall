@@ -33,14 +33,21 @@ class PlanService {
     return currentCount < limit;
   }
 
+  /// Returns the max number of custom categories allowed.
+  static Future<int> getCategoryLimit() async {
+    if (await isPremium()) {
+      return RemoteConfigService.instance.premiumMaxCustomCategories;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final bonus = prefs.getInt('bonus_categories') ?? 0;
+    return freeMaxCustomCategories + bonus;
+  }
+
   /// Checks if a user can add another custom category.
   /// [currentCustomCount] should exclude default categories (General, Work).
   static Future<bool> canAddCategory(int currentCustomCount) async {
-    if (await isPremium()) {
-      return currentCustomCount <
-          RemoteConfigService.instance.premiumMaxCustomCategories;
-    }
-    return currentCustomCount < freeMaxCustomCategories;
+    final limit = await getCategoryLimit();
+    return currentCustomCount < limit;
   }
 
   /// Manually set premium status (used after successful IAP or cloud sync).

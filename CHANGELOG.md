@@ -5,6 +5,18 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.5] — 2026-04-28
+
+### Fixed
+- **Bonus category slots from 14-day challenge never applied** — `PlanService.canAddCategory()` checked only `freeMaxCustomCategories` (always 1) and ignored the `bonus_categories` value earned through challenges, unlike `getQuestionLimit()` which correctly adds bonus questions. Added `getCategoryLimit()` mirroring `getQuestionLimit()`, and updated `canAddCategory()` to use it. Also updated both FutureBuilders in `manage_categories_screen.dart` to display the correct limit (base + bonus).
+- **Misleading "unlimited" marketing copy** — Premium was marketed as "Unlimited Questions" and "Unlimited Categories" but the actual enforced limits are 200 questions and 20 custom categories. Updated all affected strings in both `app_en.arb` and `app_id.arb`:
+  - Premium screen: feature names, subtitles, and perks list
+  - Limit-reached dialogs for questions and categories
+  - Category banner and free-plan note in add-category sheet
+  - FAQ A7 and A8
+
+---
+
 ## [0.13.4] — 2026-04-28
 
 ### Fixed

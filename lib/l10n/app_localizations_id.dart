@@ -753,7 +753,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get freePlanLimitReachedBanner =>
-      'Paket gratis: kamu sudah menggunakan 1 slot kategori kustom. Upgrade ke Premium untuk kategori tak terbatas.';
+      'Paket gratis: kamu sudah menggunakan 1 slot kategori kustom. Upgrade ke Premium untuk hingga 20 kategori kustom.';
 
   @override
   String get freePlanInfoBanner =>
@@ -786,11 +786,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumUnlimitedCategories =>
-      'Premium — buat sebanyak kategori yang kamu mau!';
+      'Premium — buat hingga 20 kategori kustom!';
 
   @override
   String freePlanCategoryNote(int count) {
-    return 'Paket gratis: $count kategori kustom diizinkan (General & Work sudah tersedia). Upgrade ke Premium untuk tak terbatas.';
+    return 'Paket gratis: $count kategori kustom diizinkan (General & Work sudah tersedia). Upgrade ke Premium untuk hingga 20.';
   }
 
   @override
@@ -1001,21 +1001,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get premiumUnlockTitle => 'Buka Potensi Penuh';
 
   @override
-  String get premiumUnlockSubtitle => 'Kuasai pengetahuanmu tanpa batas.';
+  String get premiumUnlockSubtitle =>
+      'Pengalaman Random Recall penuh — setiap fitur, sepenuhnya terbuka.';
 
   @override
-  String get featureUnlimitedQuestions => 'Pertanyaan Tak Terbatas';
+  String get featureUnlimitedQuestions => 'Hingga 200 Pertanyaan';
 
   @override
   String get featureUnlimitedQuestionsSubtitle =>
-      'Tambahkan sebanyak fakta yang perlu kamu ingat.';
+      'Simpan hingga 200 pertanyaan — lebih dari cukup untuk menguasai topik apa pun.';
 
   @override
-  String get featureUnlimitedCategories => 'Kategori Tak Terbatas';
+  String get featureUnlimitedCategories => 'Hingga 20 Kategori';
 
   @override
   String get featureUnlimitedCategoriesSubtitle =>
-      'Organisir belajarmu ke dalam topik spesifik.';
+      'Organisir belajarmu ke dalam hingga 20 topik kustom.';
 
   @override
   String get featureUndoMistakes => 'Batalkan Kesalahan';
@@ -1072,10 +1073,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get premiumIncludes => 'Premium mencakup:';
 
   @override
-  String get premiumPerkUnlimitedQuestions => '✅ Pertanyaan tak terbatas';
+  String get premiumPerkUnlimitedQuestions => '✅ Hingga 200 pertanyaan';
 
   @override
-  String get premiumPerkAllCategories => '✅ Semua kategori';
+  String get premiumPerkAllCategories => '✅ Hingga 20 kategori';
 
   @override
   String get premiumPerkFullAnalytics => '✅ Analitik lengkap';
@@ -1091,11 +1092,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get questionLimitReachedDesc =>
-      'Akun gratis dapat menyimpan hingga 20 pertanyaan (+ slot bonus dari streakmu). Upgrade ke Premium untuk pertanyaan tak terbatas.';
+      'Akun gratis dapat menyimpan hingga 20 pertanyaan (+ slot bonus dari tantangan). Upgrade ke Premium untuk hingga 200 pertanyaan.';
 
   @override
   String get categoryLimitReachedDesc =>
-      'Akun gratis dapat menambahkan pertanyaan ke maksimal 2 kategori. Upgrade ke Premium untuk menggunakan semua kategori tanpa batas.';
+      'Akun gratis dapat membuat 1 kategori kustom (+ slot bonus dari tantangan). Upgrade ke Premium untuk hingga 20 kategori.';
 
   @override
   String get maybeLater => 'Nanti saja';
@@ -1212,7 +1213,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA7 =>
-      'Paket gratis mulai dengan 20 slot pertanyaan. Kamu bisa mendapatkan slot tambahan melalui Mode Tantangan: menyelesaikan tantangan 7 hari mendapatkan +1 slot pertanyaan, dan menyelesaikan tantangan 14 hari mendapatkan +1 slot pertanyaan dan +1 slot kategori. Premium menghapus semua batas sepenuhnya.';
+      'Paket gratis mulai dengan 20 slot pertanyaan. Kamu bisa mendapatkan slot tambahan melalui Mode Tantangan: menyelesaikan tantangan 7 hari mendapatkan +1 slot pertanyaan, dan menyelesaikan tantangan 14 hari mendapatkan +1 slot pertanyaan dan +1 slot kategori. Premium memungkinkan hingga 200 pertanyaan.';
 
   @override
   String get faqQ8 =>
@@ -1220,7 +1221,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA8 =>
-      'Akun gratis dapat membuat 1 kategori kustom. Kategori bawaan \"General\" dan \"Work\" tidak dihitung terhadap batas ini. Kamu bisa mendapatkan slot kategori tambahan dengan menyelesaikan Mode Tantangan 14 hari. Premium memberikan kategori tak terbatas.';
+      'Akun gratis dapat membuat 1 kategori kustom. Kategori bawaan \"General\" dan \"Work\" tidak dihitung terhadap batas ini. Kamu bisa mendapatkan slot kategori tambahan dengan menyelesaikan Mode Tantangan 14 hari. Premium memungkinkan hingga 20 kategori kustom.';
 
   @override
   String get faqQ9 => 'Apa itu Batal harian?';
