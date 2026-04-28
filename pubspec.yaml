@@ -1,6 +1,6 @@
 name: random_recall
 description: A random recall quiz notification app.
-version: 0.13.0+32
+version: 0.13.1+33
 publish_to: 'none'
 
 environment:
@@ -20,6 +20,7 @@ dependencies:
   firebase_performance: ^0.10.0
   firebase_remote_config: ^5.1.0
   firebase_crashlytics: ^4.1.0
+  firebase_analytics: ^11.3.3
 
   # Database
   sqflite: ^2.3.3

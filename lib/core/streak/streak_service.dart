@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math';
+
+import '../services/analytics_service.dart';
 
 /// Tracks the user's timer-challenge streak.
 ///
@@ -113,6 +116,7 @@ class StreakService {
     }
     await _prefs.setString(_keyChallengeModeStartDate, DateTime.now().toIso8601String());
     await _saveToFirestore();
+    AnalyticsService.instance.trackChallengeStarted(duration: duration).ignore();
   }
 
   Future<void> incrementChallengeDay() async {
@@ -194,6 +198,7 @@ class StreakService {
     }
 
     await resetChallenge(); // resetChallenge() calls _saveToFirestore()
+    AnalyticsService.instance.trackChallengeCompleted(duration: duration).ignore();
 
     return ChallengeCompletion(
       duration: duration,
@@ -216,11 +221,12 @@ class StreakService {
   }
 
   Future<void> failChallenge() async {
-    // Wrong answer during challenge - exit and reset
     if (isChallengeActive) {
+      final dayReached = challengeDay;
       await _prefs.setInt(_keyStreak, 0);
       await resetChallenge();
       await _saveToFirestore();
+      AnalyticsService.instance.trackChallengeFailed(dayReached: dayReached).ignore();
     }
   }
 
