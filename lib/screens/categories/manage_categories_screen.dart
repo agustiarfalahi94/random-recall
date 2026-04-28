@@ -153,17 +153,18 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
           : Column(
               children: [
                 // Category count pill for both free and premium users
-                FutureBuilder<bool>(
-                  future: PlanService.isPremium(),
+                FutureBuilder<(bool, int)>(
+                  future: Future.wait([
+                    PlanService.isPremium(),
+                    PlanService.getCategoryLimit(),
+                  ]).then((r) => (r[0] as bool, r[1] as int)),
                   builder: (_, snap) {
                     if (snap.connectionState != ConnectionState.done) {
                       return const SizedBox.shrink();
                     }
 
-                    final isPremium = snap.data ?? false;
-                    final limit = isPremium
-                        ? RemoteConfigService.instance.premiumMaxCustomCategories
-                        : PlanService.freeMaxCustomCategories;
+                    final isPremium = snap.data?.$1 ?? false;
+                    final limit = snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
                     final warningThreshold = isPremium
                         ? RemoteConfigService.instance.categoryWarningThreshold
                         : limit; // Free has no warning, goes straight to red at limit
@@ -545,10 +546,14 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
             const SizedBox(height: 24),
 
             // Free-plan note
-            FutureBuilder<bool>(
-              future: PlanService.isPremium(),
+            FutureBuilder<(bool, int)>(
+              future: Future.wait([
+                PlanService.isPremium(),
+                PlanService.getCategoryLimit(),
+              ]).then((r) => (r[0] as bool, r[1] as int)),
               builder: (_, snap) {
-                final isPremium = snap.data ?? false;
+                final isPremium = snap.data?.$1 ?? false;
+                final limit = snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Row(
@@ -568,9 +573,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                         child: Text(
                           isPremium
                               ? l10n.premiumUnlimitedCategories
-                              : l10n.freePlanCategoryNote(
-                                  PlanService.freeMaxCustomCategories,
-                                ),
+                              : l10n.freePlanCategoryNote(limit),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isPremium
                                 ? colorScheme.primary

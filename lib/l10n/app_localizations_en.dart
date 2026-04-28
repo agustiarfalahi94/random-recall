@@ -747,7 +747,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get freePlanLimitReachedBanner =>
-      'Free plan: you\'ve used your 1 custom category slot. Upgrade to Premium for unlimited categories.';
+      'Free plan: you\'ve used your 1 custom category slot. Upgrade to Premium for up to 20 custom categories.';
 
   @override
   String get freePlanInfoBanner =>
@@ -780,11 +780,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumUnlimitedCategories =>
-      'Premium — create as many categories as you like!';
+      'Premium — create up to 20 custom categories!';
 
   @override
   String freePlanCategoryNote(int count) {
-    return 'Free plan: $count custom category allowed (General & Work are built-in). Upgrade to Premium for unlimited.';
+    return 'Free plan: $count custom category allowed (General & Work are built-in). Upgrade to Premium for up to 20.';
   }
 
   @override
@@ -995,21 +995,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumUnlockTitle => 'Unlock Full Potential';
 
   @override
-  String get premiumUnlockSubtitle => 'Master your knowledge without limits.';
+  String get premiumUnlockSubtitle =>
+      'The full Random Recall experience — every feature, fully unlocked.';
 
   @override
-  String get featureUnlimitedQuestions => 'Unlimited Questions';
+  String get featureUnlimitedQuestions => 'Up to 200 Questions';
 
   @override
   String get featureUnlimitedQuestionsSubtitle =>
-      'Add as many facts as you need to remember.';
+      'Store up to 200 questions — more than enough to master any topic.';
 
   @override
-  String get featureUnlimitedCategories => 'Unlimited Categories';
+  String get featureUnlimitedCategories => 'Up to 20 Categories';
 
   @override
   String get featureUnlimitedCategoriesSubtitle =>
-      'Organize your learning into specific topics.';
+      'Organize your learning into up to 20 custom topics.';
 
   @override
   String get featureUndoMistakes => 'Undo Mistakes';
@@ -1066,10 +1067,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumIncludes => 'Premium includes:';
 
   @override
-  String get premiumPerkUnlimitedQuestions => '✅ Unlimited questions';
+  String get premiumPerkUnlimitedQuestions => '✅ Up to 200 questions';
 
   @override
-  String get premiumPerkAllCategories => '✅ All categories';
+  String get premiumPerkAllCategories => '✅ Up to 20 categories';
 
   @override
   String get premiumPerkFullAnalytics => '✅ Full analytics breakdown';
@@ -1085,11 +1086,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get questionLimitReachedDesc =>
-      'Free accounts can store up to 20 questions (+ bonus slots from your streak). Upgrade to Premium for unlimited questions.';
+      'Free accounts can store up to 20 questions (+ bonus slots from challenges). Upgrade to Premium for up to 200 questions.';
 
   @override
   String get categoryLimitReachedDesc =>
-      'Free accounts can add questions to up to 2 categories. Upgrade to Premium to use all categories without limits.';
+      'Free accounts can add questions to 1 custom category (+ bonus slots from challenges). Upgrade to Premium for up to 20 categories.';
 
   @override
   String get maybeLater => 'Maybe later';
@@ -1205,14 +1206,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqA7 =>
-      'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium removes all limits entirely.';
+      'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium allows up to 200 questions.';
 
   @override
   String get faqQ8 => 'How many custom categories can I create for free?';
 
   @override
   String get faqA8 =>
-      'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium gives unlimited categories.';
+      'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium allows up to 20 custom categories.';
 
   @override
   String get faqQ9 => 'What is the daily Undo?';

@@ -1433,7 +1433,7 @@ abstract class AppLocalizations {
   /// No description provided for @freePlanLimitReachedBanner.
   ///
   /// In en, this message translates to:
-  /// **'Free plan: you\'ve used your 1 custom category slot. Upgrade to Premium for unlimited categories.'**
+  /// **'Free plan: you\'ve used your 1 custom category slot. Upgrade to Premium for up to 20 custom categories.'**
   String get freePlanLimitReachedBanner;
 
   /// No description provided for @freePlanInfoBanner.
@@ -1493,13 +1493,13 @@ abstract class AppLocalizations {
   /// No description provided for @premiumUnlimitedCategories.
   ///
   /// In en, this message translates to:
-  /// **'Premium — create as many categories as you like!'**
+  /// **'Premium — create up to 20 custom categories!'**
   String get premiumUnlimitedCategories;
 
   /// No description provided for @freePlanCategoryNote.
   ///
   /// In en, this message translates to:
-  /// **'Free plan: {count} custom category allowed (General & Work are built-in). Upgrade to Premium for unlimited.'**
+  /// **'Free plan: {count} custom category allowed (General & Work are built-in). Upgrade to Premium for up to 20.'**
   String freePlanCategoryNote(int count);
 
   /// No description provided for @hasQuestions.
@@ -1859,31 +1859,31 @@ abstract class AppLocalizations {
   /// No description provided for @premiumUnlockSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Master your knowledge without limits.'**
+  /// **'The full Random Recall experience — every feature, fully unlocked.'**
   String get premiumUnlockSubtitle;
 
   /// No description provided for @featureUnlimitedQuestions.
   ///
   /// In en, this message translates to:
-  /// **'Unlimited Questions'**
+  /// **'Up to 200 Questions'**
   String get featureUnlimitedQuestions;
 
   /// No description provided for @featureUnlimitedQuestionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Add as many facts as you need to remember.'**
+  /// **'Store up to 200 questions — more than enough to master any topic.'**
   String get featureUnlimitedQuestionsSubtitle;
 
   /// No description provided for @featureUnlimitedCategories.
   ///
   /// In en, this message translates to:
-  /// **'Unlimited Categories'**
+  /// **'Up to 20 Categories'**
   String get featureUnlimitedCategories;
 
   /// No description provided for @featureUnlimitedCategoriesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Organize your learning into specific topics.'**
+  /// **'Organize your learning into up to 20 custom topics.'**
   String get featureUnlimitedCategoriesSubtitle;
 
   /// No description provided for @featureUndoMistakes.
@@ -1979,13 +1979,13 @@ abstract class AppLocalizations {
   /// No description provided for @premiumPerkUnlimitedQuestions.
   ///
   /// In en, this message translates to:
-  /// **'✅ Unlimited questions'**
+  /// **'✅ Up to 200 questions'**
   String get premiumPerkUnlimitedQuestions;
 
   /// No description provided for @premiumPerkAllCategories.
   ///
   /// In en, this message translates to:
-  /// **'✅ All categories'**
+  /// **'✅ Up to 20 categories'**
   String get premiumPerkAllCategories;
 
   /// No description provided for @premiumPerkFullAnalytics.
@@ -2015,13 +2015,13 @@ abstract class AppLocalizations {
   /// No description provided for @questionLimitReachedDesc.
   ///
   /// In en, this message translates to:
-  /// **'Free accounts can store up to 20 questions (+ bonus slots from your streak). Upgrade to Premium for unlimited questions.'**
+  /// **'Free accounts can store up to 20 questions (+ bonus slots from challenges). Upgrade to Premium for up to 200 questions.'**
   String get questionLimitReachedDesc;
 
   /// No description provided for @categoryLimitReachedDesc.
   ///
   /// In en, this message translates to:
-  /// **'Free accounts can add questions to up to 2 categories. Upgrade to Premium to use all categories without limits.'**
+  /// **'Free accounts can add questions to 1 custom category (+ bonus slots from challenges). Upgrade to Premium for up to 20 categories.'**
   String get categoryLimitReachedDesc;
 
   /// No description provided for @maybeLater.
@@ -2225,7 +2225,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA7.
   ///
   /// In en, this message translates to:
-  /// **'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium removes all limits entirely.'**
+  /// **'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium allows up to 200 questions.'**
   String get faqA7;
 
   /// No description provided for @faqQ8.
@@ -2237,7 +2237,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA8.
   ///
   /// In en, this message translates to:
-  /// **'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium gives unlimited categories.'**
+  /// **'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium allows up to 20 custom categories.'**
   String get faqA8;
 
   /// No description provided for @faqQ9.
