@@ -771,8 +771,8 @@ class _NotificationScheduleScreenState
                         Slider(
                           value: _frequency.toDouble(),
                           min: 1,
-                          max: 20,
-                          divisions: 19,
+                          max: 50,
+                          divisions: 49,
                           label: '$_frequency',
                           onChanged: (v) =>
                               setState(() => _frequency = v.round()),
@@ -788,7 +788,7 @@ class _NotificationScheduleScreenState
                             ),
                           ),
                           Text(
-                            '20',
+                            '50',
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,

@@ -1,10 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:random_recall/core/services/profile_service.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
-import 'package:random_recall/providers/app_provider.dart';
 import 'package:random_recall/services/display_name_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,8 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfileData() async {
-    // Capture provider before any await so it stays valid across async gaps.
-    final appProvider = context.read<AppProvider>();
     try {
       final user = _auth.currentUser;
       if (user == null) return;
@@ -67,14 +63,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isPremium = isPremium;
           _isLoading = false;
         });
-        appProvider.setLoading(false);
       }
     } catch (e) {
       debugPrint('ProfileScreen: Load profile failed: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-        appProvider.setLoading(false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

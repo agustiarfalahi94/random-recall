@@ -52,30 +52,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Consumer<AppProvider>(
-        builder: (context, appProvider, _) => Stack(
-          children: [
-            [
-              _HomeTab(),
-              const QuestionsListScreen(),
-              const AnalyticsScreen(),
-              const ProfileScreen(),
-            ][_currentIndex],
-            if (appProvider.isLoading)
-              const ModalBarrier(dismissible: false, color: Colors.transparent),
-            if (appProvider.isLoading)
-              const Center(child: CircularProgressIndicator()),
-          ],
-        ),
-      ),
+      body: [
+        _HomeTab(), // Removed 'const' to ensure refresh when switching back to this tab
+        const QuestionsListScreen(),
+        const AnalyticsScreen(),
+        const ProfileScreen(),
+      ][_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentIndex = index);
-          if (index == 3) {
-            context.read<AppProvider>().setLoading(true);
-          }
-        },
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
         backgroundColor: colorScheme.surface,
         indicatorColor: colorScheme.primaryContainer,
         destinations: [
