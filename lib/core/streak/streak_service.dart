@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/analytics_service.dart';
+import '../utils/date_utils.dart' as date_utils;
 
 /// Tracks the user's timer-challenge streak.
 ///
@@ -228,8 +229,7 @@ class StreakService {
       final dayReached = challengeDay;
       final durationDays = challengeDuration; // capture before resetChallenge() removes the key
       await _prefs.setInt(_keyStreak, 0);
-      await resetChallenge();
-      await _saveToFirestore();
+      await resetChallenge(); // calls _saveToFirestore() internally
       AnalyticsService.instance.trackChallengeFailed(
         dayReached: dayReached,
         durationDays: durationDays,
@@ -417,38 +417,29 @@ class StreakService {
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
-  static Future<int> getStreak() async {
-    final prefs = await SharedPreferences.getInstance();
-    // Check if streak is still alive (last date was today or yesterday)
-    final lastDate = prefs.getString(_keyLastDate) ?? '';
+  // These use the singleton's cached _prefs to stay consistent with instance
+  // getters and avoid creating a second SharedPreferences handle.
+  static int getStreak() {
+    final lastDate = _instance._prefs.getString(_keyLastDate) ?? '';
     final today = _dateKey(DateTime.now());
-    final yesterday = _dateKey(
-      DateTime.now().subtract(const Duration(days: 1)),
-    );
-    if (lastDate != today && lastDate != yesterday) {
-      // Streak has expired
-      await prefs.setInt(_keyStreak, 0);
-      return 0;
-    }
-    return prefs.getInt(_keyStreak) ?? 0;
+    final yesterday = _dateKey(DateTime.now().subtract(const Duration(days: 1)));
+    if (lastDate != today && lastDate != yesterday) return 0;
+    return _instance._prefs.getInt(_keyStreak) ?? 0;
   }
 
-  static Future<int> getBonusQuestions() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_keyBonusQuestions) ?? 0;
+  static int getBonusQuestions() {
+    return _instance._prefs.getInt(_keyBonusQuestions) ?? 0;
   }
 
   // ── Total question limit for free tier ────────────────────────────────────
 
-  static Future<int> getFreeQuestionLimit() async {
-    final bonus = await getBonusQuestions();
-    return 20 + bonus; // base 20 + earned bonuses
+  static int getFreeQuestionLimit() {
+    return questionBase + getBonusQuestions();
   }
 
   // ── Helper ─────────────────────────────────────────────────────────────────
 
-  static String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  static String _dateKey(DateTime d) => date_utils.dateKey(d);
 }
 
 enum ChallengeAnswerOutcome { noChallenge, alreadyCompletedToday, progressed, completed, failed }

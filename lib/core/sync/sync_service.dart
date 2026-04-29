@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -95,38 +96,25 @@ class SyncService {
         'notif_timer_seconds': prefs.getInt('notif_timer_seconds') ?? 0,
       };
 
-      final streakData = {
-        'timer_streak_days': prefs.getInt('timer_streak_days') ?? 0,
-        'timer_streak_last_date':
-            prefs.getString('timer_streak_last_date') ?? '',
-        'timer_streak_bonus_questions':
-            prefs.getInt('timer_streak_bonus_questions') ?? 0,
-      };
-
       // Record which device performed this backup
       final deviceId = prefs.getString('device_id') ?? 'unknown';
 
-      // 4. Commit all changes at once
+      // 4. Commit all changes at once (include metadata in the same batch)
       batch.set(userDoc, {
         'last_active_device_id': deviceId,
-      }, SetOptions(merge: true));
-      await batch.commit();
-
-      // 5. Update user profile with metadata
-      await userDoc.set({
         'last_sync_at': FieldValue.serverTimestamp(),
         'settings': settings,
-        'streak': streakData,
         'onboarding_complete': prefs.getBool('onboarding_complete') ?? false,
       }, SetOptions(merge: true));
+      await batch.commit();
 
       trace.putAttribute('question_count', questions.length.toString());
       debugPrint(
         'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.',
       );
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('SyncService: Backup failed: $e');
-      // Don't rethrow here so the UI calling it doesn't crash
+      FirebaseCrashlytics.instance.recordError(e, st, reason: 'sync_backup_failed');
     } finally {
       await trace.stop();
       _isSyncing = false;
@@ -178,23 +166,12 @@ class SyncService {
       final userDoc = _db.collection('users').doc(user.uid);
 
       // Fetch everything from cloud first to keep the transaction short
-      debugPrint('SyncService: Fetching categories from cloud...');
       final catSnap = await userDoc.collection('categories').get();
       debugPrint('SyncService: Got ${catSnap.docs.length} categories');
-      for (var i = 0; i < catSnap.docs.length; i++) {
-        final data = catSnap.docs[i].data();
-        debugPrint('SyncService: Category[$i]: id=${data['id']}, name=${data['name']}');
-      }
 
-      debugPrint('SyncService: Fetching questions from cloud...');
       final qSnap = await userDoc.collection('questions').get();
       debugPrint('SyncService: Got ${qSnap.docs.length} questions');
-      for (var i = 0; i < qSnap.docs.length; i++) {
-        final data = qSnap.docs[i].data();
-        debugPrint('SyncService: Question[$i]: id=${data['id']}, category_id=${data['category_id']}');
-      }
 
-      debugPrint('SyncService: Fetching score_records from cloud...');
       final sSnap = await userDoc.collection('score_records').get();
       debugPrint('SyncService: Got ${sSnap.docs.length} score_records');
 
@@ -227,33 +204,24 @@ class SyncService {
           }
 
           // 1. Restore Categories
-          debugPrint('SyncService: Inserting ${catSnap.docs.length} categories...');
           for (var doc in catSnap.docs) {
-            final data = doc.data();
-            debugPrint('SyncService: Inserting category: id=${data['id']}, name=${data['name']}, is_default=${data['is_default']}');
             await txn.insert(
               'categories',
-              data,
+              doc.data(),
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
-          debugPrint('SyncService: Categories inserted successfully');
 
           // 2. Restore Questions
-          debugPrint('SyncService: Inserting ${qSnap.docs.length} questions...');
           for (var doc in qSnap.docs) {
-            final data = doc.data();
-            debugPrint('SyncService: Inserting question: id=${data['id']}, category_id=${data['category_id']}');
             await txn.insert(
               'questions',
-              data,
+              doc.data(),
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
-          debugPrint('SyncService: Questions inserted successfully');
 
           // 3. Restore Score Records
-          debugPrint('SyncService: Inserting ${sSnap.docs.length} score records...');
           for (var doc in sSnap.docs) {
             await txn.insert(
               'score_records',
@@ -261,7 +229,6 @@ class SyncService {
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
           }
-          debugPrint('SyncService: Score records inserted successfully');
 
           await txn.execute('PRAGMA foreign_keys = ON;');
         });
@@ -278,16 +245,15 @@ class SyncService {
 
       // 4. Restore SharedPreferences (Settings & Streak)
       if (userData != null) {
-        final data = userData;
         final prefs = await SharedPreferences.getInstance();
 
         // Pull Premium status directly from Firestore document root
-        if (data.containsKey('is_premium')) {
-          await prefs.setBool('is_premium', data['is_premium'] as bool);
+        if (userData.containsKey('is_premium')) {
+          await prefs.setBool('is_premium', userData['is_premium'] as bool);
         }
 
-        if (data.containsKey('settings')) {
-          final s = data['settings'] as Map<String, dynamic>;
+        if (userData.containsKey('settings')) {
+          final s = userData['settings'] as Map<String, dynamic>;
           if (s.containsKey('notif_random_anytime'))
             await prefs.setBool(
               'notif_random_anytime',
@@ -313,38 +279,22 @@ class SyncService {
               s['notif_timer_seconds'] as int,
             );
         }
-        if (data.containsKey('streak')) {
-          final str = data['streak'] as Map<String, dynamic>;
-          if (str.containsKey('timer_streak_days'))
-            await prefs.setInt(
-              'timer_streak_days',
-              str['timer_streak_days'] as int,
-            );
-          if (str.containsKey('timer_streak_last_date'))
-            await prefs.setString(
-              'timer_streak_last_date',
-              str['timer_streak_last_date'] as String,
-            );
-          if (str.containsKey('timer_streak_bonus_questions'))
-            await prefs.setInt(
-              'timer_streak_bonus_questions',
-              str['timer_streak_bonus_questions'] as int,
-            );
-        }
+        // Streak data is NOT restored here — StreakService.loadFromCloud()
+        // reads from the private/streakData subcollection which is the single
+        // source of truth and is always up-to-date after challenge events.
       }
 
       // Restore onboarding_complete from Firestore if present,
       // otherwise infer it from whether the user has questions in the cloud.
       if (userData != null) {
-        final data = userData;
-        if (data.containsKey('onboarding_complete')) {
+        if (userData.containsKey('onboarding_complete')) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool(
             'onboarding_complete',
-            data['onboarding_complete'] as bool,
+            userData['onboarding_complete'] as bool,
           );
           debugPrint(
-            'SyncService: Set onboarding_complete=${data['onboarding_complete']}',
+            'SyncService: Set onboarding_complete=${userData['onboarding_complete']}',
           );
         } else if (dataFound) {
           final prefs = await SharedPreferences.getInstance();

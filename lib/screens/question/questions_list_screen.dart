@@ -8,6 +8,7 @@ import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
+import '../../widgets/upgrade_bottom_sheet.dart';
 import '../categories/manage_categories_screen.dart';
 import '../settings/subscription_screen.dart';
 import 'add_edit_question_screen.dart';
@@ -110,9 +111,10 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
       final canAdd = await PlanService.canAddQuestion(_totalQuestionCount);
       if (!canAdd) {
         if (!mounted) return;
-        Navigator.of(
+        await UpgradeBottomSheet.show(
           context,
-        ).push(MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+          trigger: UpgradeTrigger.questionLimit,
+        );
         return;
       }
     }

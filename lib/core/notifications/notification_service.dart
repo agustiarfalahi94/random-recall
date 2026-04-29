@@ -46,8 +46,8 @@ class NotificationService {
     if (_initialized) return;
     debugPrint('NotificationService: Initializing...');
 
-    // Listen for database changes to refresh the schedule.
-    // We debounce this to avoid rapid re-scheduling during sync/practice.
+    // Register the database-change listener exactly once.
+    // Guarded here so repeated init() calls don't stack duplicate listeners.
     DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
       if (_scheduleDebounceTimer?.isActive ?? false)
         _scheduleDebounceTimer!.cancel();
@@ -58,7 +58,7 @@ class NotificationService {
 
         if (currentCount != lastCount) {
           await prefs.setInt('last_known_question_count', currentCount);
-          scheduleNotifications();
+          await scheduleNotifications();
         }
       });
     });
@@ -72,18 +72,19 @@ class NotificationService {
       // Wrap in a defensive timeout. If the native side hangs (common on MIUI/HyperOS),
       // we complete the future anyway so the app can continue.
       await _actualInit().timeout(const Duration(seconds: 4));
-      _initialized =
-          true; // Mark as initialized only if _actualInit completes successfully
+      _initialized = true;
     } catch (e) {
       debugPrint('NotificationService: Initialization error: $e');
-      // We still mark as initialized if it was a timeout to avoid infinite waiting,
-      // but the plugin might not be fully ready.
-      _initialized = false;
+      // Mark initialized on timeout so we don't spin forever — the plugin
+      // state is indeterminate but repeated init loops are worse.
+      _initialized = true;
     } finally {
       if (!completer.isCompleted) {
         debugPrint('NotificationService: Init completer completed.');
         completer.complete();
       }
+      // Null the completer so a subsequent init() call can re-enter if needed.
+      _initCompleter = null;
     }
   }
 

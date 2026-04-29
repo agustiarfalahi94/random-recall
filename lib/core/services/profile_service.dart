@@ -1,6 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../database/database_helper.dart';
+import '../streak/streak_service.dart';
 
 class ProfileService {
   static final ProfileService _instance = ProfileService._internal();
@@ -153,7 +157,7 @@ class ProfileService {
     }
   }
 
-  /// Helper: Delete all user data from Firestore, including subcollections.
+  /// Helper: Delete all user data from Firestore and local storage.
   /// Firestore does not cascade-delete subcollections when a parent document
   /// is deleted, so each subcollection must be explicitly cleared first.
   Future<void> _deleteUserData(String userId) async {
@@ -168,8 +172,21 @@ class ProfileService {
       await _deleteSubcollection(userDoc.collection('private'));
 
       await userDoc.delete();
+
+      // Clear local SQLite data so the next user on this device starts fresh.
+      await DatabaseHelper.instance.clearAllData();
+
+      // Clear all app-specific SharedPreferences including challenge-mode state.
+      final prefs = await SharedPreferences.getInstance();
+      await StreakService.instance.resetChallenge();
+      await prefs.remove('onboarding_complete');
+      await prefs.remove('timer_streak_days');
+      await prefs.remove('timer_streak_last_date');
+      await prefs.remove('timer_streak_bonus_questions');
+      await prefs.remove('is_premium');
+      await prefs.remove('bonus_categories');
     } catch (e) {
-      debugPrint('ProfileService: Delete Firestore data failed: $e');
+      debugPrint('ProfileService: Delete user data failed: $e');
       rethrow;
     }
   }

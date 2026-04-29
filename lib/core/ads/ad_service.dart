@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/date_utils.dart' as date_utils;
+
 class AdService {
   static final AdService instance = AdService._();
   AdService._();
@@ -16,6 +18,11 @@ class AdService {
 
   BannerAd? _bannerAd;
   bool _bannerLoaded = false;
+
+  /// Actual loaded banner height — used by the wrapper to compute bottom padding.
+  /// Falls back to AdSize.banner.height (50dp) until the ad is loaded.
+  double get bannerHeight =>
+      (_bannerAd?.size.height.toDouble()) ?? AdSize.banner.height.toDouble();
 
   InterstitialAd? _interstitialAd;
 
@@ -215,6 +222,5 @@ class AdService {
     }
   }
 
-  String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String _dateKey(DateTime d) => date_utils.dateKey(d);
 }

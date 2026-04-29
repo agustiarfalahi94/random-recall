@@ -5,6 +5,42 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.6] — 2026-04-29
+
+### Fixed
+- **Account deletion left local data on device** — `_deleteUserData()` now clears SQLite and all app SharedPreferences (streak, challenge-mode keys, is_premium) in addition to Firestore, so a new account on the same device starts fresh.
+- **Stale streak shown after challenge completion** — Removed redundant `streak` field from root user doc backup/restore. `StreakService` private subcollection is now the single source of truth, eliminating the stale-streak-after-challenge-reset bug.
+- **Settings written outside backup batch** — Moved `last_sync_at`, `settings`, and `onboarding_complete` into the same Firestore batch commit as questions/categories, so a partial write can no longer leave them out of sync.
+- **Notification init completer never cleared on timeout** — `_initCompleter` is now nulled after each init attempt so subsequent `init()` calls can re-enter; `_initialized` is set to `true` on timeout to prevent infinite init loops.
+- **Source.server Firestore read blocks app startup** — Added `.timeout(5s)` to the active-device check in `_checkActiveDevice()`.
+- **Phone users excluded from cloud restore at startup** — `_HomeGate._initFlow` now uses `user.emailVerified || user.phoneNumber != null` (consistent with the rest of the codebase).
+- **Sign-out didn't clear challenge-mode SharedPreferences** — `signOut()` now calls `StreakService.instance.resetChallenge()` before Firebase sign-out, preventing the next user on the same device from inheriting a stale challenge session.
+- **Double `_saveToFirestore()` in `failChallenge()`** — Removed the redundant explicit call after `resetChallenge()`, which already calls it internally.
+- **Static streak getters bypassed singleton `_prefs` cache** — `getStreak()`, `getBonusQuestions()`, and `getFreeQuestionLimit()` now use `_instance._prefs` instead of calling `SharedPreferences.getInstance()`, keeping them consistent with instance getters and removing the dangerous side-effect streak reset from `getStreak()`.
+- **Empty name error showed field label instead of error message** — Profile screen now shows `displayNameEmpty` ("Please enter a name.") instead of `nameLabel` ("Name").
+- **Question limit redirected to full subscription screen** — Now shows `UpgradeBottomSheet` (consistent with category limit behavior).
+- **Notification DB listener registered on every `init()` call** — Listener registration is now guarded inside the `_initialized` check so it fires at most once.
+- **`showDialog` called before first frame in `_HomeTabState.initState()`** — Deferred display-name prompt to `addPostFrameCallback`.
+- **Email verification polling had no time cap** — Poll now stops after 10 minutes; user can still tap the check button manually.
+- **Profanity check flagged legitimate names** — Word-boundary regex (`\b`) now used instead of substring `contains`, preventing false positives on names like "Bassett", "Michelle", or "Gila".
+- **Backup failures were silent** — Exceptions in `performBackup()` are now recorded to Crashlytics in addition to debug print.
+- **Per-record debug logs during restore** — Removed hundreds of per-document log lines in `performRestore()` that leaked category/question metadata in development logs.
+
+### Added
+- **Profile tab loading animation** — Tapping the Profile tab now immediately shows a `CircularProgressIndicator` overlay (via `AppProvider.isLoading`) while Firestore data loads, giving instant visual feedback.
+
+### Changed
+- **Frequency slider capped at 20** (was 50) — Values above 20 notifications/day provided no practical benefit and caused the scheduler to compute unnecessarily large slot sets.
+- **Banner ad padding uses actual loaded ad height** — `_AdBannerWrapper` now reads `AdService.bannerHeight` instead of the hardcoded `50.0`, so it stays correct if the ad size ever changes.
+- **`_dateKey` extracted to shared utility** — `lib/core/utils/date_utils.dart` now holds the canonical date-key formatter used by `StreakService`, `PlanService`, and `AdService`.
+
+### Removed
+- **Dead code** — Deleted empty `lib/core/auth/profile_screen.dart`, unused `challenge_warning_dialog.dart`, `challenge_mode_dialog.dart`, and `existing_streak_dialog.dart`.
+- **Unused imports** — `firebase_core` import removed from `email_auth_screen.dart` and `email_signup_screen.dart`.
+- **Dead debug button** — "Reset Existing Streak Dialog" button replaced with a working "Reset Challenge State" button in the debug notification screen.
+
+---
+
 ## [0.13.5] — 2026-04-28
 
 ### Fixed

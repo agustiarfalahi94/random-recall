@@ -52,15 +52,30 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: [
-        _HomeTab(), // Removed 'const' to ensure refresh when switching back to this tab
-        const QuestionsListScreen(),
-        const AnalyticsScreen(),
-        const ProfileScreen(),
-      ][_currentIndex],
+      body: Consumer<AppProvider>(
+        builder: (context, appProvider, _) => Stack(
+          children: [
+            [
+              _HomeTab(),
+              const QuestionsListScreen(),
+              const AnalyticsScreen(),
+              const ProfileScreen(),
+            ][_currentIndex],
+            if (appProvider.isLoading)
+              const ModalBarrier(dismissible: false, color: Colors.transparent),
+            if (appProvider.isLoading)
+              const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        onDestinationSelected: (index) {
+          setState(() => _currentIndex = index);
+          if (index == 3) {
+            context.read<AppProvider>().setLoading(true);
+          }
+        },
         backgroundColor: colorScheme.surface,
         indicatorColor: colorScheme.primaryContainer,
         destinations: [
@@ -676,8 +691,10 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
       (e) => debugPrint('HomeTab: Daily challenge check failed: $e'),
     );
 
-    // Check if user has set a display name, prompt if not (once per session)
-    _checkAndShowDisplayNamePrompt();
+    // Defer display name dialog until after the first frame is fully built.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _checkAndShowDisplayNamePrompt(),
+    );
 
   }
 

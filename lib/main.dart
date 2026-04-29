@@ -414,7 +414,9 @@ class _HomeGateState extends State<_HomeGate> {
       debugPrint(
         'HomeGate: user=${user?.uid}, emailVerified=${user?.emailVerified}',
       );
-      if (user != null && user.emailVerified) {
+      final isVerified = user != null &&
+          (user.emailVerified || user.phoneNumber != null);
+      if (isVerified) {
         debugPrint('HomeGate: Checking cloud for existing user data...');
         try {
           final userDoc = FirebaseFirestore.instance
@@ -495,7 +497,8 @@ class _HomeGateState extends State<_HomeGate> {
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
-          .get(const GetOptions(source: Source.server));
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 5));
 
       if (!userDoc.exists) return;
 
@@ -541,9 +544,6 @@ class _AdBannerWrapper extends StatelessWidget {
   const _AdBannerWrapper({required this.child});
   final Widget child;
 
-  // Standard banner height from AdSize.banner
-  static const double _bannerHeight = 50.0;
-
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
@@ -554,8 +554,9 @@ class _AdBannerWrapper extends StatelessWidget {
       builder: (context, bannerVisible, _) {
         // When keyboard is up the keyboard already covers the banner, so we
         // don't add extra bottom padding (avoids double-compressing content).
+        final bannerHeight = AdService.instance.bannerHeight;
         final bottomPad =
-            (bannerVisible && !keyboardVisible) ? _bannerHeight : 0.0;
+            (bannerVisible && !keyboardVisible) ? bannerHeight : 0.0;
 
         return Stack(
           children: [

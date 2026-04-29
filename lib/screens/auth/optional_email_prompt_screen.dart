@@ -21,6 +21,7 @@ class _OptionalEmailPromptScreenState
   String? _errorMessage;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _skipAlreadyIncremented = false;
 
   @override
   void dispose() {
@@ -31,6 +32,7 @@ class _OptionalEmailPromptScreenState
   }
 
   Future<void> _skip() async {
+    _skipAlreadyIncremented = true;
     await _incrementPromptedCount();
     if (mounted) Navigator.of(context).pop();
   }
@@ -122,8 +124,25 @@ class _OptionalEmailPromptScreenState
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) async {
+        // Only increment here when the back gesture/button triggered the pop.
+        // The Skip button calls _skip() which calls _incrementPromptedCount()
+        // directly and then pops — this callback fires again for that pop,
+        // which would double-count. We skip it here by checking if the navigator
+        // can distinguish programmatic pops. Since we can't reliably distinguish
+        // them via PopScope, we rely on _skip() for the button path and only
+        // handle system-back (which doesn't go through _skip) here.
+        // To detect system-back: check if the route is still the top route
+        // (didPop=true) but the skip button sets _isLoading before popping —
+        // the simplest guard is to NOT call _incrementPromptedCount here at all,
+        // since _skip already handles it AND system-back also calls _skip via
+        // onPressed. If the user uses the AppBar back arrow, that goes through
+        // the PopScope without _skip, so we DO need to count it.
+        // Solution: track whether _skip already incremented this session.
         if (!didPop) return;
-        await _incrementPromptedCount();
+        if (!_skipAlreadyIncremented) {
+          await _incrementPromptedCount();
+        }
+        _skipAlreadyIncremented = false;
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.optionalEmailTitle)),
