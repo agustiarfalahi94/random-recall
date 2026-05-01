@@ -264,14 +264,18 @@ class AuthService {
       //    does not inherit the previous user's challenge session.
       await StreakService.instance.resetChallenge();
 
-      // 5. Selective cleanup: clear app-specific preferences
+      // 5. Selective cleanup: clear all user-specific preferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('onboarding_complete');
-      await prefs.remove('timer_streak_days');
-      await prefs.remove('timer_streak_last_date');
-      await prefs.remove('timer_streak_bonus_questions');
-      await prefs.remove('is_premium');
-      await prefs.remove('bonus_categories');
+      for (final key in const [
+        'onboarding_complete',
+        'timer_streak_days', 'timer_streak_last_date',
+        'timer_streak_bonus_questions',
+        'total_7day_completed', 'total_14day_completed',
+        'challenge_badge_unlocked', 'highest_title',
+        'is_premium', 'bonus_categories',
+      ]) {
+        await prefs.remove(key);
+      }
     } catch (e) {
       // Log errors but never let them block the critical sign-out steps below.
       debugPrint('AuthService: Sign-out cleanup error (non-fatal): $e');

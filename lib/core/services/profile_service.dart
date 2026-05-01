@@ -186,6 +186,8 @@ class ProfileService {
         'challenge_locked_frequency', 'challenge_locked_active_days',
         'challenge_locked_random_anytime', 'challenge_locked_timer_seconds',
         'challenge_last_answer_date',
+        'total_7day_completed', 'total_14day_completed',
+        'challenge_badge_unlocked', 'highest_title',
         'onboarding_complete',
         'timer_streak_days', 'timer_streak_last_date',
         'timer_streak_bonus_questions',

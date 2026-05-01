@@ -137,6 +137,7 @@ class StreakService {
     await _prefs.remove(_keyChallengeLockedFrequency);
     await _prefs.remove(_keyChallengeLockedActiveDays);
     await _prefs.remove(_keyChallengeLockedRandomAnytime);
+    await _prefs.remove(_keyChallengeLockedTimerSeconds);
     await _prefs.remove(_keyChallengeModeStartDate);
     await _prefs.remove(_keyChallengeLastAnswerDate);
     // Reset current streak
@@ -416,29 +417,6 @@ class StreakService {
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
-  // These use the singleton's cached _prefs to stay consistent with instance
-  // getters and avoid creating a second SharedPreferences handle.
-  // NOTE: These will throw LateInitializationError if called before initialize().
-  // In practice, initialize() is always awaited before any UI renders, but callers
-  // in background isolates must call initialize() themselves first.
-  static int getStreak() {
-    final prefs = _instance._prefs;
-    final lastDate = prefs.getString(_keyLastDate) ?? '';
-    final today = _dateKey(DateTime.now());
-    final yesterday = _dateKey(DateTime.now().subtract(const Duration(days: 1)));
-    if (lastDate != today && lastDate != yesterday) return 0;
-    return prefs.getInt(_keyStreak) ?? 0;
-  }
-
-  static int getBonusQuestions() {
-    return _instance._prefs.getInt(_keyBonusQuestions) ?? 0;
-  }
-
-  // ── Total question limit for free tier ────────────────────────────────────
-
-  static int getFreeQuestionLimit() {
-    return questionBase + getBonusQuestions();
-  }
 
   // ── Helper ─────────────────────────────────────────────────────────────────
 
