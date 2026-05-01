@@ -52,12 +52,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: [
-        _HomeTab(), // Removed 'const' to ensure refresh when switching back to this tab
-        const QuestionsListScreen(),
-        const AnalyticsScreen(),
-        const ProfileScreen(),
-      ][_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          _HomeTab(),
+          QuestionsListScreen(),
+          AnalyticsScreen(),
+          ProfileScreen(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
