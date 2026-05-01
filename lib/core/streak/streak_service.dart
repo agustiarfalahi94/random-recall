@@ -228,8 +228,7 @@ class StreakService {
     if (isChallengeActive) {
       final dayReached = challengeDay;
       final durationDays = challengeDuration; // capture before resetChallenge() removes the key
-      await _prefs.setInt(_keyStreak, 0);
-      await resetChallenge(); // calls _saveToFirestore() internally
+      await resetChallenge(); // resets streak to 0 and calls _saveToFirestore() internally
       AnalyticsService.instance.trackChallengeFailed(
         dayReached: dayReached,
         durationDays: durationDays,
@@ -419,12 +418,16 @@ class StreakService {
 
   // These use the singleton's cached _prefs to stay consistent with instance
   // getters and avoid creating a second SharedPreferences handle.
+  // NOTE: These will throw LateInitializationError if called before initialize().
+  // In practice, initialize() is always awaited before any UI renders, but callers
+  // in background isolates must call initialize() themselves first.
   static int getStreak() {
-    final lastDate = _instance._prefs.getString(_keyLastDate) ?? '';
+    final prefs = _instance._prefs;
+    final lastDate = prefs.getString(_keyLastDate) ?? '';
     final today = _dateKey(DateTime.now());
     final yesterday = _dateKey(DateTime.now().subtract(const Duration(days: 1)));
     if (lastDate != today && lastDate != yesterday) return 0;
-    return _instance._prefs.getInt(_keyStreak) ?? 0;
+    return prefs.getInt(_keyStreak) ?? 0;
   }
 
   static int getBonusQuestions() {

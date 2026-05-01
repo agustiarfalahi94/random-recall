@@ -98,6 +98,8 @@ class _OptionalEmailPromptScreenState
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Prevent onPopInvokedWithResult from counting a successful link as a skip.
+      _skipAlreadyIncremented = true;
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
       if (mounted) {

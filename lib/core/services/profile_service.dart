@@ -177,14 +177,22 @@ class ProfileService {
       await DatabaseHelper.instance.clearAllData();
 
       // Clear all app-specific SharedPreferences including challenge-mode state.
+      // Use direct prefs removal rather than StreakService.resetChallenge() to
+      // avoid triggering _saveToFirestore() on the already-deleted Firestore doc.
       final prefs = await SharedPreferences.getInstance();
-      await StreakService.instance.resetChallenge();
-      await prefs.remove('onboarding_complete');
-      await prefs.remove('timer_streak_days');
-      await prefs.remove('timer_streak_last_date');
-      await prefs.remove('timer_streak_bonus_questions');
-      await prefs.remove('is_premium');
-      await prefs.remove('bonus_categories');
+      for (final key in const [
+        'challenge_mode_active', 'challenge_mode_start_date',
+        'challenge_mode_day', 'challenge_duration',
+        'challenge_locked_frequency', 'challenge_locked_active_days',
+        'challenge_locked_random_anytime', 'challenge_locked_timer_seconds',
+        'challenge_last_answer_date',
+        'onboarding_complete',
+        'timer_streak_days', 'timer_streak_last_date',
+        'timer_streak_bonus_questions',
+        'is_premium', 'bonus_categories',
+      ]) {
+        await prefs.remove(key);
+      }
     } catch (e) {
       debugPrint('ProfileService: Delete user data failed: $e');
       rethrow;

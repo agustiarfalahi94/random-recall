@@ -26,6 +26,7 @@ class NotificationService {
   GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
+  bool _listenerRegistered = false;
   bool _isScheduling = false;
   Completer<void>? _initCompleter;
   Timer? _scheduleDebounceTimer;
@@ -44,27 +45,11 @@ class NotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
-    debugPrint('NotificationService: Initializing...');
 
-    // Register the database-change listener exactly once.
-    // Guarded here so repeated init() calls don't stack duplicate listeners.
-    DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
-      if (_scheduleDebounceTimer?.isActive ?? false)
-        _scheduleDebounceTimer!.cancel();
-      _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
-        final prefs = await SharedPreferences.getInstance();
-        final lastCount = prefs.getInt('last_known_question_count') ?? 0;
-        final currentCount = await DatabaseHelper.instance.getQuestionCount();
-
-        if (currentCount != lastCount) {
-          await prefs.setInt('last_known_question_count', currentCount);
-          await scheduleNotifications();
-        }
-      });
-    });
-
+    // Deduplicate concurrent init() calls — latecomers await the in-flight init.
     if (_initCompleter != null) return _initCompleter!.future;
 
+    debugPrint('NotificationService: Initializing...');
     final completer = Completer<void>();
     _initCompleter = completer;
 
@@ -85,6 +70,26 @@ class NotificationService {
       }
       // Null the completer so a subsequent init() call can re-enter if needed.
       _initCompleter = null;
+    }
+
+    // Register the database-change listener exactly once, AFTER init completes
+    // so that _listenerRegistered is only set when we know _initialized is true.
+    if (!_listenerRegistered) {
+      _listenerRegistered = true;
+      DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
+        if (_scheduleDebounceTimer?.isActive ?? false)
+          _scheduleDebounceTimer!.cancel();
+        _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
+          final prefs = await SharedPreferences.getInstance();
+          final lastCount = prefs.getInt('last_known_question_count') ?? 0;
+          final currentCount = await DatabaseHelper.instance.getQuestionCount();
+
+          if (currentCount != lastCount) {
+            await prefs.setInt('last_known_question_count', currentCount);
+            await scheduleNotifications();
+          }
+        });
+      });
     }
   }
 
