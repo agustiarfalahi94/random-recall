@@ -192,6 +192,7 @@ class ProfileService {
         'timer_streak_days', 'timer_streak_last_date',
         'timer_streak_bonus_questions',
         'is_premium', 'bonus_categories',
+        'notif_schedule_mirror',
       ]) {
         await prefs.remove(key);
       }

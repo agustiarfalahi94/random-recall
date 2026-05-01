@@ -273,6 +273,7 @@ class AuthService {
         'total_7day_completed', 'total_14day_completed',
         'challenge_badge_unlocked', 'highest_title',
         'is_premium', 'bonus_categories',
+        'notif_schedule_mirror',
       ]) {
         await prefs.remove(key);
       }

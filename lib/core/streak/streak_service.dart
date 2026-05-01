@@ -190,7 +190,9 @@ class StreakService {
       badgeUnlocked = true;
       await _prefs.setBool(_keyChallengeBadgeUnlocked, true);
 
-      final totalCompleted = total7DayCompleted + total14DayCompleted + 1;
+      // total7/14DayCompleted getters already read the post-increment value from
+      // _prefs — do NOT add + 1 here or the thresholds are all shifted by one.
+      final totalCompleted = total7DayCompleted + total14DayCompleted;
       // Simple progression: 1+ = Challenger, 3+ = Champion, 7+ = Legend
       if (totalCompleted >= 7) {
         title = 'Legend';
@@ -276,10 +278,13 @@ class StreakService {
     final todayKey = _dateKey(now);
     final lastAnswerDateStr = _prefs.getString(_keyChallengeLastAnswerDate);
 
-    // First ever correct answer in this challenge: mark today as done, keep day=1.
+    // First ever correct answer — mark today done and advance from day 1 to day 2.
+    // Without this increment a 7-day challenge would require 8 calendar days:
+    // day stays at 1 after the first answer, then 6 increments reach 7, then
+    // the 8th-day check sees 7 >= 7 and completes.
     if (lastAnswerDateStr == null) {
       await _prefs.setString(_keyChallengeLastAnswerDate, now.toIso8601String());
-      await _saveToFirestore();
+      await incrementChallengeDay();
       return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.progressed);
     }
 

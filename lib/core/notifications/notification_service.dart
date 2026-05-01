@@ -373,12 +373,21 @@ class NotificationService {
 
     if (slots.isEmpty) return;
 
-    // 1. Generate stable IDs and mirror log for the debug menu & tray matching
-    // Stable ID = days-since-epoch * 20 + slotIndex. Unique across the entire
+    // 1. Cancel all pending alarms before scheduling new ones.
+    // This is necessary when the user reduces their frequency: without cancelAll(),
+    // the old higher-frequency alarms remain active in the OS alongside the new ones.
+    // cancelAll() only affects pending (not yet fired) alarms — active tray
+    // notifications are NOT touched by this call.
+    await _plugin.cancelAll();
+
+    // 2. Generate stable IDs and mirror log for the debug menu & tray matching.
+    // Multiplier = 100 so that up to 100 slots/day can be safely accommodated
+    // (slider max is 50, so this gives 2x headroom with no cross-day collision).
+    // Stable ID = days-since-epoch * 100 + slotIndex. Unique across the entire
     // 8-day schedule window AND deterministic across reschedules (no week-collision).
     int idForSlot(tz.TZDateTime when, int slotIndex) {
       final daysSinceEpoch = when.toUtc().millisecondsSinceEpoch ~/ 86400000;
-      return (daysSinceEpoch * 20) + slotIndex;
+      return (daysSinceEpoch * 100) + slotIndex;
     }
 
     final futureList = slots.map((s) {
