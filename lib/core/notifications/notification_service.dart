@@ -30,6 +30,10 @@ class NotificationService {
   bool _isScheduling = false;
   Completer<void>? _initCompleter;
   Timer? _scheduleDebounceTimer;
+  // Set to true when _onNotificationTapped successfully handles a tap so that
+  // handleNotificationLaunch() doesn't push a second question screen for the
+  // same notification (double-navigation bug on MIUI/HyperOS background starts).
+  bool _notificationNavigationHandled = false;
 
   // Fires whenever a notification is answered (tray cleared).
   // Home screen subscribes to this to refresh the badge immediately.
@@ -820,6 +824,9 @@ class NotificationService {
     // (no-score) screen so they don't pollute the user's score history.
     final isTest = payload.startsWith('test:');
     final questionId = int.tryParse(isTest ? payload.substring(5) : payload);
+    // Mark as handled so handleNotificationLaunch() doesn't push a second
+    // screen for the same tap (double-navigation on MIUI/HyperOS background starts).
+    _notificationNavigationHandled = true;
     // Pop everything back to root before pushing the answer screen.
     navigator.popUntil((route) => route.isFirst);
     navigator.pushNamed(
@@ -835,6 +842,10 @@ class NotificationService {
 
   Future<void> handleNotificationLaunch() async {
     if (!_initialized) await init();
+
+    // If _onNotificationTapped already handled this tap (app was in background),
+    // skip — otherwise we'd push a duplicate question screen on top.
+    if (_notificationNavigationHandled) return;
 
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return;
