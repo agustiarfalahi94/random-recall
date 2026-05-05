@@ -5,6 +5,59 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.12] — 2026-05-05
+
+### Fixed
+- **Question screen showing twice after answering a notification** — On MIUI/HyperOS, both `_onNotificationTapped` and `handleNotificationLaunch` could fire for the same notification tap (app was in background), pushing the question screen twice. User answered the top screen, popped it, and saw the identical question again. Fixed with a `_notificationNavigationHandled` flag: `_onNotificationTapped` sets it on success; `handleNotificationLaunch` skips navigation if the flag is set.
+- **Notification language not updating after locale change** — Notification title/body are baked into `zonedSchedule()` at schedule time. Changing the locale updated SharedPreferences strings but the 7-day queue of already-scheduled alarms retained the old language. `setLocale()` now triggers `scheduleNotifications()` immediately after updating the strings.
+
+---
+
+## [0.13.11] — 2026-05-01
+
+### Fixed
+- **Challenge title off by one** — `completeChallengeMode()` incremented the completed-count in SharedPreferences, then read it back via the getter (already incremented) and added `+1` again. All title thresholds were shifted by one: users received "Champion" after their 1st completion instead of "Challenger", etc.
+- **7-day challenge required 8 calendar days** — The first correct answer in a challenge stored the date but did not call `incrementChallengeDay()`, leaving the counter at 1. Subsequent days each incremented once, so reaching `challengeDay >= 7` required 7 more increments after the first — 8 days total. The first answer now also calls `incrementChallengeDay()`.
+- **Notification ID collision above 20 notifications/day** — The stable notification ID formula used a multiplier of 20 (`daysSinceEpoch × 20 + slotIndex`). When frequency exceeded 20, `slotIndex` values ≥ 20 overflowed into the next day's ID range, silently replacing those alarms. Multiplier increased to 100.
+- **Ghost alarms persisted when frequency was reduced** — `scheduleNotifications()` used stable IDs to replace individual slots but never cancelled alarms no longer in the new schedule. Reducing frequency from 10 to 5 left 5 ghost alarms per day active in the OS. `cancelAll()` is now called before every reschedule.
+- **Phantom notification badge after sign-out or account deletion** — `notif_schedule_mirror` was not cleared on sign-out or account delete. The next user on the same device saw a badge count pointing to the previous user's question IDs.
+
+---
+
+## [0.13.10] — 2026-05-01
+
+### Fixed
+- **`resetChallenge()` left timer key in SharedPreferences** — `challenge_locked_timer_seconds` was missing from the remove list, so after completing or failing a challenge the previous timer value persisted and was written into the next challenge's Firestore save and notification schedule.
+- **Dead static getters with `LateInitializationError` risk** — `StreakService.getStreak()`, `.getBonusQuestions()`, and `.getFreeQuestionLimit()` had zero external callers after previous refactoring. They accessed `_instance._prefs` directly and would throw `LateInitializationError` if called before `initialize()`. Removed.
+- **Lifetime achievement keys not cleared on sign-out or account deletion** — `total_7day_completed`, `total_14day_completed`, `challenge_badge_unlocked`, and `highest_title` persisted in SharedPreferences across sign-out and account deletion. A new account on the same device inherited the previous user's challenge badge and completion history.
+
+---
+
+## [0.13.9] — 2026-04-30
+
+### Fixed
+- **Profile tab showing loading spinner on every tab switch** — The `[tab1, tab2, tab3, tab4][index]` approach unmounted and remounted the active tab widget on every switch, causing `ProfileScreen` to re-run `initState` and fetch Firestore data each visit (showing a spinner). Switched to `IndexedStack` — all four tabs stay mounted permanently. Switching tabs only shows/hides them with no repeated Firestore reads.
+
+---
+
+## [0.13.8] — 2026-04-30
+
+### Fixed
+- **Notification listener registered before init completes** — The `DatabaseHelper.onDatabaseUpdated.listen()` call was placed before the `_initCompleter != null` guard, allowing concurrent `init()` callers during the async gap to register duplicate listeners. Moved registration to after init completes, guarded by a `_listenerRegistered` bool.
+- **Account deletion wrote to already-deleted Firestore document** — `_deleteUserData()` called `StreakService.instance.resetChallenge()` after deleting the Firestore doc. `resetChallenge()` internally calls `_saveToFirestore()`, which re-created the deleted path. Replaced with direct `prefs.remove()` calls on all challenge and streak keys.
+- **`failChallenge()` set streak to 0 before `resetChallenge()`** — `resetChallenge()` already sets `_keyStreak = 0` internally. The explicit `setInt` before calling it was redundant.
+- **Successful email link counted as a skipped prompt** — `onPopInvokedWithResult` incremented `phone_only_prompted` on any pop, including the pop from a successful email link. Added `_skipAlreadyIncremented = true` to the success path so the counter is not double-incremented.
+
+---
+
+## [0.13.7] — 2026-04-29
+
+### Fixed
+- **Frequency slider max incorrectly changed to 20** — Reverted to max=50 (original value changed without approval).
+- **Double loading spinner on profile tab** — AppProvider overlay added in v0.13.6 caused two simultaneous spinners (overlay + `ProfileScreen`'s own `_isLoading` spinner). Removed the overlay; the profile screen's own spinner remains.
+
+---
+
 ## [0.13.6] — 2026-04-29
 
 ### Fixed
