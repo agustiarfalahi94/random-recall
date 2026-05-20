@@ -34,6 +34,8 @@ class NotificationService {
   // handleNotificationLaunch() doesn't push a second question screen for the
   // same notification (double-navigation bug on MIUI/HyperOS background starts).
   bool _notificationNavigationHandled = false;
+  int? _lastTappedQuestionId;
+  DateTime? _lastTapTime;
 
   // Fires whenever a notification is answered (tray cleared).
   // Home screen subscribes to this to refresh the badge immediately.
@@ -824,6 +826,18 @@ class NotificationService {
     // (no-score) screen so they don't pollute the user's score history.
     final isTest = payload.startsWith('test:');
     final questionId = int.tryParse(isTest ? payload.substring(5) : payload);
+    // On MIUI/HyperOS this callback can fire twice for a single tap, which
+    // would push two question screens. Absorb duplicates for the same question
+    // within a 3-second window. Different question IDs always pass through so
+    // the user can tap a second tray notification right after the first.
+    final now = DateTime.now();
+    if (_lastTappedQuestionId == questionId &&
+        _lastTapTime != null &&
+        now.difference(_lastTapTime!) < const Duration(seconds: 3)) {
+      return;
+    }
+    _lastTappedQuestionId = questionId;
+    _lastTapTime = now;
     // Mark as handled so handleNotificationLaunch() doesn't push a second
     // screen for the same tap (double-navigation on MIUI/HyperOS background starts).
     _notificationNavigationHandled = true;

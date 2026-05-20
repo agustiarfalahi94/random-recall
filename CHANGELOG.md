@@ -5,6 +5,14 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.13] — 2026-04-28
+
+### Fixed
+- **Challenge streak not failing on day skip** — With `IndexedStack`, `_HomeTab` is never unmounted, so `initState()` (where `checkChallengeDailyRequirement()` was called) only runs once per app process. Backgrounding and reopening the app did not re-run the check. Fixed by also calling `checkChallengeDailyRequirement()` in `didChangeAppLifecycleState(resumed)` so every app foreground checks whether a challenge day was skipped.
+- **Question screen not closing / appearing twice after answering** — On MIUI/HyperOS, `_onNotificationTapped` fires twice for a single notification tap, pushing two question screens. When the first screen's 2-second auto-close fired, `Navigator.pop()` popped the second (top) screen, leaving the first screen still visible. Fixed with a 3-second debounce on `_onNotificationTapped`: duplicate calls for the same question ID within 3 seconds are ignored; different question IDs always pass through.
+
+---
+
 ## [0.13.12] — 2026-05-05
 
 ### Fixed

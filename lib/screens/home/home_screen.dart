@@ -731,6 +731,9 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshData();
+      StreakService.instance.checkChallengeDailyRequirement().catchError(
+        (e) => debugPrint('HomeTab: Daily challenge check failed: $e'),
+      );
     }
   }
 
