@@ -383,7 +383,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                       itemCount: _questions.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final q = _questions[index];
                         final cat = _categoryFor(q.categoryId);

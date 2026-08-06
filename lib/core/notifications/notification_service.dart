@@ -119,7 +119,7 @@ class NotificationService {
     );
     debugPrint('NotificationService: Initializing plugin...');
     await _plugin.initialize(
-      const InitializationSettings(android: androidSettings),
+      settings: const InitializationSettings(android: androidSettings),
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -145,7 +145,9 @@ class NotificationService {
       // First run on this build: delete the legacy channel (if any) and
       // recreate it with the alarm audio attributes. This wipes the tray once,
       // which is acceptable on a one-time migration.
-      await androidPlugin?.deleteNotificationChannel('random_recall_channel');
+      await androidPlugin?.deleteNotificationChannel(
+        channelId: 'random_recall_channel',
+      );
       debugPrint(
         'NotificationService: Legacy channel deleted (one-time migration).',
       );
@@ -707,7 +709,7 @@ class NotificationService {
               debugPrint(
                 'NotificationService: Cancelling active notification $nId for question $questionId',
               );
-              await _plugin.cancel(nId);
+              await _plugin.cancel(id: nId);
             }
           }
         }
@@ -754,18 +756,16 @@ class NotificationService {
         'Tap to answer the question';
 
     await _plugin.zonedSchedule(
-      id,
-      isChallenge ? '🔥 $title' : title,
-      body,
-      scheduledDate,
-      NotificationDetails(android: androidDetails),
+      id: id,
+      title: isChallenge ? '🔥 $title' : title,
+      body: body,
+      scheduledDate: scheduledDate,
+      notificationDetails: NotificationDetails(android: androidDetails),
       // alarmClock is intercepted by Xiaomi HyperOS power management for
       // third-party apps. exactAllowWhileIdle uses setExactAndAllowWhileIdle()
       // which bypasses that interception while still being exact and
       // Doze-exempt. SCHEDULE_EXACT_ALARM permission is already declared.
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       payload: isTest ? 'test:${question.id}' : question.id?.toString(),
     );
   }
@@ -802,10 +802,10 @@ class NotificationService {
         prefs.getString('test_notif_body') ?? 'Tap to answer the question';
 
     await _plugin.show(
-      9999,
-      title,
-      body,
-      const NotificationDetails(android: androidDetails),
+      id: 9999,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(android: androidDetails),
       payload: 'test:${question.id}',
     );
     debugPrint(

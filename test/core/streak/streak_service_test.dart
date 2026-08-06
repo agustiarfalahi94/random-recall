@@ -1,5 +1,5 @@
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart'
-    show FirebaseAuthPlatform, PigeonUserDetails, UserPlatform;
+    show FirebaseAuthPlatform, InternalUserDetails, UserPlatform;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart'
     show FirebaseAppPlatform, FirebasePlatform, coreNotInitialized;
@@ -57,7 +57,7 @@ class _FakeAuthPlatform extends FirebaseAuthPlatform {
 
   @override
   FirebaseAuthPlatform setInitialValues({
-    PigeonUserDetails? currentUser,
+    InternalUserDetails? currentUser,
     String? languageCode,
   }) => this;
 

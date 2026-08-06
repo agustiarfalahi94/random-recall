@@ -72,9 +72,9 @@ Future<void> main() async {
   await _getOrCreateDeviceId();
   await Firebase.initializeApp();
   await FirebaseAppCheck.instance.activate(
-    androidProvider: kDebugMode
-        ? AndroidProvider.debug
-        : AndroidProvider.playIntegrity,
+    providerAndroid: kDebugMode
+        ? const AndroidDebugProvider()
+        : const AndroidPlayIntegrityProvider(),
   );
 
   // Root/jailbreak detection — informational only. Logs to Firebase Analytics

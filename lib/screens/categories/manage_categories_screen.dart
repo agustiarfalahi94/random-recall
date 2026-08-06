@@ -262,8 +262,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                           itemCount: _customCategories.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
                           itemBuilder: (_, index) {
                             final cat = _customCategories[index];
                             final hasQuestions = _usedCategoryIds.contains(
@@ -493,7 +492,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _categoryIcons.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
                 itemBuilder: (_, i) {
                   final icon = _categoryIcons[i];
                   final selected = icon == _selectedIcon;
