@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:random_recall/core/database/database_helper.dart';
+import 'package:random_recall/models/category.dart';
+import 'package:random_recall/models/question.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -61,5 +63,105 @@ void main() {
       await db.addTombstones('questions', [20, 21]);
       expect(await db.getTombstonedIds('questions'), {20, 21});
     });
+
+    test('deleteQuestion writes a tombstone', () async {
+      final catId = await db.insertCategory(
+        Category(
+          name: 'T',
+          icon: '📌',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      final qId = await db.insertQuestion(
+        Question(
+          question: 'q',
+          answer: 'a',
+          categoryId: catId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      await db.deleteQuestion(qId);
+      final all = await db.getAllTombstones();
+      expect(all['questions'], contains(qId));
+    });
+
+    test('deleteCategory tombstones the category and its questions', () async {
+      final catId = await db.insertCategory(
+        Category(
+          name: 'T',
+          icon: '📌',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      final q1 = await db.insertQuestion(
+        Question(
+          question: 'q1',
+          answer: 'a',
+          categoryId: catId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      final q2 = await db.insertQuestion(
+        Question(
+          question: 'q2',
+          answer: 'a',
+          categoryId: catId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      await db.deleteCategory(catId);
+      final all = await db.getAllTombstones();
+      expect(all['categories'], contains(catId));
+      expect(all['questions'], containsAll([q1, q2]));
+    });
+
+    test(
+      'deleteCategory does not tombstone questions of other categories',
+      () async {
+        final catA = await db.insertCategory(
+          Category(
+            name: 'A',
+            icon: '📌',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        final catB = await db.insertCategory(
+          Category(
+            name: 'B',
+            icon: '📌',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        final qA = await db.insertQuestion(
+          Question(
+            question: 'a',
+            answer: 'a',
+            categoryId: catA,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        final qB = await db.insertQuestion(
+          Question(
+            question: 'b',
+            answer: 'a',
+            categoryId: catB,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        await db.deleteCategory(catA);
+        final all = await db.getAllTombstones();
+        expect(all['questions'], {qA});
+        expect(all['questions'], isNot(contains(qB)));
+      },
+    );
   });
 }

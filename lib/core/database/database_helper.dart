@@ -214,13 +214,25 @@ class DatabaseHelper {
   }
 
   Future<int> deleteCategory(int id) async {
-    final count = await (await database).delete(
-      _tableCategories,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final db = await database;
+    final questionIds = await getQuestionIdsByCategory(id);
+    await db.transaction((txn) async {
+      await txn.insert(_tableSyncDeletions, {
+        'collection': 'categories',
+        'doc_id': id,
+        'deleted_at': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      for (final qId in questionIds) {
+        await txn.insert(_tableSyncDeletions, {
+          'collection': 'questions',
+          'doc_id': qId,
+          'deleted_at': DateTime.now().toIso8601String(),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await txn.delete(_tableCategories, where: 'id = ?', whereArgs: [id]);
+    });
     _updateController.add(null);
-    return count;
+    return 1;
   }
 
   // ── Questions ───────────────────────────────────────────────────────────────
@@ -325,14 +337,30 @@ class DatabaseHelper {
     return count;
   }
 
-  Future<int> deleteQuestion(int id) async {
-    final count = await (await database).delete(
+  /// Returns the ids of all questions belonging to [id] (used for the
+  /// cascade tombstone when a category is deleted).
+  Future<List<int>> getQuestionIdsByCategory(int id) async {
+    final rows = await (await database).query(
       _tableQuestions,
-      where: 'id = ?',
+      where: 'category_id = ?',
       whereArgs: [id],
+      columns: ['id'],
     );
+    return rows.map((r) => r['id'] as int).toList();
+  }
+
+  Future<int> deleteQuestion(int id) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.insert(_tableSyncDeletions, {
+        'collection': 'questions',
+        'doc_id': id,
+        'deleted_at': DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.delete(_tableQuestions, where: 'id = ?', whereArgs: [id]);
+    });
     _updateController.add(null);
-    return count;
+    return 1;
   }
 
   // ── Score Records ────────────────────────────────────────────────────────────
