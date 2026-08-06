@@ -62,6 +62,20 @@ class AuthService {
   /// Returns the current user if logged in.
   User? get currentUser => _auth.currentUser;
 
+  /// A user is "verified" if they proved ownership of an email or phone.
+  /// Phone users are verified by OTP; email users by verification email.
+  static bool isVerified({
+    required bool hasEmailVerified,
+    required bool hasPhone,
+  }) => hasEmailVerified || hasPhone;
+
+  static bool isVerifiedUser(User? user) =>
+      user != null &&
+      isVerified(
+        hasEmailVerified: user.emailVerified,
+        hasPhone: user.phoneNumber != null,
+      );
+
   /// Sign in with Google.
   Future<UserCredential?> signInWithGoogle() async {
     AuthCredential? credential;
@@ -268,8 +282,7 @@ class AuthService {
   Future<void> initializeUserSession() async {
     final user = currentUser;
     // Phone users are verified by OTP — no emailVerified check needed for them.
-    final isVerified = user?.emailVerified == true || user?.phoneNumber != null;
-    if (user == null || !isVerified) return;
+    if (user == null || !isVerifiedUser(user)) return;
 
     await _ensureUserDocument(user);
     await SubscriptionService.instance.logIn(user.uid);

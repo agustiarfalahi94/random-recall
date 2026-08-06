@@ -179,8 +179,7 @@ Future<void> main() async {
 
       final user = AuthService.instance.currentUser;
 
-      final isVerified =
-          user != null && (user.emailVerified || user.phoneNumber != null);
+      final isVerified = AuthService.isVerifiedUser(user);
       if (onboardingComplete && isVerified) {
         SyncService.instance.performRestore().ignore();
         await registerNotificationWorker().catchError(
@@ -422,8 +421,7 @@ class _HomeGateState extends State<_HomeGate> {
       debugPrint(
         'HomeGate: user=${user?.uid}, emailVerified=${user?.emailVerified}',
       );
-      final isVerified =
-          user != null && (user.emailVerified || user.phoneNumber != null);
+      final isVerified = user != null && AuthService.isVerifiedUser(user);
       if (isVerified) {
         debugPrint('HomeGate: Checking cloud for existing user data...');
         try {

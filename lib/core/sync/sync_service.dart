@@ -48,8 +48,7 @@ class SyncService {
   /// pushing them to the user's private collection using a write batch.
   Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
-    final isVerified =
-        user != null && (user.emailVerified || user.phoneNumber != null);
+    final isVerified = user != null && AuthService.isVerifiedUser(user);
     if (!isVerified || (_isSyncing && !force)) return;
 
     _isSyncing = true;
@@ -293,8 +292,7 @@ class SyncService {
     bool isInitialLogin = false,
   }) async {
     final user = AuthService.instance.currentUser;
-    final isVerifiedRestore =
-        user != null && (user.emailVerified || user.phoneNumber != null);
+    final isVerifiedRestore = user != null && AuthService.isVerifiedUser(user);
     if (!isVerifiedRestore) return;
 
     // If a restore is already running, wait for it rather than silently
