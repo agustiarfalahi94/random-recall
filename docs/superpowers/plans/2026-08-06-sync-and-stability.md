@@ -18,6 +18,8 @@
 - `sync_deletions` is **never wiped** by `clearAllData()` or the restore's initial-login wipe.
 - `isVerified` = `user != null && (user.emailVerified || user.phoneNumber != null)`. The `_HomeGate` login-gate at `main.dart:292-302` stays unchanged (intentionally more permissive).
 - No RevenueCat / AdMob / Google Developer accounts involved — pure code.
+- **Test infra — sqflite:** `flutter test` has no sqflite platform, so DB tests (Tasks 1, 2, 6) MUST use `sqflite_common_ffi`. Add dev dep `sqflite_common_ffi: ^2.3.0`; every DB test file calls `sqfliteFfiInit(); databaseFactory = databaseFactoryFfi;` in `main()`.
+- **Test infra — Firestore:** `flutter test` has no cloud_firestore platform — `batch.commit()` / `.get()` throw `MissingPluginException` (swallowed by sync's catch). Sync tests (Tasks 3, 4) MUST test pure extracted logic only (chunking, tombstone plan, score-window filter, `dataFound` predicate, tombstone-drop). The thin Firestore shell is verified by `flutter analyze` + integration, not unit tests.
 
 ---
 
@@ -27,8 +29,8 @@
 - `lib/core/sync/sync_service.dart` — chunked/tombstone-aware backup, paginated/batched/tombstone-aware restore, `dataFound` fix, windowed score sync + prune
 - `lib/core/auth/auth_service.dart` — `isVerifiedUser` helper; use in `initializeUserSession`
 - `lib/main.dart` — use `isVerifiedUser` (2 sites); move root detection off the first frame
-- `test/core/database/database_helper_test.dart` — new: tombstone + random-question tests
-- `test/core/sync/sync_service_test.dart` — new: chunking, tombstone-aware backup/restore, windowed scores, pagination
+- `test/core/database/database_helper_test.dart` — new: tombstone + random-question tests (uses `sqflite_common_ffi`)
+- `test/core/sync/sync_service_test.dart` — new: pure-helper tests (chunk ranges, tombstone plan, score window, dataFound predicate, tombstone drop)
 - `test/core/auth/is_verified_user_test.dart` — new: helper unit tests
 
 ---
@@ -47,14 +49,26 @@
   - `Future<void> removeTombstones(String collection, Iterable<int> docIds)` — delete rows (called after cloud commit)
   - `Future<Set<int>> getTombstonedIds(String collection)` — for restore skip
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Add the sqflite FFI dev dependency**
+
+```bash
+flutter pub add dev:sqflite_common_ffi:^2.3.0
+```
+
+Run: `flutter pub get` — resolves cleanly (sqflite_common 2.5.8 is already transitive).
+
+- [ ] **Step 2: Write the failing test**
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:random_recall/core/database/database_helper.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  // `flutter test` has no sqflite platform — use the FFI factory (native SQLite).
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
 
   group('sync_deletions tombstone journal', () {
     late DatabaseHelper db;
@@ -113,12 +127,12 @@ void main() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Run test to verify it fails**
 
 Run: `flutter test test/core/database/database_helper_test.dart`
-Expected: FAIL — `sync_deletions` table missing / methods undefined.
+Expected: FAIL — `sync_deletions` table missing / methods undefined. (If it instead fails with a sqflite error, the FFI factory setup in Step 1 is wrong — fix the setup before proceeding.)
 
-- [ ] **Step 3: Implement schema v5 + helpers**
+- [ ] **Step 4: Implement schema v5 + helpers**
 
 In `database_helper.dart`:
 - Bump `_dbVersion` from `4` to `5`.
@@ -133,23 +147,23 @@ In `database_helper.dart`:
   )
   ```
 - In `_onUpgrade`, add a `if (oldVersion < 5)` branch that creates the same table.
-- Add the five helper methods using `(await database)` + raw SQL with `ConflictAlgorithm.ignore`-style inserts (`INSERT OR IGNORE`).
+- Add the five helper methods using `(await database)` + raw SQL with `INSERT OR IGNORE`.
 - Add a `@visibleForTesting String get dbPathForTesting` returning the current path, and a `@visibleForTesting void overrideDbPathForTesting(String path)` that closes `_db` and swaps the path used by `_initDatabase()`. (Store it in a field `_dbPathOverride`; `_initDatabase` uses `join(getDatabasesPath(), _dbPathOverride ?? _dbName)`.)
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [ ] **Step 5: Run tests to verify they pass**
 
 Run: `flutter test test/core/database/database_helper_test.dart`
 Expected: PASS.
 
-- [ ] **Step 5: Run full validation**
+- [ ] **Step 6: Run full validation**
 
 Run: `flutter analyze && dart format --set-exit-if-changed lib/ test/ && flutter test`
 Expected: 0 analyzer issues; format clean; 77/77 + new tests pass.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add lib/core/database/database_helper.dart test/core/database/database_helper_test.dart
+git add pubspec.yaml pubspec.lock lib/core/database/database_helper.dart test/core/database/database_helper_test.dart
 git commit -m "feat(db): schema v5 sync_deletions tombstone journal
 ```
 
@@ -312,45 +326,67 @@ git commit -m "feat(db): tombstone categories and questions on delete"
 
 **Interfaces:**
 - Consumes: `DatabaseHelper.getAllTombstones()`, `removeTombstones()`, and existing `getAllCategories/getAllQuestions/getAllScoreRecords`.
-- Produces:
-  - `Future<void> _runBatched(List<void Function(WriteBatch)> ops, {int chunkSize = 450})`
-  - Backup now: push tombstones first, then upsert live data (categories + questions + scores `answered_at >= now − 30d`) in chunks, then prune cloud scores older than 30d.
+- Produces (pure statics — unit-testable without Firestore):
+  - `static List<(int, int)> chunkRanges(int total, {int chunkSize})` — (start, end) index ranges
+  - `static List<(String, int)> tombstonePlan(Map<String, Set<int>> tombstones)` — deterministic ordered cloud-delete list
+  - `static List<ScoreRecord> scoresForSync(List<ScoreRecord> all, DateTime cutoff)` — window filter
+  - `Future<void> _runBatched(List<void Function(WriteBatch)> ops, {int chunkSize = 450})` — commits each chunk
+- Backup now: push tombstones first, then upsert live data (categories + questions + scores `answered_at >= now − 30d`) in chunks, then prune cloud scores older than 30d.
 
-- [ ] **Step 1: Write the failing test for `_runBatched` chunking**
+- [ ] **Step 1: Write the failing test for `chunkRanges`**
 
 ```dart
 // test/core/sync/sync_service_test.dart
+// NOTE: these tests only touch static pure helpers — they do NOT construct
+// SyncService.instance (its field initializer touches FirebaseFirestore, which
+// throws in `flutter test`). Static access is safe.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:random_recall/core/sync/sync_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('SyncService._runBatched', () {
-    test('executes ops across multiple chunks', () async {
-      final calls = <String>[];
-      final sync = SyncService.instance;
-      // Stub out batch commit via a fake WriteBatch? — use a counting helper.
-      // Instead, expose chunking by passing a fake batch-builder.
-      await sync._runBatchedForTesting(
-        1200,
-        (i) => calls.add('op$i'),
-        chunkSize: 450,
+  group('SyncService.chunkRanges', () {
+    test('splits into ≤ chunkSize ranges', () {
+      expect(
+        SyncService.chunkRanges(1200, chunkSize: 450),
+        [(0, 450), (450, 900), (900, 1200)],
       );
-      // 1200 ops at 450 = 3 chunks (450, 450, 300)
-      expect(calls.length, 1200);
+    });
+
+    test('single range when total < chunkSize', () {
+      expect(SyncService.chunkRanges(100, chunkSize: 450), [(0, 100)]);
+    });
+
+    test('empty total yields no ranges', () {
+      expect(SyncService.chunkRanges(0), isEmpty);
     });
   });
 }
 ```
 
-> Note: `_runBatched` operates on real Firestore `WriteBatch`. To unit-test chunking without the platform, add a `@visibleForTesting` variant `_runBatchedForTesting(int opCount, void Function(int index) op, {int chunkSize})` that just counts chunk boundaries, OR test the pure chunk-split logic. Prefer the pure split: extract `List<List<int>> _chunkIndices(int count, {int chunkSize})` and test that.
+- [ ] **Step 2: Run test to verify it fails**
 
-- [ ] **Step 2: Implement `_runBatched`**
+Run: `flutter test test/core/sync/sync_service_test.dart`
+Expected: FAIL — `chunkRanges` not defined.
+
+- [ ] **Step 3: Implement `chunkRanges` + `_runBatched`**
 
 ```dart
 static const int _scoreSyncWindowDays = 30;
 static const int _batchChunkSize = 450;
+
+/// Splits [total] items into (start, end) index ranges, each at most
+/// [chunkSize] wide. Used to keep every Firestore batch under the 500-op cap.
+static List<(int, int)> chunkRanges(int total, {int chunkSize = _batchChunkSize}) {
+  if (total <= 0) return const [];
+  final ranges = <(int, int)>[];
+  for (var start = 0; start < total; start += chunkSize) {
+    final end = (start + chunkSize) < total ? start + chunkSize : total;
+    ranges.add((start, end));
+  }
+  return ranges;
+}
 
 /// Runs [ops] against Firestore write batches, committing every [chunkSize]
 /// operations. Keeps each commit under Firestore's 500-op batch cap.
@@ -358,8 +394,7 @@ Future<void> _runBatched(
   List<void Function(WriteBatch)> ops, {
   int chunkSize = _batchChunkSize,
 }) async {
-  for (var start = 0; start < ops.length; start += chunkSize) {
-    final end = (start + chunkSize).clamp(0, ops.length);
+  for (final (start, end) in chunkRanges(ops.length, chunkSize: chunkSize)) {
     final batch = _db.batch();
     for (var i = start; i < end; i++) {
       ops[i](batch);
@@ -369,7 +404,76 @@ Future<void> _runBatched(
 }
 ```
 
-- [ ] **Step 3: Rewrite backup**
+- [ ] **Step 4: Write the failing tests for `tombstonePlan` + `scoresForSync`**
+
+```dart
+// Append to sync_service_test.dart — add `import 'package:random_recall/models/score_record.dart';`
+// at the top.
+
+group('SyncService.tombstonePlan', () {
+  test('flattens deterministically by collection then id', () {
+    final plan = SyncService.tombstonePlan({
+      'questions': {5, 1},
+      'categories': {2},
+    });
+    expect(plan, [('categories', 2), ('questions', 1), ('questions', 5)]);
+  });
+
+  test('empty journal yields empty plan', () {
+    expect(SyncService.tombstonePlan({}), isEmpty);
+  });
+});
+
+group('SyncService.scoresForSync', () {
+  test('keeps records at or after cutoff', () {
+    final now = DateTime(2026, 8, 6);
+    final cutoff = now.subtract(const Duration(days: 30));
+    final tooOld = ScoreRecord(
+      questionId: 1, categoryId: 1, isCorrect: true,
+      answeredAt: cutoff.subtract(const Duration(days: 1)), updatedAt: now,
+    );
+    final boundary = ScoreRecord(
+      questionId: 2, categoryId: 1, isCorrect: true,
+      answeredAt: cutoff, updatedAt: now,
+    );
+    final recent = ScoreRecord(
+      questionId: 3, categoryId: 1, isCorrect: true,
+      answeredAt: now, updatedAt: now,
+    );
+    final result = SyncService.scoresForSync([tooOld, boundary, recent], cutoff);
+    expect(result, [boundary, recent]);
+  });
+});
+```
+
+- [ ] **Step 5: Run tests to verify they pass**
+
+Run: `flutter test test/core/sync/sync_service_test.dart`
+Expected: PASS.
+
+- [ ] **Step 6: Implement the pure helpers used by backup**
+
+```dart
+/// Flattens the tombstone journal into an ordered list of (collection, docId)
+/// cloud deletes. Ordered by collection name then docId for determinism.
+static List<(String, int)> tombstonePlan(Map<String, Set<int>> tombstones) {
+  final plan = <(String, int)>[];
+  final keys = tombstones.keys.toList()..sort();
+  for (final collection in keys) {
+    final ids = tombstones[collection]!.toList()..sort();
+    for (final id in ids) {
+      plan.add((collection, id));
+    }
+  }
+  return plan;
+}
+
+/// Returns score records within the sync window (not older than [cutoff]).
+static List<ScoreRecord> scoresForSync(List<ScoreRecord> all, DateTime cutoff) =>
+    all.where((s) => !s.answeredAt.isBefore(cutoff)).toList();
+```
+
+- [ ] **Step 7: Rewrite backup using the pure helpers**
 
 ```dart
 Future<void> performBackup({bool force = false}) async {
@@ -387,11 +491,9 @@ Future<void> performBackup({bool force = false}) async {
     // 1. Push tombstones first — deletes propagate, journal cleared on success.
     final tombstones = await dbHelper.getAllTombstones();
     final deleteOps = <void Function(WriteBatch)>[];
-    for (final entry in tombstones.entries) {
-      for (final docId in entry.value) {
-        deleteOps.add((batch) =>
-            batch.delete(userDoc.collection(entry.key).doc(docId.toString())));
-      }
+    for (final (collection, docId) in tombstonePlan(tombstones)) {
+      deleteOps.add((b) =>
+          b.delete(userDoc.collection(collection).doc(docId.toString())));
     }
     await _runBatched(deleteOps);
     for (final entry in tombstones.entries) {
@@ -417,7 +519,7 @@ Future<void> performBackup({bool force = false}) async {
       const Duration(days: _scoreSyncWindowDays),
     );
     final scores = await dbHelper.getAllScoreRecords();
-    final recentScores = scores.where((s) => !s.answeredAt.isBefore(cutoff)).toList();
+    final recentScores = scoresForSync(scores, cutoff);
     for (final s in recentScores) {
       if (s.id == null) continue;
       final ref = userDoc.collection('score_records').doc(s.id.toString());
@@ -463,37 +565,20 @@ Future<void> performBackup({bool force = false}) async {
 ```
 
 > The `settings` map is copied verbatim from the current implementation (`sync_service.dart:89-97`). Keep it identical.
+>
+> **Note on testing:** the Firestore-touching shell (the `_runBatched` commits, the prune query, journal-clearing after commit) is NOT unit-tested — `batch.commit()` throws `MissingPluginException` in `flutter test`. It is verified by `flutter analyze` + integration on device. The unit-testable decisions (chunk boundaries, tombstone ordering, score window) are the pure helpers above.
 
-- [ ] **Step 4: Write the failing tests for tombstone backup**
-
-```dart
-// Append to sync_service_test.dart — uses the fake Firebase platform pattern
-// from streak_service_test.dart (FirebasePlatform + FirebaseAuthPlatform fakes,
-// SharedPreferences.setMockInitialValues({})).
-
-test('backup pushes tombstones then clears journal', () async {
-  // Seed a tombstone in the DB
-  await DatabaseHelper.instance.addTombstone('questions', 42);
-  await SyncService.instance.performBackup(force: true);
-  // Journal should be cleared after a successful (no-op) commit
-  final all = await DatabaseHelper.instance.getAllTombstones();
-  expect(all, isEmpty);
-});
-```
-
-> Because the fake Firebase platform has no real network, `batch.commit()` in the fake returns without error, so the tombstone path (delete → commit → clear journal) can be exercised. The important assertion is that the journal clears after backup.
-
-- [ ] **Step 5: Run tests**
+- [ ] **Step 8: Run tests**
 
 Run: `flutter test test/core/sync/sync_service_test.dart test/core/database/database_helper_test.dart`
 Expected: PASS. (The existing 77 must still pass — run `flutter test` too.)
 
-- [ ] **Step 6: Run full validation**
+- [ ] **Step 9: Run full validation**
 
 Run: `flutter analyze && dart format --set-exit-if-changed lib/ test/ && flutter test`
 Expected: 0 issues; format clean; all pass.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add lib/core/sync/sync_service.dart test/core/sync/sync_service_test.dart
@@ -510,28 +595,65 @@ git commit -m "feat(sync): chunked tombstone-aware backup with windowed scores"
 
 **Interfaces:**
 - Consumes: `DatabaseHelper.getTombstonedIds()`, `DatabaseHelper.clearAllData()`.
-- Produces: `dataFound` = `questions.isNotEmpty || scores.isNotEmpty`.
+- Produces (pure statics — unit-testable without Firestore):
+  - `static bool hasCloudData({required bool hasQuestions, required bool hasScores})` — `hasQuestions || hasScores` (categories excluded — default General/Work are always backed up)
+  - `static List<String> dropTombstoned(Iterable<String> cloudDocIds, Set<int> tombstonedIds)` — filters cloud doc ids against the journal
+  - `Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _fetchAllDocs(CollectionReference<Map<String, dynamic>> collection, {int pageSize = 500})` — paginated read (Firestore shell, not unit-tested)
 
-- [ ] **Step 1: Write the failing test for the dataFound fix**
+- [ ] **Step 1: Write the failing tests for the pure helpers**
 
 ```dart
-// Append to sync_service_test.dart
+// Append to sync_service_test.dart (static access only — do not construct
+// SyncService.instance in this file).
 
-test('restore treats questions or scores as dataFound', () async {
-  // Seed local DB so restore returns early (skip if data exists),
-  // then call the dataFound decision directly if it's exposed; else
-  // verify via a seeded cloud-less restore path.
-  // Simplest: assert the new predicate behavior through a @visibleForTesting
-  // helper, or test _HomeGate's equivalent check via a unit test on the
-  // extracted logic.
+group('SyncService.hasCloudData', () {
+  test('true if questions or scores exist', () {
+    expect(SyncService.hasCloudData(hasQuestions: true, hasScores: false), true);
+    expect(SyncService.hasCloudData(hasQuestions: false, hasScores: true), true);
+    expect(SyncService.hasCloudData(hasQuestions: true, hasScores: true), true);
+    expect(SyncService.hasCloudData(hasQuestions: false, hasScores: false), false);
+  });
+});
+
+group('SyncService.dropTombstoned', () {
+  test('drops cloud doc ids present in the tombstone set', () {
+    expect(SyncService.dropTombstoned(['1', '2', '3'], {2}), ['1', '3']);
+  });
+
+  test('keeps all when tombstone set is empty', () {
+    expect(SyncService.dropTombstoned(['1', '2'], {}), ['1', '2']);
+  });
+
+  test('ignores non-numeric cloud ids safely', () {
+    expect(SyncService.dropTombstoned(['abc', '4'], {4}), ['abc']);
+  });
 });
 ```
 
-> Because `_HomeGate`'s check (`main.dart:433`) is UI-coupled, extract the predicate to `AuthService.isVerifiedUser` (Task 5) and keep the `dataFound` logic testable. In this task, test the restore skip-tombstone path and leave the `dataFound` predicate as an inline boolean that the plan documents.
+- [ ] **Step 2: Run tests to verify they fail**
 
-- [ ] **Step 2: Implement paginated reads + batched inserts + tombstone skip**
+Run: `flutter test test/core/sync/sync_service_test.dart`
+Expected: FAIL — `hasCloudData` / `dropTombstoned` not defined.
+
+- [ ] **Step 3: Implement the pure helpers + paginated restore**
 
 ```dart
+/// True when the cloud has real user data worth restoring. Categories are
+/// excluded because the default General/Work categories are always backed up
+/// and would be a false signal.
+static bool hasCloudData({required bool hasQuestions, required bool hasScores}) =>
+    hasQuestions || hasScores;
+
+/// Drops cloud document ids that are in the local tombstone journal, so an
+/// offline delete does not resurrect on restore.
+static List<String> dropTombstoned(
+  Iterable<String> cloudDocIds,
+  Set<int> tombstonedIds,
+) =>
+    cloudDocIds
+        .where((id) => !tombstonedIds.contains(int.tryParse(id)))
+        .toList();
+
 Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _fetchAllDocs(
   CollectionReference<Map<String, dynamic>> collection, {
   int pageSize = 500,
@@ -553,22 +675,27 @@ Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _fetchAllDocs(
 }
 ```
 
-In `performRestore`, replace the three unbounded `.get()` calls with `_fetchAllDocs` on categories/questions/scores. After fetching, read `getTombstonedIds('questions')` and `getTombstonedIds('categories')` and filter the fetched docs before inserting:
+In `performRestore`, replace the three unbounded `.get()` calls with `_fetchAllDocs` on categories/questions/scores. After fetching, read `getTombstonedIds('questions')` and `getTombstonedIds('categories')`, filter the fetched docs, and use `hasCloudData` for the decision:
 
 ```dart
 final qTombstones = await dbHelper.getTombstonedIds('questions');
 final cTombstones = await dbHelper.getTombstonedIds('categories');
-final categories = catSnap.where((d) => !cTombstones.contains(int.parse(d.id))).toList();
-final questions = qSnap.where((d) => !qTombstones.contains(int.parse(d.id))).toList();
+final keptQIds = dropTombstoned(qSnap.docs.map((d) => d.id), qTombstones).toSet();
+final keptCIds = dropTombstoned(catSnap.docs.map((d) => d.id), cTombstones).toSet();
+final categories = catSnap.docs.where((d) => keptCIds.contains(d.id)).toList();
+final questions = qSnap.docs.where((d) => keptQIds.contains(d.id)).toList();
 ```
 
 Insert via batched `txn.batch` in chunks, ordered categories → questions → scores (FK-safe). Then update `dataFound`:
 
 ```dart
-final dataFound = questions.isNotEmpty || sSnap.isNotEmpty;
+final dataFound = hasCloudData(
+  hasQuestions: qSnap.docs.isNotEmpty,
+  hasScores: sSnap.docs.isNotEmpty,
+);
 ```
 
-- [ ] **Step 3: Update `_HomeGate`'s direct cloud-data check**
+- [ ] **Step 4: Update `_HomeGate`'s direct cloud-data check**
 
 In `lib/main.dart:433`, the `_HomeGate` check uses `userDoc.collection('questions').limit(1).get()` to decide `hasCloudData`. Extend it to also check `score_records` so a categories/scores-only user isn't pushed to onboarding:
 
@@ -578,17 +705,17 @@ final sSnap = await userDoc.collection('score_records').limit(1).get();
 final hasCloudData = qSnap.docs.isNotEmpty || sSnap.docs.isNotEmpty;
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 5: Run tests**
 
 Run: `flutter test test/core/sync/sync_service_test.dart`
 Expected: PASS.
 
-- [ ] **Step 5: Run full validation**
+- [ ] **Step 6: Run full validation**
 
 Run: `flutter analyze && dart format --set-exit-if-changed lib/ test/ && flutter test`
 Expected: 0 issues; format clean; all pass.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add lib/core/sync/sync_service.dart lib/main.dart test/core/sync/sync_service_test.dart
@@ -909,6 +1036,10 @@ git commit -m "docs: changelog + session notes for sync & stability batch"
 - Root detection off the first frame → Task 7
 - Doc sync (CHANGELOG + SESSION_NOTES) → Task 8
 
-**Placeholder scan:** The only soft spot is Task 4 Step 1 / the `dataFound` test, which leans on the Task 5 pure predicate. That's acceptable — the plan documents the intended test approach and the inline boolean in Step 2. No TBD/TODO.
+**Placeholder scan:** No TBD/TODO. Task 4's original placeholder test was replaced with real tests for the extracted pure helpers (`hasCloudData`, `dropTombstoned`). The Firestore shells (`_runBatched` commit path, `_fetchAllDocs`, prune query, journal-clear-after-commit) are documented as integration-verified, not unit-tested — a deliberate, stated exception consistent with the existing streak tests (which also leave Firestore calls untested).
 
-**Type consistency:** `_runBatched(List<void Function(WriteBatch)>)`, `_fetchAllDocs(CollectionReference, {int pageSize})`, `isVerifiedUser(User?)`, `addTombstone(s)`, `removeTombstones`, `getAllTombstones`, `getTombstonedIds` are defined once and referenced consistently across tasks. `_runBatchedForTesting` is noted as an alternative but the plan prefers the pure `_chunkIndices` split for testability — Task 3 Step 1 shows the counting test against a pure split.
+**Type consistency:** The pure helpers are defined once and used consistently: `chunkRanges(int, {int chunkSize})`, `tombstonePlan(Map<String, Set<int>>)`, `scoresForSync(List<ScoreRecord>, DateTime)`, `hasCloudData({hasQuestions, hasScores})`, `dropTombstoned(Iterable<String>, Set<int>)`, `_runBatched(List<void Function(WriteBatch)>, {int chunkSize})`, `_fetchAllDocs(CollectionReference, {int pageSize})`, `isVerifiedUser(User?)`, `addTombstone(s)`, `removeTombstones`, `getAllTombstones`, `getTombstonedIds`. Task 3 tests use `SyncService.chunkRanges(1200, chunkSize: 450)` → `[(0, 450), (450, 900), (900, 1200)]`, which matches the 450-op batch constraint.
+
+**Pre-flight revisions (recorded):** Two test-infra issues found before dispatch and fixed in this plan:
+1. `sqflite` has no platform in `flutter test` → added `sqflite_common_ffi: ^2.3.0` dev dep; DB test files call `sqfliteFfiInit()` + `databaseFactory = databaseFactoryFfi`.
+2. `cloud_firestore` has no platform in `flutter test` → sync tests target pure extracted logic only; the thin Firestore shells are integration-verified.
