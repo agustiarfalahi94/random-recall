@@ -754,5 +754,17 @@
 
   "rootWarningTitle": "Perangkat ter-root terdeteksi",
   "rootWarningBody": "Perangkat ini tampaknya ter-root atau jailbreak. Data Anda disimpan secara lokal di perangkat ini dan dicadangkan ke akun cloud pribadi Anda, tetapi perangkat yang ter-root lebih rentan terhadap aplikasi berbahaya. Kami menyarankan untuk menjaga keamanan perangkat Anda.",
-  "rootWarningGotIt": "Mengerti"
+  "rootWarningGotIt": "Mengerti",
+
+  "tourPracticeBody": "Ketuk **Latihan Sekarang** untuk menjawab pertanyaan dari kategori tersimpanmu.",
+  "tourQuestionsBody": "Perpustakaan **Pertanyaan** ada di sini — tambah, edit, dan atur.",
+  "tourAddBody": "Ketuk **+** untuk menambah pertanyaan baru.",
+  "tourAnalyticsBody": "Lihat akurasi setiap kategori di **Analitik**.",
+  "tourHomeBody": "Kembali ke **Beranda** saat siap berlatih.",
+  "tourSettingsBody": "Buka **Pengaturan** untuk mengelola sinkronisasi, notifikasi, dan lainnya.",
+  "tourScheduleBody": "Atur kapan Random Recall mengirim pengingat.",
+  "tourDoneBody": "Semua siap! 🎉 Ketuk di mana saja untuk selesai.",
+  "tourSkip": "Lewati",
+  "tourReplayTile": "Panduan interaktif",
+  "tourReplaySubtitle": "Lihat kembali panduan interaktif"
 }

@@ -31,6 +31,8 @@
 | 0.13.17 | Google Sign-In fix (serverClientId + account linking), deferred AdMob init (cold start) |
 | 0.13.18 | Black launch screen fix (v31 theme variants), shared CI debug keystore (upgradeable test APKs) |
 
+**Current work (unreleased, on `develop`):** Sync & stability batch — tombstone-based deletes (`sync_deletions` table, schema v5), chunked ≤450-op backup (fixes the Firestore 500-op write cap) with tombstone-first writes + 30-day cloud score prune, paginated tombstone-aware restore (`_fetchAllDocs`, 500-doc pages, drops orphaned scores) + the `dataFound` fix (categories/scores-only users no longer pushed back to onboarding), `AuthService.isVerifiedUser` consolidation, random-OFFSET question query, root detection off the first frame. Tests: **105/105**. Version NOT bumped (still `0.13.18+49`) — changelog entry is under `[Unreleased]`.
+
 Branches: `develop` & `main` in sync. Working tree should be clean after commits.
 
 ## 4. Google Sign-In (v7) — critical knowledge
@@ -77,7 +79,8 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 - `lib/core/auth/auth_service.dart` — AuthService, AccountExistsException, Google v7 flow.
 - `lib/core/notifications/notification_service.dart` — scheduling (named-param API of v22), channel migration, mirror log, badge logic.
 - `lib/core/notifications/notification_scheduler.dart` — pure slot computation (heavily unit-tested).
-- `lib/core/sync/sync_service.dart` — Firestore backup/restore; device-claim write historically hit permission-denied when rules weren't deployed.
+- `lib/core/database/database_helper.dart` — schema v5 + `sync_deletions` tombstone journal table (categories/questions deleted locally get a journal row; the next backup deletes those cloud docs).
+- `lib/core/sync/sync_service.dart` — Firestore backup/restore; chunked ≤450-op tombstone-aware backup (delete-first, 30-day score prune) + paginated tombstone-aware restore via `_fetchAllDocs` (500-doc pages, skips tombstoned docs, drops orphaned score records); device-claim write historically hit permission-denied when rules weren't deployed.
 - `lib/core/ads/ad_service.dart` — premium gating, banner/interstitial, daily caps.
 - `lib/core/utils/screen_security.dart` + `MainActivity.kt` — FLAG_SECURE channel.
 - `lib/core/services/root_detection_service.dart` — jailbreak/root detection (informational).
@@ -121,3 +124,18 @@ and verify everything on the code side and walk the user through the console ste
 3. Test **Google Sign-In on the release build** (fingerprint D3:A4… registered — Step B3).
 4. Keep `CHANGELOG.md`, `CI_CD_SETUP.md`, and this file in sync for every subsequent release.
 5. Monitor subscription/entitlement events in RevenueCat after any purchase flow is enabled.
+
+---
+
+## 11. CURRENT WORK — resume point (2026-08-06)
+
+> If you are a fresh agent session, this is where work stands. Read this before anything else.
+
+**Interactive spotlight tutorial (coach marks) — IMPLEMENTED, not yet released.**
+
+- Design spec: `docs/superpowers/specs/2026-08-06-interactive-tutorial-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-08-06-interactive-tutorial.md`
+- **Status: Tasks 1–5 complete (showcaseview dep, TourService flag logic + 8 steps, en/id ARB copy, GlobalKeys on real controls, TourOverlay driver, auto-start after display-name/root-warning prompts resolve, Settings "Take a tour" replay tile). Task 6 (final validation + docs) is done too — 108/108 tests, 0 analyzer issues, debug APK builds.**
+- Wiring notes: `TourOverlay` wraps the HomeScreen Scaffold (`GlobalKey<TourOverlayState>`); `_HomeTabState._scheduleTourStart()` fires once after `_displayNameResolved` && !`_rootWarningVisible`; `TourService.initialize()` added in `main.dart`. Step 7 (`scheduleTileKey`) intentionally uses the text-overlay fallback (no in-sheet spotlight — documented decision).
+- **NOT RELEASED — everything since v0.13.18 is still only on local `develop` (19 commits, including the sync & stability batch). Next step: push develop → merge to main → tag a release (e.g. v0.13.19) so CI builds it and the user can test on device.**
+- Also done earlier today (fully shipped, on device): sync & stability batch — tombstone deletes, chunked ≤450-op backup, paginated tombstone-aware restore, isVerifiedUser consolidation, random-OFFSET question query, root detection post-frame. See `CHANGELOG.md` `[Unreleased]` + §10 file-map additions.

@@ -1,6 +1,6 @@
 name: random_recall
 description: A random recall quiz notification app.
-version: 0.13.18+49
+version: 0.13.19+50
 publish_to: 'none'
 
 environment:
@@ -59,6 +59,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_jailbreak_detection: ^1.10.0
+  showcaseview: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,7 @@ dev_dependencies:
   # Test-only: fake Firebase platforms for unit tests that touch Firebase singletons
   firebase_core_platform_interface: ^8.1.0
   firebase_auth_platform_interface: ^9.0.6
+  sqflite_common_ffi: ^2.3.0
 
 flutter_launcher_icons:
   android: true

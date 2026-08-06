@@ -54,3 +54,6 @@ GoogleService-Info.plist
 
 # Local dart-define files
 dart-defines.json
+
+# Superpowers SDD workspace (scratch — briefs, reports, review packages)
+.superpowers/

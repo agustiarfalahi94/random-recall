@@ -6,6 +6,7 @@ import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/config/remote_config_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
+import '../../core/tutorial/tour_service.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../widgets/upgrade_bottom_sheet.dart';
@@ -399,12 +400,15 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: pillIsError ? null : _showAddMenu,
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        tooltip: l10n.addTooltip,
-        child: const Icon(Icons.add_rounded, size: 28),
+      floatingActionButton: KeyedSubtree(
+        key: TourService.instance.addFabKey,
+        child: FloatingActionButton(
+          onPressed: pillIsError ? null : _showAddMenu,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          tooltip: l10n.addTooltip,
+          child: const Icon(Icons.add_rounded, size: 28),
+        ),
       ),
     );
   }

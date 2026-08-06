@@ -1760,4 +1760,41 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get rootWarningGotIt => 'Mengerti';
+
+  @override
+  String get tourPracticeBody =>
+      'Ketuk **Latihan Sekarang** untuk menjawab pertanyaan dari kategori tersimpanmu.';
+
+  @override
+  String get tourQuestionsBody =>
+      'Perpustakaan **Pertanyaan** ada di sini — tambah, edit, dan atur.';
+
+  @override
+  String get tourAddBody => 'Ketuk **+** untuk menambah pertanyaan baru.';
+
+  @override
+  String get tourAnalyticsBody =>
+      'Lihat akurasi setiap kategori di **Analitik**.';
+
+  @override
+  String get tourHomeBody => 'Kembali ke **Beranda** saat siap berlatih.';
+
+  @override
+  String get tourSettingsBody =>
+      'Buka **Pengaturan** untuk mengelola sinkronisasi, notifikasi, dan lainnya.';
+
+  @override
+  String get tourScheduleBody => 'Atur kapan Random Recall mengirim pengingat.';
+
+  @override
+  String get tourDoneBody => 'Semua siap! 🎉 Ketuk di mana saja untuk selesai.';
+
+  @override
+  String get tourSkip => 'Lewati';
+
+  @override
+  String get tourReplayTile => 'Panduan interaktif';
+
+  @override
+  String get tourReplaySubtitle => 'Lihat kembali panduan interaktif';
 }

@@ -1,13 +1,14 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
+import 'package:sqflite/sqflite.dart' show ConflictAlgorithm, Transaction;
 import '../auth/auth_service.dart';
 import '../database/database_helper.dart';
+import '../../models/score_record.dart';
 
 /// Service responsible for synchronizing local SQLite data with Cloud Firestore.
 class SyncService {
@@ -47,8 +48,7 @@ class SyncService {
   /// pushing them to the user's private collection using a write batch.
   Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
-    final isVerified =
-        user != null && (user.emailVerified || user.phoneNumber != null);
+    final isVerified = user != null && AuthService.isVerifiedUser(user);
     if (!isVerified || (_isSyncing && !force)) return;
 
     _isSyncing = true;
@@ -58,33 +58,63 @@ class SyncService {
     await trace.start();
     try {
       final userDoc = _db.collection('users').doc(user.uid);
-      final batch = _db.batch();
+      final dbHelper = DatabaseHelper.instance;
 
-      // 1. Backup Categories
-      final categories = await _dbHelper.getAllCategories();
+      // 1. Push tombstones first — deletes propagate, journal cleared on success.
+      final tombstones = await dbHelper.getAllTombstones();
+      final deleteOps = <void Function(WriteBatch)>[];
+      for (final (collection, docId) in tombstonePlan(tombstones)) {
+        deleteOps.add(
+          (b) => b.delete(userDoc.collection(collection).doc(docId.toString())),
+        );
+      }
+      await _runBatched(deleteOps);
+      for (final entry in tombstones.entries) {
+        await dbHelper.removeTombstones(entry.key, entry.value);
+      }
+
+      // 2. Upsert live data in chunks.
+      final ops = <void Function(WriteBatch)>[];
+      final categories = await dbHelper.getAllCategories();
       for (final cat in categories) {
         if (cat.id == null) continue;
-        final docRef = userDoc.collection('categories').doc(cat.id.toString());
-        batch.set(docRef, cat.toMap(), SetOptions(merge: true));
+        final ref = userDoc.collection('categories').doc(cat.id.toString());
+        ops.add((b) => b.set(ref, cat.toMap(), SetOptions(merge: true)));
       }
-
-      // 2. Backup Questions
-      final questions = await _dbHelper.getAllQuestions();
+      final questions = await dbHelper.getAllQuestions();
       for (final q in questions) {
         if (q.id == null) continue;
-        final docRef = userDoc.collection('questions').doc(q.id.toString());
-        batch.set(docRef, q.toMap(), SetOptions(merge: true));
+        final ref = userDoc.collection('questions').doc(q.id.toString());
+        ops.add((b) => b.set(ref, q.toMap(), SetOptions(merge: true)));
       }
-
-      // 3. Backup Score Records
-      final scores = await _dbHelper.getAllScoreRecords();
-      for (final s in scores) {
+      // Scores: only within the sync window.
+      final cutoff = DateTime.now().subtract(
+        const Duration(days: _scoreSyncWindowDays),
+      );
+      final scores = await dbHelper.getAllScoreRecords();
+      final recentScores = scoresForSync(scores, cutoff);
+      for (final s in recentScores) {
         if (s.id == null) continue;
-        final docRef = userDoc.collection('score_records').doc(s.id.toString());
-        batch.set(docRef, s.toMap(), SetOptions(merge: true));
+        final ref = userDoc.collection('score_records').doc(s.id.toString());
+        ops.add((b) => b.set(ref, s.toMap(), SetOptions(merge: true)));
       }
 
-      // 4. Backup User Settings (SharedPreferences)
+      // 3. Prune cloud scores older than the window.
+      final oldQuery = await userDoc
+          .collection('score_records')
+          .where('answered_at', isLessThan: cutoff.toIso8601String())
+          .get();
+      final pruneOps = <void Function(WriteBatch)>[];
+      for (final doc in oldQuery.docs) {
+        pruneOps.add(
+          (b) => b.delete(userDoc.collection('score_records').doc(doc.id)),
+        );
+      }
+      await _runBatched(pruneOps);
+
+      await _runBatched(ops);
+
+      // 4. User-doc metadata as before.
       final prefs = await SharedPreferences.getInstance();
       final settings = {
         'notif_random_anytime': prefs.getBool('notif_random_anytime') ?? true,
@@ -99,7 +129,8 @@ class SyncService {
       // Record which device performed this backup
       final deviceId = prefs.getString('device_id') ?? 'unknown';
 
-      // 4. Commit all changes at once (include metadata in the same batch)
+      // 4. Commit metadata (unchanged from the original single-batch flow)
+      final batch = _db.batch();
       batch.set(userDoc, {
         'last_active_device_id': deviceId,
         'last_sync_at': FieldValue.serverTimestamp(),
@@ -110,7 +141,7 @@ class SyncService {
 
       trace.putAttribute('question_count', questions.length.toString());
       debugPrint(
-        'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.',
+        'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${recentScores.length} recent scores synced.',
       );
     } catch (e, st) {
       debugPrint('SyncService: Backup failed: $e');
@@ -125,6 +156,132 @@ class SyncService {
     }
   }
 
+  static const int _scoreSyncWindowDays = 30;
+  static const int _batchChunkSize = 450;
+
+  /// Splits [total] items into (start, end) index ranges, each at most
+  /// [chunkSize] wide. Used to keep every Firestore batch under the 500-op cap.
+  static List<(int, int)> chunkRanges(
+    int total, {
+    int chunkSize = _batchChunkSize,
+  }) {
+    if (total <= 0) return const [];
+    final ranges = <(int, int)>[];
+    for (var start = 0; start < total; start += chunkSize) {
+      final end = (start + chunkSize) < total ? start + chunkSize : total;
+      ranges.add((start, end));
+    }
+    return ranges;
+  }
+
+  /// Runs [ops] against Firestore write batches, committing every [chunkSize]
+  /// operations. Keeps each commit under Firestore's 500-op batch cap.
+  Future<void> _runBatched(
+    List<void Function(WriteBatch)> ops, {
+    int chunkSize = _batchChunkSize,
+  }) async {
+    for (final (start, end) in chunkRanges(ops.length, chunkSize: chunkSize)) {
+      final batch = _db.batch();
+      for (var i = start; i < end; i++) {
+        ops[i](batch);
+      }
+      await batch.commit();
+    }
+  }
+
+  /// Flattens the tombstone journal into an ordered list of (collection, docId)
+  /// cloud deletes. Ordered by collection name then docId for determinism.
+  static List<(String, int)> tombstonePlan(Map<String, Set<int>> tombstones) {
+    final plan = <(String, int)>[];
+    final keys = tombstones.keys.toList()..sort();
+    for (final collection in keys) {
+      final ids = tombstones[collection]!.toList()..sort();
+      for (final id in ids) {
+        plan.add((collection, id));
+      }
+    }
+    return plan;
+  }
+
+  /// Returns score records within the sync window (not older than [cutoff]).
+  static List<ScoreRecord> scoresForSync(
+    List<ScoreRecord> all,
+    DateTime cutoff,
+  ) => all.where((s) => !s.answeredAt.isBefore(cutoff)).toList();
+
+  /// True when the cloud has real user data worth restoring. Categories are
+  /// excluded because the default General/Work categories are always backed up
+  /// and would be a false signal.
+  static bool hasCloudData({
+    required bool hasQuestions,
+    required bool hasScores,
+  }) => hasQuestions || hasScores;
+
+  /// Drops cloud document ids that are in the local tombstone journal, so an
+  /// offline delete does not resurrect on restore.
+  static List<String> dropTombstoned(
+    Iterable<String> cloudDocIds,
+    Set<int> tombstonedIds,
+  ) => cloudDocIds
+      .where((id) => !tombstonedIds.contains(int.tryParse(id)))
+      .toList();
+
+  /// Drops score records whose referenced question/category was not restored
+  /// (e.g. the question was deleted and tombstoned). Without this, an insert
+  /// would violate the score_records FK and roll back the whole restore.
+  static List<ScoreRecord> keepScoresForRestoredRefs(
+    List<ScoreRecord> scores,
+    Set<int> restoredQuestionIds,
+    Set<int> restoredCategoryIds,
+  ) => scores
+      .where(
+        (s) =>
+            restoredQuestionIds.contains(s.questionId) &&
+            restoredCategoryIds.contains(s.categoryId),
+      )
+      .toList();
+
+  /// Reads every document in [collection] in pages (ordered by document id)
+  /// so a large collection never loads unbounded into memory. Firestore
+  /// shells this in; not unit-tested.
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _fetchAllDocs(
+    CollectionReference<Map<String, dynamic>> collection, {
+    int pageSize = 500,
+  }) async {
+    final docs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    QueryDocumentSnapshot<Map<String, dynamic>>? last;
+    while (true) {
+      var q = collection.orderBy(FieldPath.documentId).limit(pageSize);
+      if (last != null) {
+        q = q.startAfterDocument(last);
+      }
+      final snap = await q.get();
+      if (snap.docs.isEmpty) break;
+      docs.addAll(snap.docs);
+      last = snap.docs.last;
+      if (snap.docs.length < pageSize) break;
+    }
+    return docs;
+  }
+
+  /// Inserts [rows] into [table] using a transaction-scoped sqflite Batch,
+  /// chunked so each commit stays small. Runs inside the open [txn]; a
+  /// `txn.batch().commit(noResult: true)` executes within the transaction
+  /// rather than committing it.
+  Future<void> _batchInsertDocs(
+    Transaction txn,
+    String table,
+    List<Map<String, dynamic>> rows,
+  ) async {
+    for (final (start, end) in chunkRanges(rows.length)) {
+      final batch = txn.batch();
+      for (final row in rows.sublist(start, end)) {
+        batch.insert(table, row, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    }
+  }
+
   /// Downloads all user data from Firestore and merges it into the local database.
   /// Used when logging into a new device or performing a manual refresh.
   ///
@@ -135,8 +292,7 @@ class SyncService {
     bool isInitialLogin = false,
   }) async {
     final user = AuthService.instance.currentUser;
-    final isVerifiedRestore =
-        user != null && (user.emailVerified || user.phoneNumber != null);
+    final isVerifiedRestore = user != null && AuthService.isVerifiedUser(user);
     if (!isVerifiedRestore) return;
 
     // If a restore is already running, wait for it rather than silently
@@ -169,15 +325,16 @@ class SyncService {
       final db = await _dbHelper.database;
       final userDoc = _db.collection('users').doc(user.uid);
 
-      // Fetch everything from cloud first to keep the transaction short
-      final catSnap = await userDoc.collection('categories').get();
-      debugPrint('SyncService: Got ${catSnap.docs.length} categories');
+      // Fetch everything from cloud first to keep the transaction short,
+      // reading in pages so a large collection never loads unbounded.
+      final catDocs = await _fetchAllDocs(userDoc.collection('categories'));
+      debugPrint('SyncService: Got ${catDocs.length} categories');
 
-      final qSnap = await userDoc.collection('questions').get();
-      debugPrint('SyncService: Got ${qSnap.docs.length} questions');
+      final qDocs = await _fetchAllDocs(userDoc.collection('questions'));
+      debugPrint('SyncService: Got ${qDocs.length} questions');
 
-      final sSnap = await userDoc.collection('score_records').get();
-      debugPrint('SyncService: Got ${sSnap.docs.length} score_records');
+      final sDocs = await _fetchAllDocs(userDoc.collection('score_records'));
+      debugPrint('SyncService: Got ${sDocs.length} score_records');
 
       // Read user doc separately so a permission error here doesn't
       // block the question/category restore.
@@ -189,13 +346,55 @@ class SyncService {
         debugPrint('SyncService: User doc read failed (non-fatal): $e');
       }
 
-      bool dataFound = qSnap.docs.isNotEmpty;
+      // Drop documents the user deleted while offline — the tombstone journal
+      // records them so a restore does not resurrect a deleted question or
+      // category. Score records are append-only and never tombstoned.
+      final qTombstones = await _dbHelper.getTombstonedIds('questions');
+      final cTombstones = await _dbHelper.getTombstonedIds('categories');
+      final keptCIds = dropTombstoned(
+        catDocs.map((d) => d.id),
+        cTombstones,
+      ).toSet();
+      final keptQIds = dropTombstoned(
+        qDocs.map((d) => d.id),
+        qTombstones,
+      ).toSet();
+      final keptCatDocs = catDocs
+          .where((d) => keptCIds.contains(d.id))
+          .toList();
+      final keptQDocs = qDocs.where((d) => keptQIds.contains(d.id)).toList();
 
-      // Execute everything in a single transaction with Foreign Keys disabled
+      // A restore counts as "data found" when the cloud has real user data.
+      // Categories are excluded — the default General/Work categories are
+      // always backed up and would be a false signal.
+      final bool dataFound = hasCloudData(
+        hasQuestions: qDocs.isNotEmpty,
+        hasScores: sDocs.isNotEmpty,
+      );
+
+      // Score records reference restored questions/categories. Drop any whose
+      // question or category was not restored (tombstoned, or already deleted
+      // from cloud) — otherwise the score_records FK would be violated and the
+      // whole restore would roll back.
+      final restoredCategoryIds = keptCatDocs
+          .map((d) => int.tryParse(d.id))
+          .whereType<int>()
+          .toSet();
+      final restoredQuestionIds = keptQDocs
+          .map((d) => int.tryParse(d.id))
+          .whereType<int>()
+          .toSet();
+      final scoreRecords = keepScoresForRestoredRefs(
+        sDocs.map((d) => ScoreRecord.fromMap(d.data())).toList(),
+        restoredQuestionIds,
+        restoredCategoryIds,
+      );
+
+      // Execute everything in a single transaction with Foreign Keys enabled.
+      // Inserts stay FK-ordered (categories → questions → scores) and the
+      // isInitialLogin wipe runs children-first, so constraints are always met.
       try {
         await db.transaction((txn) async {
-          await txn.execute('PRAGMA foreign_keys = OFF');
-
           // If it's a forced login restore, clean up local tables first to prevent ID conflicts
           if (isInitialLogin) {
             debugPrint(
@@ -210,33 +409,25 @@ class SyncService {
           }
 
           // 1. Restore Categories
-          for (var doc in catSnap.docs) {
-            await txn.insert(
-              'categories',
-              doc.data(),
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
+          await _batchInsertDocs(
+            txn,
+            'categories',
+            keptCatDocs.map((d) => d.data()).toList(),
+          );
 
           // 2. Restore Questions
-          for (var doc in qSnap.docs) {
-            await txn.insert(
-              'questions',
-              doc.data(),
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
+          await _batchInsertDocs(
+            txn,
+            'questions',
+            keptQDocs.map((d) => d.data()).toList(),
+          );
 
           // 3. Restore Score Records
-          for (var doc in sSnap.docs) {
-            await txn.insert(
-              'score_records',
-              doc.data(),
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
-
-          await txn.execute('PRAGMA foreign_keys = ON;');
+          await _batchInsertDocs(
+            txn,
+            'score_records',
+            scoreRecords.map((s) => s.toMap()).toList(),
+          );
         });
         debugPrint('SyncService: Transaction completed successfully');
       } catch (e) {
@@ -246,7 +437,7 @@ class SyncService {
 
       debugPrint(
         'SyncService: SQLite insert done — '
-        '${catSnap.docs.length} cats, ${qSnap.docs.length} qs, ${sSnap.docs.length} scores',
+        '${keptCatDocs.length} cats, ${keptQDocs.length} qs, ${scoreRecords.length} scores',
       );
 
       // 4. Restore SharedPreferences (Settings & Streak)
@@ -342,7 +533,7 @@ class SyncService {
       // Refresh the UI so the user sees their restored data immediately
       _dbHelper.notifyUpdate();
 
-      trace.putAttribute('question_count', qSnap.docs.length.toString());
+      trace.putAttribute('question_count', qDocs.length.toString());
       debugPrint('SyncService: Restore completed successfully.');
     } catch (e) {
       debugPrint('SyncService: Restore failed with error: $e');

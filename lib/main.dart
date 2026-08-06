@@ -29,6 +29,7 @@ import 'core/plan/subscription_service.dart';
 import 'core/streak/streak_service.dart';
 import 'core/ads/ad_service.dart';
 import 'core/plan/plan_service.dart';
+import 'core/tutorial/tour_service.dart';
 import 'widgets/ad_banner_widget.dart';
 import 'screens/question/notification_question_screen.dart';
 import 'screens/question/permission_required_screen.dart';
@@ -77,11 +78,6 @@ Future<void> main() async {
         : const AndroidPlayIntegrityProvider(),
   );
 
-  // Root/jailbreak detection — informational only. Logs to Firebase Analytics
-  // (dev signal) and enables a one-time client warning. Never blocks features.
-  await RootDetectionService.instance.detect();
-  RootDetectionService.instance.trackStatus().ignore();
-
   // Crashlytics: route Flutter and async errors to Crashlytics
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
     !kDebugMode,
@@ -127,6 +123,9 @@ Future<void> main() async {
   // Firestore sync happens in initializeUserSession() after auth is confirmed.
   await StreakService.instance.initialize();
 
+  // Initialize the interactive tour's local flag cache.
+  await TourService.instance.initialize();
+
   // Wire up navigator key so notification taps can navigate
   NotificationService.instance.navigatorKey = navigatorKey;
 
@@ -144,6 +143,11 @@ Future<void> main() async {
       'cold_start_post_frame',
     );
     await startupTrace.start();
+    // Root/jailbreak detection — informational only. Runs post-frame so it
+    // never delays the first frame. The one-time warning dialog renders in
+    // HomeScreen after auth.
+    await RootDetectionService.instance.detect();
+    RootDetectionService.instance.trackStatus().ignore();
     try {
       // Initialize service and check launch details
       await NotificationService.instance.init();
@@ -179,8 +183,7 @@ Future<void> main() async {
 
       final user = AuthService.instance.currentUser;
 
-      final isVerified =
-          user != null && (user.emailVerified || user.phoneNumber != null);
+      final isVerified = AuthService.isVerifiedUser(user);
       if (onboardingComplete && isVerified) {
         SyncService.instance.performRestore().ignore();
         await registerNotificationWorker().catchError(
@@ -422,8 +425,7 @@ class _HomeGateState extends State<_HomeGate> {
       debugPrint(
         'HomeGate: user=${user?.uid}, emailVerified=${user?.emailVerified}',
       );
-      final isVerified =
-          user != null && (user.emailVerified || user.phoneNumber != null);
+      final isVerified = user != null && AuthService.isVerifiedUser(user);
       if (isVerified) {
         debugPrint('HomeGate: Checking cloud for existing user data...');
         try {
@@ -431,7 +433,11 @@ class _HomeGateState extends State<_HomeGate> {
               .collection('users')
               .doc(user.uid);
           final qSnap = await userDoc.collection('questions').limit(1).get();
-          final hasCloudData = qSnap.docs.isNotEmpty;
+          final sSnap = await userDoc
+              .collection('score_records')
+              .limit(1)
+              .get();
+          final hasCloudData = qSnap.docs.isNotEmpty || sSnap.docs.isNotEmpty;
           debugPrint('HomeGate: Cloud data check — hasCloudData=$hasCloudData');
 
           if (hasCloudData) {

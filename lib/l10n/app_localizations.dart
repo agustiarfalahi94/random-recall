@@ -3145,6 +3145,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got it'**
   String get rootWarningGotIt;
+
+  /// No description provided for @tourPracticeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap **Practice Now** to answer questions from your saved categories.'**
+  String get tourPracticeBody;
+
+  /// No description provided for @tourQuestionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your **Questions** library lives here — add, edit, and organize.'**
+  String get tourQuestionsBody;
+
+  /// No description provided for @tourAddBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap **+** to add a new question.'**
+  String get tourAddBody;
+
+  /// No description provided for @tourAnalyticsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'See your accuracy for each category in **Analytics**.'**
+  String get tourAnalyticsBody;
+
+  /// No description provided for @tourHomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Head back **Home** when you\'re ready to practice.'**
+  String get tourHomeBody;
+
+  /// No description provided for @tourSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open **Settings** to manage sync, notifications, and more.'**
+  String get tourSettingsBody;
+
+  /// No description provided for @tourScheduleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule when Random Recall sends you reminders.'**
+  String get tourScheduleBody;
+
+  /// No description provided for @tourDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all set! 🎉 Tap anywhere to finish.'**
+  String get tourDoneBody;
+
+  /// No description provided for @tourSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tourSkip;
+
+  /// No description provided for @tourReplayTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a tour'**
+  String get tourReplayTile;
+
+  /// No description provided for @tourReplaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay the interactive guide'**
+  String get tourReplaySubtitle;
 }
 
 class _AppLocalizationsDelegate
