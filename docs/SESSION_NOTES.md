@@ -67,7 +67,7 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 
 - **AdMob**: manifest + `lib/core/ads/ad_service.dart` still use Google **test IDs** (`ca-app-pub-3940256099942544...`). Replace with the real app ID + banner/interstitial unit IDs from apps.admob.com before Play Store. (Ads currently: test ads, no revenue.)
 - **RevenueCat**: key is a placeholder; init is skipped until `--dart-define=REVENUECAT_API_KEY=...` is provided. Subscriptions not live yet.
-- **iOS**: dependency upgrades changed iOS plugin versions — run `flutter build ios --no-codesign` to validate before any iOS release.
+- **iOS**: dependency upgrades changed iOS plugin versions — run `flutter build ios --no-codesign` to validate before any iOS release. **STATUS: explicitly deferred — iOS is not a near-term target ("maybe next year, maybe never"). Do NOT spend time on iOS validation unless the user says they're targeting iOS.** (Note: `app_settings` 8.x was skipped because it requires Swift Package Manager; revisit that choice only if iOS becomes real.)
 - **Play Store**: release signing exists locally; CI release signing + Play upload steps are commented out in the workflow ("FUTURE" section in `CI_CD_SETUP.md`). Data Safety form + privacy policy needed.
 - Firestore rules: deployed ✅ (100 KB write cap live).
 
