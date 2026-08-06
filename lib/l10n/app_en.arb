@@ -67,7 +67,6 @@
   "validationValidEmail": "Please enter a valid email address",
   "validationEnterPassword": "Please enter your password",
   "validationPasswordLength": "Password must be at least 6 characters",
-  "errorNoAccount": "No account found for this email.",
   "errorWrongPassword": "Incorrect email or password.",
   "errorInvalidEmail": "The email address is not valid.",
   "errorAccountDisabled": "This account has been disabled.",

@@ -67,7 +67,6 @@
   "validationValidEmail": "Masukkan alamat email yang valid",
   "validationEnterPassword": "Masukkan kata sandi kamu",
   "validationPasswordLength": "Kata sandi minimal 6 karakter",
-  "errorNoAccount": "Tidak ada akun untuk email ini.",
   "errorWrongPassword": "Email atau kata sandi salah.",
   "errorInvalidEmail": "Alamat email tidak valid.",
   "errorAccountDisabled": "Akun ini telah dinonaktifkan.",

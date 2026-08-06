@@ -5,6 +5,21 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.15] — 2026-08-06
+
+### Security
+- **FLAG_SECURE screenshot blocking** — question and notification-question screens now block screenshots, screen recording, and recents thumbnails on Android (`screen_security.dart` + native method channel in `MainActivity.kt`); screenshots re-enabled when the screen closes.
+- **Login no longer reveals registered emails** — `user-not-found` now shows the same generic *"Incorrect email or password."* as `wrong-password` (prevents account enumeration via login probing; matches the existing password-reset protection). Removed the now-unused `errorNoAccount` string.
+- **Android Auto Backup disabled** — `allowBackup="false"` + `fullBackupContent="false"` so the local SQLite DB and prefs can't be extracted from Google Drive backups or persist after uninstall. Cloud sync still backs up data for logged-in users.
+- **Removed dead PostHog config** — leftover `com.posthog.posthog.*` meta-data (API key + host) removed from `AndroidManifest.xml`; the PostHog SDK is not a dependency.
+- **Removed unused `http` dependency** — declared in pubspec but never imported anywhere.
+- **Firestore rules hardening** — writes to a user's own tree are now capped at 100 KB per document to prevent storage abuse with a leaked/debug token. ⚠️ Deploy the updated `firestore.rules` to Firebase Console (`firebase deploy --only firestore:rules`).
+
+### Notes
+- 77/77 tests passing, 0 analyzer issues, debug APK build verified.
+
+---
+
 ## [0.13.14] — 2026-08-06
 
 ### Code Quality & Release Readiness

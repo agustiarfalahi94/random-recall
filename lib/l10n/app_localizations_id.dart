@@ -183,9 +183,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get validationPasswordLength => 'Kata sandi minimal 6 karakter';
 
   @override
-  String get errorNoAccount => 'Tidak ada akun untuk email ini.';
-
-  @override
   String get errorWrongPassword => 'Email atau kata sandi salah.';
 
   @override

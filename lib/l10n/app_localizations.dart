@@ -440,12 +440,6 @@ abstract class AppLocalizations {
   /// **'Password must be at least 6 characters'**
   String get validationPasswordLength;
 
-  /// No description provided for @errorNoAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'No account found for this email.'**
-  String get errorNoAccount;
-
   /// No description provided for @errorWrongPassword.
   ///
   /// In en, this message translates to:

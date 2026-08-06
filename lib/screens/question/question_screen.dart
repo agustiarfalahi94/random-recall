@@ -10,6 +10,7 @@ import '../../core/notifications/notification_service.dart';
 import '../../core/plan/plan_service.dart';
 import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
+import '../../core/utils/screen_security.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../models/score_record.dart';
@@ -55,6 +56,8 @@ class _QuestionScreenState extends State<QuestionScreen>
   @override
   void initState() {
     super.initState();
+    // Block screenshots while question + answer are visible (anti-cheat).
+    enableSecureScreen();
     AdService.instance.enterExcludedScreen();
     _revealController = AnimationController(
       vsync: this,
@@ -70,6 +73,7 @@ class _QuestionScreenState extends State<QuestionScreen>
 
   @override
   void dispose() {
+    disableSecureScreen();
     AdService.instance.exitExcludedScreen();
     _countdownTimer?.cancel();
     _revealController.dispose();

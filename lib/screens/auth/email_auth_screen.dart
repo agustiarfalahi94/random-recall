@@ -47,11 +47,12 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
       }
     } on FirebaseAuthException catch (e) {
       String message;
-      if (e.code == 'user-not-found') {
-        message = l10n.errorNoAccount;
-      } else if (e.code == 'wrong-password' ||
+      if (e.code == 'user-not-found' ||
+          e.code == 'wrong-password' ||
           e.code == 'invalid-credential' ||
           e.code == 'INVALID_LOGIN_CREDENTIALS') {
+        // Generic message — never reveal whether the email is registered
+        // (prevents account enumeration via login probing).
         message = l10n.errorWrongPassword;
       } else if (e.code == 'invalid-email') {
         message = l10n.errorInvalidEmail;

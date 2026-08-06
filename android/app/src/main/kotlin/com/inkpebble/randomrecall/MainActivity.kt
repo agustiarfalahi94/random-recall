@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -12,6 +13,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
 
     private val BATTERY_CHANNEL = "com.inkpebble.randomrecall/battery"
+    private val SECURITY_CHANNEL = "com.inkpebble.randomrecall/security"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -39,6 +41,27 @@ class MainActivity : FlutterActivity() {
                             startActivity(fallback)
                             result.success(null)
                         }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
+        // FLAG_SECURE: blocks screenshots/screen recording and hides the app
+        // from the recents thumbnail while quiz content is on screen.
+        // Enabled/disabled from Dart around the question & answer screens.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURITY_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setSecureScreen" -> {
+                        val secure = call.argument<Boolean>("secure") ?: false
+                        runOnUiThread {
+                            if (secure) {
+                                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                            } else {
+                                window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                            }
+                        }
+                        result.success(null)
                     }
                     else -> result.notImplemented()
                 }
