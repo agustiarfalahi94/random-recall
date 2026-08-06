@@ -111,6 +111,17 @@ jobs:
       - name: Generate l10n files
         run: flutter gen-l10n
 
+      # Use the shared debug keystore so every CI-built APK has the SAME
+      # signature — otherwise each ephemeral runner generates a random one
+      # and newer APKs can't be installed over older ones (signature
+      # mismatch). Set once via: base64 -i ci-debug.keystore | gh secret set DEBUG_KEYSTORE_BASE64
+      - name: Install shared debug keystore
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p ~/.android
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+
       - name: Build APK (debug)
         run: flutter build apk --debug
 
