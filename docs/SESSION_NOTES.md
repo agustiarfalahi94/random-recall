@@ -83,3 +83,41 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 - `lib/core/services/root_detection_service.dart` — jailbreak/root detection (informational).
 - `android/build.gradle.kts` — plugin compat shims (namespace + JVM targets).
 - `docs/SESSION_NOTES.md` — this file.
+
+---
+
+## 10. PLAY STORE RELEASE RUNBOOK (when the user says "release to Play Store")
+
+This is the checklist for taking the current app state to production. Most items
+are prerequisites the USER must do in consoles; the agent's job is to prepare
+and verify everything on the code side and walk the user through the console steps.
+
+### A. Agent-side (code/CI — do these when asked to "prepare release")
+
+1. **Run the full validation**: `flutter analyze` (0 issues), `dart format --set-exit-if-changed lib/ test/`, `flutter test` (77/77).
+2. **Bump version** in `pubspec.yaml` (e.g. `0.13.19+50`) + add a `CHANGELOG.md` entry for it.
+3. **Build the release AAB locally** and verify it compiles + is obfuscated:
+   ```bash
+   flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info --dart-define=REVENUECAT_API_KEY=<real key>
+   ```
+   Keep `build/debug-info` for symbolication of Crashlytics stack traces.
+4. **Release-signing in CI (optional but recommended)**: add GitHub secrets `KEYSTORE_BASE64` (base64 of `release-keystore.jks`) and `KEYSTORE_PROPERTIES` (contents of `key.properties`); uncomment the "Build App Bundle (release)" + Play upload steps in `.github/workflows/flutter-build.yml` (they're already drafted in the "FUTURE" section).
+5. **Verify tag flow**: merge develop → main → tag `vX.Y.Z` → CI runs → GitHub Release created.
+6. **Push the AAB** to the user (or let CI upload it to the Play Console internal track).
+
+### B. User-side prerequisites (consoles — the user must do these)
+
+1. **AdMob** (apps.admob.com): create account → register app `com.inkpebble.randomrecall` → create **banner** + **interstitial** ad units → give the agent the real IDs to replace in `lib/core/ads/ad_service.dart` and the manifest `APPLICATION_ID` meta-data (currently Google test IDs → real ads need real IDs; also add the user's device as a test device in `RequestConfiguration.testDeviceIds` while developing).
+2. **RevenueCat** (app.revenuecat.com): create app → get the Android API key (`goog_...`) → provide it for the `--dart-define` in release builds; add it as the `REVENUECAT_API_KEY` GitHub secret if CI builds releases. Configure the `premium` entitlement + offerings/packages in the dashboard.
+3. **Firebase console**: verify App Check **enforcement is ON** for Firestore (release uses Play Integrity — already coded); the release SHA-1 fingerprint `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` must be registered (for Google Sign-In on the release app).
+4. **Play Console** (play.google.com/console): create app → **Data Safety form** (collects: email/phone for auth, analytics, ads; no financial data unless subscriptions live) → **Privacy policy URL** (host anywhere) → store listing (icon 512×512, feature graphic, screenshots, short/full description EN + ID) → content rating questionnaire → set pricing (free; IAP available).
+5. **App signing in Play Console**: Play App Signing will be used — upload the AAB; Play generates/reuses the upload key. The app's signing key stays `release-keystore.jks` for the first upload; after that Play manages updates.
+6. **Testing**: upload the AAB to the **Internal testing** track first → install via the opt-in link on the test device → run the priority scenarios from `QA_TEST_SCENARIOS.md` → then Closed → then Production (phased rollout 10-25-50-100%).
+
+### C. Post-launch checks (agent + user)
+
+1. Confirm **Crashlytics + Analytics** events arrive (launch the release build and check Firebase console live view).
+2. Verify **Play Integrity App Check** passes (Firebase App Check console shows Play Integrity tokens).
+3. Test **Google Sign-In on the release build** (fingerprint D3:A4… registered — Step B3).
+4. Keep `CHANGELOG.md`, `CI_CD_SETUP.md`, and this file in sync for every subsequent release.
+5. Monitor subscription/entitlement events in RevenueCat after any purchase flow is enabled.
