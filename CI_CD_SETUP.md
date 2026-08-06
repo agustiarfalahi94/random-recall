@@ -77,6 +77,10 @@ Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted
 - Replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console.
 - Deploy the updated `firestore.rules` to Firebase.
 
+### CI test-APK signature (2026-08-06)
+
+Every GitHub Actions runner generates a **random debug keystore**, so APKs from different runs used to have different signatures and could not be installed over each other ("App not installed" / error). Fixed by storing one shared debug keystore as the `DEBUG_KEYSTORE_BASE64` secret; the workflow decodes it to `~/.android/debug.keystore` before building, so all CI APKs are upgradeable. This only affects test builds — Play Store releases are signed with the release keystore (`release-keystore.jks`) and are unaffected.
+
 ---
 
 ## Current Workflow Branches
