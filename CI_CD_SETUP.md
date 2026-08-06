@@ -73,13 +73,25 @@ Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted
 - **Dead config/deps removed** — PostHog meta-data (SDK not used) and the unused `http` package.
 - **Firestore rules: 100 KB/document write cap** — deploy via `firebase deploy --only firestore:rules`.
 
-### Pre-release checklist (still open)
-- Replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console.
-- Deploy the updated `firestore.rules` to Firebase.
+### Pre-release checklist
+- ⬜ Replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console (currently serving test ads).
+- ✅ Deploy the updated `firestore.rules` — done 2026-08-06.
 
 ### CI test-APK signature (2026-08-06)
 
 Every GitHub Actions runner generates a **random debug keystore**, so APKs from different runs used to have different signatures and could not be installed over each other ("App not installed" / error). Fixed by storing one shared debug keystore as the `DEBUG_KEYSTORE_BASE64` secret; the workflow decodes it to `~/.android/debug.keystore` before building, so all CI APKs are upgradeable. This only affects test builds — Play Store releases are signed with the release keystore (`release-keystore.jks`) and are unaffected.
+
+### Google Sign-In on test builds (SHA-1 fingerprints)
+
+`google_sign_in` 7.x uses Android's Credential Manager, which validates the requesting app by **package name + signing-cert SHA-1 fingerprint** against the Firebase project. If the fingerprint isn't registered, the flow silently returns `canceled` after the user picks an account. Register in Firebase Console → Project settings → Your apps → Android app → **Add fingerprint**:
+
+| Fingerprint | For |
+|---|---|
+| `D8:3D:DF:7A:0C:69:B8:AC:46:C6:B2:5B:43:F1:E6:6B:56:BF:5C:91` | CI test APKs (shared debug keystore) |
+| `A6:47:FF:68:C3:3F:36:3D:EC:6A:ED:76:C0:E9:94:89:DE:E0:64:E4` | Local debug builds (`flutter run`) |
+| `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` | Release keystore (Play Store production) |
+
+Also note: the v7 plugin requires `serverClientId` passed to `GoogleSignIn.initialize()` — it no longer reads it from google-services.json. Handled in `AuthService._ensureGoogleInitialized()` (v0.13.17). Accounts that collide with an existing email/password account are resolved by a password prompt that **links** the Google credential (`AccountExistsException` flow, v0.13.17).
 
 ---
 

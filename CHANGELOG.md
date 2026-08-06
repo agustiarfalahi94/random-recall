@@ -5,6 +5,19 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.18] — 2026-08-06
+
+### Fixed
+- **Black launch screen on Android 12+** — `values-v31` / `values-night-v31` `LaunchTheme` were missing the splash `windowBackground`, so the window stayed black during startup on API 31+ devices (e.g., Xiaomi 15 / Android 16 in dark mode). All theme variants now show the splash.
+
+### Changed
+- **Shared CI debug keystore** — all CI-built APKs are signed with one fixed keystore (`DEBUG_KEYSTORE_BASE64` secret) so newer test builds install over older ones without uninstalling.
+
+### Notes
+- Google Sign-In on test builds requires the signing key's SHA-1 fingerprint registered in the Firebase console — fingerprints in `CI_CD_SETUP.md`.
+
+---
+
 ## [0.13.17] — 2026-08-06
 
 ### Fixed
