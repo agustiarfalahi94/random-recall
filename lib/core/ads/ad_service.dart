@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/date_utils.dart' as date_utils;
+
 class AdService {
   static final AdService instance = AdService._();
   AdService._();
@@ -16,6 +18,11 @@ class AdService {
 
   BannerAd? _bannerAd;
   bool _bannerLoaded = false;
+
+  /// Actual loaded banner height — used by the wrapper to compute bottom padding.
+  /// Falls back to AdSize.banner.height (50dp) until the ad is loaded.
+  double get bannerHeight =>
+      (_bannerAd?.size.height.toDouble()) ?? AdSize.banner.height.toDouble();
 
   InterstitialAd? _interstitialAd;
 
@@ -146,7 +153,9 @@ class AdService {
     _checkDailyReset();
     if (_adsShownToday >= _maxAdsPerDay) return false;
     if (_lastAdTime != null &&
-        DateTime.now().difference(_lastAdTime!) < _minAdGap) return false;
+        DateTime.now().difference(_lastAdTime!) < _minAdGap) {
+      return false;
+    }
     return true;
   }
 
@@ -202,7 +211,9 @@ class AdService {
     } else {
       _adsShownToday = 0;
     }
-    debugPrint('AdService: loaded — adsToday=$_adsShownToday, lastAd=$_lastAdTime');
+    debugPrint(
+      'AdService: loaded — adsToday=$_adsShownToday, lastAd=$_lastAdTime',
+    );
   }
 
   Future<void> _saveFrequencyState() async {
@@ -211,10 +222,11 @@ class AdService {
     await prefs.setInt('ad_count_today', _adsShownToday);
     if (_lastAdTime != null) {
       await prefs.setInt(
-          'ad_last_time_ms', _lastAdTime!.millisecondsSinceEpoch);
+        'ad_last_time_ms',
+        _lastAdTime!.millisecondsSinceEpoch,
+      );
     }
   }
 
-  String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String _dateKey(DateTime d) => date_utils.dateKey(d);
 }

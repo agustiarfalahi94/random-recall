@@ -10,6 +10,7 @@ import '../../providers/app_provider.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
+import '../../core/services/root_detection_service.dart';
 import '../../main.dart' show navigatorKey;
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
@@ -52,12 +53,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: [
-        _HomeTab(), // Removed 'const' to ensure refresh when switching back to this tab
-        const QuestionsListScreen(),
-        const AnalyticsScreen(),
-        const ProfileScreen(),
-      ][_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          _HomeTab(),
+          QuestionsListScreen(),
+          AnalyticsScreen(),
+          ProfileScreen(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
@@ -210,7 +214,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.sync_rounded, color: colorScheme.primary),
@@ -579,15 +583,15 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           'submitted_at': FieldValue.serverTimestamp(),
         });
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.feedbackSentSnack)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.feedbackSentSnack)));
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.feedbackFailedSnack)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.feedbackFailedSnack)));
         }
       }
     }
@@ -605,23 +609,26 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       builder: (ctx) => SimpleDialog(
         title: Text(l10n.language),
         children: [
-          RadioListTile<String>(
-            title: Text(l10n.languageEnglish),
-            value: 'en',
+          RadioGroup<String>(
             groupValue: currentLocale,
             onChanged: (v) {
-              appProvider.setLocale(const Locale('en'));
+              if (v == null) return;
+              appProvider.setLocale(Locale(v));
               Navigator.of(ctx).pop();
             },
-          ),
-          RadioListTile<String>(
-            title: Text(l10n.languageIndonesian),
-            value: 'id',
-            groupValue: currentLocale,
-            onChanged: (v) {
-              appProvider.setLocale(const Locale('id'));
-              Navigator.of(ctx).pop();
-            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: Text(l10n.languageEnglish),
+                  value: 'en',
+                ),
+                RadioListTile<String>(
+                  title: Text(l10n.languageIndonesian),
+                  value: 'id',
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -676,9 +683,15 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
       (e) => debugPrint('HomeTab: Daily challenge check failed: $e'),
     );
 
-    // Check if user has set a display name, prompt if not (once per session)
-    _checkAndShowDisplayNamePrompt();
+    // Defer display name dialog until after the first frame is fully built.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _checkAndShowDisplayNamePrompt(),
+    );
 
+    // One-time rooted-device warning (informational — never blocks anything).
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _checkAndShowRootWarning(),
+    );
   }
 
   @override
@@ -694,9 +707,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   Future<void> _checkAndShowDisplayNamePrompt() async {
     if (_displayNamePromptShown) return;
     final user = FirebaseAuth.instance.currentUser;
-    debugPrint('HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"');
+    debugPrint(
+      'HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"',
+    );
 
-    if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+    if (user != null &&
+        (user.displayName == null || user.displayName!.isEmpty)) {
       _displayNamePromptShown = true;
       debugPrint('HomeTab: Showing display name setup dialog');
       // Show display name setup screen
@@ -717,15 +733,45 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         debugPrint('HomeTab: Widget not mounted, skipping display name dialog');
       }
     } else {
-      debugPrint('HomeTab: User has displayName set or user is null, skipping dialog');
+      debugPrint(
+        'HomeTab: User has displayName set or user is null, skipping dialog',
+      );
     }
   }
 
+  /// Shows a one-time, dismissible warning when the device is rooted or
+  /// jailbroken. Informational only — no features are blocked or hidden.
+  Future<void> _checkAndShowRootWarning() async {
+    if (!await RootDetectionService.instance.shouldShowWarning()) return;
+    if (!mounted) return;
+
+    await RootDetectionService.instance.markWarningShown();
+    if (!mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.security_rounded),
+        title: Text(l10n.rootWarningTitle),
+        content: Text(l10n.rootWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.rootWarningGotIt),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshData();
+      StreakService.instance.checkChallengeDailyRequirement().catchError(
+        (e) => debugPrint('HomeTab: Daily challenge check failed: $e'),
+      );
     }
   }
 
@@ -832,10 +878,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
           GestureDetector(
             onTap: () async {
               if (_unansweredCount > 0) {
+                final navigator = Navigator.of(context);
                 final questionId = await NotificationService.instance
                     .getOldestUnansweredQuestionId();
                 if (mounted) {
-                  Navigator.of(context)
+                  navigator
                       .push(
                         MaterialPageRoute(
                           builder: (_) => NotificationQuestionScreen(
@@ -858,7 +905,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
+                        color: colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
@@ -996,7 +1043,10 @@ class _ChallengeModeCard extends StatelessWidget {
               ),
               if (isActive)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(20),
@@ -1049,7 +1099,9 @@ class _ChallengeModeCard extends StatelessWidget {
                 onPressed: onStopChallenge,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colorScheme.error,
-                  side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
+                  side: BorderSide(
+                    color: colorScheme.error.withValues(alpha: 0.5),
+                  ),
                   minimumSize: const Size(0, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

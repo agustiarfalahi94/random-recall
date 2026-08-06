@@ -11,8 +11,7 @@ class OptionalEmailPromptScreen extends StatefulWidget {
       _OptionalEmailPromptScreenState();
 }
 
-class _OptionalEmailPromptScreenState
-    extends State<OptionalEmailPromptScreen> {
+class _OptionalEmailPromptScreenState extends State<OptionalEmailPromptScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -21,6 +20,7 @@ class _OptionalEmailPromptScreenState
   String? _errorMessage;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _skipAlreadyIncremented = false;
 
   @override
   void dispose() {
@@ -31,6 +31,7 @@ class _OptionalEmailPromptScreenState
   }
 
   Future<void> _skip() async {
+    _skipAlreadyIncremented = true;
     await _incrementPromptedCount();
     if (mounted) Navigator.of(context).pop();
   }
@@ -38,13 +39,9 @@ class _OptionalEmailPromptScreenState
   Future<void> _incrementPromptedCount() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set(
-          {'phone_only_prompted': FieldValue.increment(1)},
-          SetOptions(merge: true),
-        );
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'phone_only_prompted': FieldValue.increment(1),
+    }, SetOptions(merge: true));
   }
 
   Future<void> _addEmail() async {
@@ -81,13 +78,9 @@ class _OptionalEmailPromptScreenState
       await user.sendEmailVerification();
 
       // Update Firestore email field
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({
-        'email': email,
-        'updated_at': FieldValue.serverTimestamp(),
-      });
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+        {'email': email, 'updated_at': FieldValue.serverTimestamp()},
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,6 +89,8 @@ class _OptionalEmailPromptScreenState
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Prevent onPopInvokedWithResult from counting a successful link as a skip.
+      _skipAlreadyIncremented = true;
       Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -122,8 +117,25 @@ class _OptionalEmailPromptScreenState
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) async {
+        // Only increment here when the back gesture/button triggered the pop.
+        // The Skip button calls _skip() which calls _incrementPromptedCount()
+        // directly and then pops — this callback fires again for that pop,
+        // which would double-count. We skip it here by checking if the navigator
+        // can distinguish programmatic pops. Since we can't reliably distinguish
+        // them via PopScope, we rely on _skip() for the button path and only
+        // handle system-back (which doesn't go through _skip) here.
+        // To detect system-back: check if the route is still the top route
+        // (didPop=true) but the skip button sets _isLoading before popping —
+        // the simplest guard is to NOT call _incrementPromptedCount here at all,
+        // since _skip already handles it AND system-back also calls _skip via
+        // onPressed. If the user uses the AppBar back arrow, that goes through
+        // the PopScope without _skip, so we DO need to count it.
+        // Solution: track whether _skip already incremented this session.
         if (!didPop) return;
-        await _incrementPromptedCount();
+        if (!_skipAlreadyIncremented) {
+          await _incrementPromptedCount();
+        }
+        _skipAlreadyIncremented = false;
       },
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.optionalEmailTitle)),
@@ -140,8 +152,9 @@ class _OptionalEmailPromptScreenState
               const SizedBox(height: 16),
               Text(
                 l10n.optionalEmailTitle,
-                style: theme.textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),

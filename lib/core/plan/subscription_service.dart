@@ -11,8 +11,14 @@ class SubscriptionService {
   SubscriptionService._internal();
   static final SubscriptionService instance = SubscriptionService._internal();
 
-  static const String _apiKeyAndroid =
-      'goog_abc123...'; // Use your real key from the dashboard
+  // RevenueCat Android API key. Injected at build time so the real key never
+  // lives in source control:
+  //   flutter build apk --dart-define=REVENUECAT_API_KEY=goog_xxx
+  // Without the define (or with a placeholder), RevenueCat init is skipped.
+  static const String _apiKeyAndroid = String.fromEnvironment(
+    'REVENUECAT_API_KEY',
+    defaultValue: '',
+  );
   static const String _entitlementId =
       'premium'; // The ID defined in RevenueCat Dashboard
 
@@ -24,8 +30,9 @@ class SubscriptionService {
 
     // 1. Configure the SDK
     if (Platform.isAndroid) {
-      // Guard against placeholder keys to avoid log spam
-      if (_apiKeyAndroid.startsWith('goog_abc') ||
+      // Guard against missing/placeholder keys to avoid log spam
+      if (_apiKeyAndroid.isEmpty ||
+          _apiKeyAndroid.startsWith('goog_abc') ||
           _apiKeyAndroid.contains('your_actual')) {
         debugPrint(
           'SubscriptionService: API Key placeholder detected. Skipping RevenueCat init.',
@@ -88,7 +95,9 @@ class SubscriptionService {
   Future<void> purchasePackage(Package package) async {
     if (!_isConfigured) return;
     try {
-      final purchaseResult = await Purchases.purchasePackage(package);
+      final purchaseResult = await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
       await _updatePremiumStatus(purchaseResult.customerInfo);
     } catch (e) {
       if (e is! PlatformException) rethrow;

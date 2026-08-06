@@ -209,8 +209,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             const SizedBox(height: 24),
             Text(
               _isStage2 ? l10n.phoneAuthEnterCode : l10n.phoneAuthEnterNumber,
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             if (_isStage2) ...[
@@ -296,10 +297,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed:
-                    (_isLoading || _codeController.text.length != 6)
-                        ? null
-                        : _verifyCode,
+                onPressed: (_isLoading || _codeController.text.length != 6)
+                    ? null
+                    : _verifyCode,
                 child: _isLoading
                     ? const SizedBox(
                         height: 20,

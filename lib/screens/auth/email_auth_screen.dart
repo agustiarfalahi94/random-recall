@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
@@ -134,8 +133,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return l10n.validationEnterEmail;
+                  }
                   if (!RegExp(
                     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                   ).hasMatch(value)) {
@@ -168,8 +168,9 @@ class _EmailAuthScreenState extends State<EmailAuthScreen> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return l10n.validationEnterPassword;
+                  }
                   if (value.length < 6) return l10n.validationPasswordLength;
                   return null;
                 },

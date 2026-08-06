@@ -5,6 +5,129 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.14] — 2026-08-06
+
+### Code Quality & Release Readiness
+- **Fixed all 69 analyzer issues** — `flutter analyze` now reports **0 issues**:
+  - Deprecated `withOpacity()` → `.withValues(alpha:)` across 11 files.
+  - Deprecated `RadioListTile.groupValue/onChanged` → `RadioGroup` ancestor (language picker).
+  - Deprecated `TextFormField.value` → `initialValue` (2 files).
+  - Deprecated RevenueCat `purchasePackage` → `purchase(PurchaseParams.package(...))`.
+  - `curly_braces_in_flow_control_structures` — braces added across 13 files.
+  - `use_build_context_synchronously` — `mounted` guards / capture-before-await across 6 files.
+  - `prefer_const_constructors` / `prefer_const_literals_to_create_immutables`.
+- **Removed dead code** — unused `_keyLastDate` field in `StreakService`; unused `streak_service.dart` import in `profile_service.dart`.
+- **Deleted stray empty files** — `android/app/auth_service.dart` and `android/app/login_screen.dart` (0-byte files accidentally placed outside `lib/`).
+- **Formatted codebase** — `dart format` applied across `lib/`; all files pass `dart format --set-exit-if-changed`.
+- **CI hardening** — `.github/workflows/flutter-build.yml` now runs plain `flutter analyze` (warnings/infos are fatal), so lint regressions block CI; release build guidance updated with `--obfuscate --split-debug-info` and `--dart-define=REVENUECAT_API_KEY`.
+- **RevenueCat key no longer in source** — `_apiKeyAndroid` is read from `String.fromEnvironment('REVENUECAT_API_KEY')` instead of a hardcoded placeholder; without the build-time define, behavior is unchanged (init skipped).
+- **Fixed 11 pre-existing test failures** — `streak_service_test.dart` now bootstraps fake `FirebasePlatform` / `FirebaseAuthPlatform` instances (no native channels needed), so challenge-mode tests run against an in-memory Firebase app. Test-only dev dependencies added: `firebase_core_platform_interface`, `firebase_auth_platform_interface`.
+
+### Added
+- **Root/jailbreak detection (informational, non-blocking)** — new `RootDetectionService` (`flutter_jailbreak_detection`) reports the device's root status to Firebase Analytics as a `device_root_status` event for dev visibility, and shows a one-time, dismissible warning dialog on first app open (English + Indonesian). No features are blocked or hidden based on this signal. `android/build.gradle.kts` gained a namespace + per-plugin JVM-target compatibility shim so the unmaintained plugin compiles under AGP 8 / Kotlin 2.x (debug APK build verified).
+
+### Notes
+- Test suite: **77/77 passing**. `flutter analyze`: 0 issues. App behavior unchanged except the new informational warning dialog.
+
+---
+
+## [0.13.13] — 2026-04-28
+
+### Fixed
+- **Challenge streak not failing on day skip** — With `IndexedStack`, `_HomeTab` is never unmounted, so `initState()` (where `checkChallengeDailyRequirement()` was called) only runs once per app process. Backgrounding and reopening the app did not re-run the check. Fixed by also calling `checkChallengeDailyRequirement()` in `didChangeAppLifecycleState(resumed)` so every app foreground checks whether a challenge day was skipped.
+- **Question screen not closing / appearing twice after answering** — On MIUI/HyperOS, `_onNotificationTapped` fires twice for a single notification tap, pushing two question screens. When the first screen's 2-second auto-close fired, `Navigator.pop()` popped the second (top) screen, leaving the first screen still visible. Fixed with a 3-second debounce on `_onNotificationTapped`: duplicate calls for the same question ID within 3 seconds are ignored; different question IDs always pass through.
+
+---
+
+## [0.13.12] — 2026-05-05
+
+### Fixed
+- **Question screen showing twice after answering a notification** — On MIUI/HyperOS, both `_onNotificationTapped` and `handleNotificationLaunch` could fire for the same notification tap (app was in background), pushing the question screen twice. User answered the top screen, popped it, and saw the identical question again. Fixed with a `_notificationNavigationHandled` flag: `_onNotificationTapped` sets it on success; `handleNotificationLaunch` skips navigation if the flag is set.
+- **Notification language not updating after locale change** — Notification title/body are baked into `zonedSchedule()` at schedule time. Changing the locale updated SharedPreferences strings but the 7-day queue of already-scheduled alarms retained the old language. `setLocale()` now triggers `scheduleNotifications()` immediately after updating the strings.
+
+---
+
+## [0.13.11] — 2026-05-01
+
+### Fixed
+- **Challenge title off by one** — `completeChallengeMode()` incremented the completed-count in SharedPreferences, then read it back via the getter (already incremented) and added `+1` again. All title thresholds were shifted by one: users received "Champion" after their 1st completion instead of "Challenger", etc.
+- **7-day challenge required 8 calendar days** — The first correct answer in a challenge stored the date but did not call `incrementChallengeDay()`, leaving the counter at 1. Subsequent days each incremented once, so reaching `challengeDay >= 7` required 7 more increments after the first — 8 days total. The first answer now also calls `incrementChallengeDay()`.
+- **Notification ID collision above 20 notifications/day** — The stable notification ID formula used a multiplier of 20 (`daysSinceEpoch × 20 + slotIndex`). When frequency exceeded 20, `slotIndex` values ≥ 20 overflowed into the next day's ID range, silently replacing those alarms. Multiplier increased to 100.
+- **Ghost alarms persisted when frequency was reduced** — `scheduleNotifications()` used stable IDs to replace individual slots but never cancelled alarms no longer in the new schedule. Reducing frequency from 10 to 5 left 5 ghost alarms per day active in the OS. `cancelAll()` is now called before every reschedule.
+- **Phantom notification badge after sign-out or account deletion** — `notif_schedule_mirror` was not cleared on sign-out or account delete. The next user on the same device saw a badge count pointing to the previous user's question IDs.
+
+---
+
+## [0.13.10] — 2026-05-01
+
+### Fixed
+- **`resetChallenge()` left timer key in SharedPreferences** — `challenge_locked_timer_seconds` was missing from the remove list, so after completing or failing a challenge the previous timer value persisted and was written into the next challenge's Firestore save and notification schedule.
+- **Dead static getters with `LateInitializationError` risk** — `StreakService.getStreak()`, `.getBonusQuestions()`, and `.getFreeQuestionLimit()` had zero external callers after previous refactoring. They accessed `_instance._prefs` directly and would throw `LateInitializationError` if called before `initialize()`. Removed.
+- **Lifetime achievement keys not cleared on sign-out or account deletion** — `total_7day_completed`, `total_14day_completed`, `challenge_badge_unlocked`, and `highest_title` persisted in SharedPreferences across sign-out and account deletion. A new account on the same device inherited the previous user's challenge badge and completion history.
+
+---
+
+## [0.13.9] — 2026-04-30
+
+### Fixed
+- **Profile tab showing loading spinner on every tab switch** — The `[tab1, tab2, tab3, tab4][index]` approach unmounted and remounted the active tab widget on every switch, causing `ProfileScreen` to re-run `initState` and fetch Firestore data each visit (showing a spinner). Switched to `IndexedStack` — all four tabs stay mounted permanently. Switching tabs only shows/hides them with no repeated Firestore reads.
+
+---
+
+## [0.13.8] — 2026-04-30
+
+### Fixed
+- **Notification listener registered before init completes** — The `DatabaseHelper.onDatabaseUpdated.listen()` call was placed before the `_initCompleter != null` guard, allowing concurrent `init()` callers during the async gap to register duplicate listeners. Moved registration to after init completes, guarded by a `_listenerRegistered` bool.
+- **Account deletion wrote to already-deleted Firestore document** — `_deleteUserData()` called `StreakService.instance.resetChallenge()` after deleting the Firestore doc. `resetChallenge()` internally calls `_saveToFirestore()`, which re-created the deleted path. Replaced with direct `prefs.remove()` calls on all challenge and streak keys.
+- **`failChallenge()` set streak to 0 before `resetChallenge()`** — `resetChallenge()` already sets `_keyStreak = 0` internally. The explicit `setInt` before calling it was redundant.
+- **Successful email link counted as a skipped prompt** — `onPopInvokedWithResult` incremented `phone_only_prompted` on any pop, including the pop from a successful email link. Added `_skipAlreadyIncremented = true` to the success path so the counter is not double-incremented.
+
+---
+
+## [0.13.7] — 2026-04-29
+
+### Fixed
+- **Frequency slider max incorrectly changed to 20** — Reverted to max=50 (original value changed without approval).
+- **Double loading spinner on profile tab** — AppProvider overlay added in v0.13.6 caused two simultaneous spinners (overlay + `ProfileScreen`'s own `_isLoading` spinner). Removed the overlay; the profile screen's own spinner remains.
+
+---
+
+## [0.13.6] — 2026-04-29
+
+### Fixed
+- **Account deletion left local data on device** — `_deleteUserData()` now clears SQLite and all app SharedPreferences (streak, challenge-mode keys, is_premium) in addition to Firestore, so a new account on the same device starts fresh.
+- **Stale streak shown after challenge completion** — Removed redundant `streak` field from root user doc backup/restore. `StreakService` private subcollection is now the single source of truth, eliminating the stale-streak-after-challenge-reset bug.
+- **Settings written outside backup batch** — Moved `last_sync_at`, `settings`, and `onboarding_complete` into the same Firestore batch commit as questions/categories, so a partial write can no longer leave them out of sync.
+- **Notification init completer never cleared on timeout** — `_initCompleter` is now nulled after each init attempt so subsequent `init()` calls can re-enter; `_initialized` is set to `true` on timeout to prevent infinite init loops.
+- **Source.server Firestore read blocks app startup** — Added `.timeout(5s)` to the active-device check in `_checkActiveDevice()`.
+- **Phone users excluded from cloud restore at startup** — `_HomeGate._initFlow` now uses `user.emailVerified || user.phoneNumber != null` (consistent with the rest of the codebase).
+- **Sign-out didn't clear challenge-mode SharedPreferences** — `signOut()` now calls `StreakService.instance.resetChallenge()` before Firebase sign-out, preventing the next user on the same device from inheriting a stale challenge session.
+- **Double `_saveToFirestore()` in `failChallenge()`** — Removed the redundant explicit call after `resetChallenge()`, which already calls it internally.
+- **Static streak getters bypassed singleton `_prefs` cache** — `getStreak()`, `getBonusQuestions()`, and `getFreeQuestionLimit()` now use `_instance._prefs` instead of calling `SharedPreferences.getInstance()`, keeping them consistent with instance getters and removing the dangerous side-effect streak reset from `getStreak()`.
+- **Empty name error showed field label instead of error message** — Profile screen now shows `displayNameEmpty` ("Please enter a name.") instead of `nameLabel` ("Name").
+- **Question limit redirected to full subscription screen** — Now shows `UpgradeBottomSheet` (consistent with category limit behavior).
+- **Notification DB listener registered on every `init()` call** — Listener registration is now guarded inside the `_initialized` check so it fires at most once.
+- **`showDialog` called before first frame in `_HomeTabState.initState()`** — Deferred display-name prompt to `addPostFrameCallback`.
+- **Email verification polling had no time cap** — Poll now stops after 10 minutes; user can still tap the check button manually.
+- **Profanity check flagged legitimate names** — Word-boundary regex (`\b`) now used instead of substring `contains`, preventing false positives on names like "Bassett", "Michelle", or "Gila".
+- **Backup failures were silent** — Exceptions in `performBackup()` are now recorded to Crashlytics in addition to debug print.
+- **Per-record debug logs during restore** — Removed hundreds of per-document log lines in `performRestore()` that leaked category/question metadata in development logs.
+
+### Added
+- **Profile tab loading animation** — Tapping the Profile tab now immediately shows a `CircularProgressIndicator` overlay (via `AppProvider.isLoading`) while Firestore data loads, giving instant visual feedback.
+
+### Changed
+- **Frequency slider capped at 20** (was 50) — Values above 20 notifications/day provided no practical benefit and caused the scheduler to compute unnecessarily large slot sets.
+- **Banner ad padding uses actual loaded ad height** — `_AdBannerWrapper` now reads `AdService.bannerHeight` instead of the hardcoded `50.0`, so it stays correct if the ad size ever changes.
+- **`_dateKey` extracted to shared utility** — `lib/core/utils/date_utils.dart` now holds the canonical date-key formatter used by `StreakService`, `PlanService`, and `AdService`.
+
+### Removed
+- **Dead code** — Deleted empty `lib/core/auth/profile_screen.dart`, unused `challenge_warning_dialog.dart`, `challenge_mode_dialog.dart`, and `existing_streak_dialog.dart`.
+- **Unused imports** — `firebase_core` import removed from `email_auth_screen.dart` and `email_signup_screen.dart`.
+- **Dead debug button** — "Reset Existing Streak Dialog" button replaced with a working "Reset Challenge State" button in the debug notification screen.
+
+---
+
 ## [0.13.5] — 2026-04-28
 
 ### Fixed

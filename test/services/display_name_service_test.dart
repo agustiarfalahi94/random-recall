@@ -3,11 +3,14 @@ import 'package:random_recall/services/display_name_service.dart';
 
 void main() {
   group('DisplayNameService', () {
-    test('accepts valid characters: letters, numbers, spaces, hyphens, underscores', () {
-      expect(DisplayNameService.isValidCharacters('John Doe-123_test'), true);
-      expect(DisplayNameService.isValidCharacters('Jean-Pierre'), true);
-      expect(DisplayNameService.isValidCharacters('User_Name'), true);
-    });
+    test(
+      'accepts valid characters: letters, numbers, spaces, hyphens, underscores',
+      () {
+        expect(DisplayNameService.isValidCharacters('John Doe-123_test'), true);
+        expect(DisplayNameService.isValidCharacters('Jean-Pierre'), true);
+        expect(DisplayNameService.isValidCharacters('User_Name'), true);
+      },
+    );
 
     test('rejects special characters', () {
       expect(DisplayNameService.isValidCharacters('John@Doe'), false);

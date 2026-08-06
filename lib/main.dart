@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/notifications/background_worker.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/services/analytics_service.dart';
+import 'core/services/root_detection_service.dart';
 import 'core/utils/battery_optimization.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
@@ -75,6 +76,11 @@ Future<void> main() async {
         ? AndroidProvider.debug
         : AndroidProvider.playIntegrity,
   );
+
+  // Root/jailbreak detection — informational only. Logs to Firebase Analytics
+  // (dev signal) and enables a one-time client warning. Never blocks features.
+  await RootDetectionService.instance.detect();
+  RootDetectionService.instance.trackStatus().ignore();
 
   // Crashlytics: route Flutter and async errors to Crashlytics
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
@@ -153,8 +159,7 @@ Future<void> main() async {
       await NotificationService.instance.handleNotificationLaunch();
 
       final prefs = await SharedPreferences.getInstance();
-      final onboardingComplete =
-          prefs.getBool('onboarding_complete') ?? false;
+      final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
 
       // Reload user on startup safely
       final currentUser = AuthService.instance.currentUser;
@@ -173,8 +178,8 @@ Future<void> main() async {
 
       final user = AuthService.instance.currentUser;
 
-      final isVerified = user != null &&
-          (user.emailVerified || user.phoneNumber != null);
+      final isVerified =
+          user != null && (user.emailVerified || user.phoneNumber != null);
       if (onboardingComplete && isVerified) {
         SyncService.instance.performRestore().ignore();
         await registerNotificationWorker().catchError(
@@ -257,7 +262,7 @@ class _RandomRecallAppState extends State<RandomRecallApp>
             title: 'Random Recall',
             debugShowCheckedModeBanner: false,
             navigatorKey: navigatorKey,
-            navigatorObservers: [],
+            navigatorObservers: const [],
             locale: locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -375,7 +380,9 @@ class _RandomRecallAppState extends State<RandomRecallApp>
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
     );
@@ -414,7 +421,9 @@ class _HomeGateState extends State<_HomeGate> {
       debugPrint(
         'HomeGate: user=${user?.uid}, emailVerified=${user?.emailVerified}',
       );
-      if (user != null && user.emailVerified) {
+      final isVerified =
+          user != null && (user.emailVerified || user.phoneNumber != null);
+      if (isVerified) {
         debugPrint('HomeGate: Checking cloud for existing user data...');
         try {
           final userDoc = FirebaseFirestore.instance
@@ -495,7 +504,8 @@ class _HomeGateState extends State<_HomeGate> {
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
-          .get(const GetOptions(source: Source.server));
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 5));
 
       if (!userDoc.exists) return;
 
@@ -541,9 +551,6 @@ class _AdBannerWrapper extends StatelessWidget {
   const _AdBannerWrapper({required this.child});
   final Widget child;
 
-  // Standard banner height from AdSize.banner
-  static const double _bannerHeight = 50.0;
-
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
@@ -554,8 +561,10 @@ class _AdBannerWrapper extends StatelessWidget {
       builder: (context, bannerVisible, _) {
         // When keyboard is up the keyboard already covers the banner, so we
         // don't add extra bottom padding (avoids double-compressing content).
-        final bottomPad =
-            (bannerVisible && !keyboardVisible) ? _bannerHeight : 0.0;
+        final bannerHeight = AdService.instance.bannerHeight;
+        final bottomPad = (bannerVisible && !keyboardVisible)
+            ? bannerHeight
+            : 0.0;
 
         return Stack(
           children: [

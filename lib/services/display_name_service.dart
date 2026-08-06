@@ -35,12 +35,15 @@ class DisplayNameService {
   }
 
   /// Checks if name contains profanity (English and Indonesian)
-  /// Returns true if profanity detected, false if clean
+  /// Returns true if profanity detected, false if clean.
+  /// Uses word-boundary matching to avoid false positives on names like
+  /// "Bassett" (contains "ass") or "Michelle" (contains "hell").
   static Future<bool> checkProfanity(String name) async {
     final lowerName = name.toLowerCase().trim();
 
     for (final word in _profanityWords) {
-      if (lowerName.contains(word)) {
+      final pattern = RegExp(r'\b' + RegExp.escape(word) + r'\b');
+      if (pattern.hasMatch(lowerName)) {
         return true;
       }
     }

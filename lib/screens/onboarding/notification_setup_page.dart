@@ -264,7 +264,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                   ),
                   Divider(
                     height: 1,
-                    color: colorScheme.outlineVariant.withOpacity(0.4),
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                   ),
                   _TimingOptionTile(
                     title: l10n.setTimeRange,
@@ -312,7 +312,7 @@ class _NotificationSetupPageState extends State<NotificationSetupPage>
                     ),
                     Divider(
                       height: 1,
-                      color: colorScheme.outlineVariant.withOpacity(0.4),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -668,7 +668,9 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: child,

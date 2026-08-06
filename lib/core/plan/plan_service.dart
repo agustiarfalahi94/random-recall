@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/remote_config_service.dart';
+import '../utils/date_utils.dart' as date_utils;
 
 class PlanService {
   // Free tier limits — sourced from Remote Config so they can be tuned without
@@ -69,6 +70,5 @@ class PlanService {
     await prefs.setString('last_undo_date', _dateKey(DateTime.now()));
   }
 
-  static String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  static String _dateKey(DateTime d) => date_utils.dateKey(d);
 }

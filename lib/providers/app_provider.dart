@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/notifications/notification_service.dart';
+
 // Notification strings stored in SharedPreferences for use by the background
 // isolate (no BuildContext available there). Values must stay in sync with
 // the corresponding keys in app_en.arb / app_id.arb.
@@ -57,6 +59,10 @@ class AppProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_locale', locale.languageCode);
     await _updateNotificationStrings(locale.languageCode);
+    // Reschedule so the new language is baked into the next 7 days of alarms.
+    // Notification title/body are written into zonedSchedule() at schedule time,
+    // so already-queued notifications keep the old language without this call.
+    NotificationService.instance.scheduleNotifications().ignore();
   }
 
   void setLoading(bool value) {

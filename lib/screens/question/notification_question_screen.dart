@@ -211,8 +211,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
             isPremiumUser: isPremiumNow,
           );
 
-          if (mounted &&
-              result.outcome == ChallengeAnswerOutcome.failed) {
+          if (mounted && result.outcome == ChallengeAnswerOutcome.failed) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.challengeFailureMessage)),
             );
@@ -242,7 +241,11 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
       FirebaseCrashlytics.instance.recordError(e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.failedToSaveScore(e.toString()))),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.failedToSaveScore(e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -265,8 +268,9 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
   }
 
   Future<void> _undoGrade() async {
-    if (!_graded || !_isPremium || (!widget.isPractice && _undoUsedToday))
+    if (!_graded || !_isPremium || (!widget.isPractice && _undoUsedToday)) {
       return;
+    }
 
     try {
       // If it was a recorded score (not practice), delete it from local DB
@@ -286,6 +290,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
           _undoUsedToday = true;
         }
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.undoSuccess)),
       );
@@ -326,7 +331,10 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.tertiaryContainer,
                   borderRadius: BorderRadius.circular(20),
@@ -532,4 +540,3 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
     );
   }
 }
-

@@ -14,6 +14,7 @@ class VerifyEmailScreen extends StatefulWidget {
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   bool _isResending = false;
   Timer? _timer;
+  Timer? _pollingCutoffTimer;
 
   @override
   void initState() {
@@ -22,11 +23,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       const Duration(seconds: 3),
       (timer) => _checkEmailVerified(),
     );
+    // Stop polling after 10 minutes — user can tap the button manually.
+    _pollingCutoffTimer = Timer(const Duration(minutes: 10), () {
+      _timer?.cancel();
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _pollingCutoffTimer?.cancel();
     super.dispose();
   }
 

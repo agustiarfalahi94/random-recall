@@ -53,13 +53,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() {
           _nameController.text = profile?['name'] ?? '';
-          _isEmailUser =
-              user.providerData.any((p) => p.providerId == 'password');
-          _isPhoneUser =
-              user.providerData.any((p) => p.providerId == 'phone');
+          _isEmailUser = user.providerData.any(
+            (p) => p.providerId == 'password',
+          );
+          _isPhoneUser = user.providerData.any((p) => p.providerId == 'phone');
           _linkedPhoneNumber = user.phoneNumber;
-          _phoneOnlyPrompted =
-              (profile?['phone_only_prompted'] as int?) ?? 0;
+          _phoneOnlyPrompted = (profile?['phone_only_prompted'] as int?) ?? 0;
           _isPremium = isPremium;
           _isLoading = false;
         });
@@ -76,9 +75,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (trimmedName.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.nameLabel)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.displayNameEmpty)));
       }
       return;
     }
@@ -92,13 +91,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    final hasProfanity =
-        await DisplayNameService.checkProfanity(trimmedName);
+    final hasProfanity = await DisplayNameService.checkProfanity(trimmedName);
     if (hasProfanity) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.displayNameProfanity)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.displayNameProfanity)));
       }
       return;
     }
@@ -111,15 +109,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _auth.currentUser?.reload();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profileUpdateSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.profileUpdateSuccess)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profileUpdateFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.profileUpdateFailed)));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -134,6 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true && mounted) {
       await _auth.currentUser?.reload();
       await _loadProfileData();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.profileUpdateSuccess),
@@ -146,13 +145,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _dismissRecoveryEmailNudge() async {
     final user = _auth.currentUser;
     if (user == null) return;
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set(
-          {'phone_only_prompted': FieldValue.increment(1)},
-          SetOptions(merge: true),
-        );
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'phone_only_prompted': FieldValue.increment(1),
+    }, SetOptions(merge: true));
     if (mounted) setState(() => _phoneOnlyPrompted++);
   }
 
@@ -174,9 +169,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    final hasEmailOrGoogle = _isEmailUser ||
-        (_auth.currentUser?.providerData
-                .any((p) => p.providerId == 'google.com') ??
+    final hasEmailOrGoogle =
+        _isEmailUser ||
+        (_auth.currentUser?.providerData.any(
+              (p) => p.providerId == 'google.com',
+            ) ??
             false);
 
     return Column(
@@ -274,9 +271,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           FilledButton(
             onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
               if (newPasswordController.text !=
                   confirmPasswordController.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text(l10n.optionalEmailPasswordMismatch)),
                 );
                 return;
@@ -288,18 +287,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   newPassword: newPasswordController.text,
                 );
 
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.passwordChangedSuccess)),
-                  );
-                }
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.passwordChangedSuccess)),
+                );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.passwordChangedFailed)),
-                  );
-                }
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.passwordChangedFailed)),
+                );
               }
             },
             child: Text(l10n.changePasswordConfirmAction),
@@ -366,27 +361,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           FilledButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(context);
               try {
-                Navigator.pop(context);
+                navigator.pop();
                 setState(() => _isLoading = true);
 
                 await _profileService.deleteAccountEmailAuth(
                   passwordController.text,
                 );
 
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.accountDeletedSuccess)),
-                  );
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/', (_) => false);
-                }
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.accountDeletedSuccess)),
+                );
+                navigator.pushNamedAndRemoveUntil('/', (_) => false);
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.accountDeleteFailed)),
-                  );
-                }
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.accountDeleteFailed)),
+                );
               } finally {
                 setState(() => _isLoading = false);
               }
@@ -408,16 +400,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _profileService.deleteAccountGoogleAuth();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.accountDeletedSuccess)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.accountDeletedSuccess)));
         Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.accountDeleteFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.accountDeleteFailed)));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -464,27 +456,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             smsCode: credential.smsCode!,
           );
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.accountDeletedSuccess)),
-            );
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (_) => false);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.accountDeletedSuccess)));
+            Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
           }
         } catch (e) {
           if (mounted) {
             setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.accountDeleteFailed)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.accountDeleteFailed)));
           }
         }
       },
       onFailed: (e) {
         if (mounted) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.accountDeleteFailed)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.accountDeleteFailed)));
         }
       },
     );
@@ -509,8 +500,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Text(l10n.cancel),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.pop(ctx, codeController.text.trim()),
+              onPressed: () => Navigator.pop(ctx, codeController.text.trim()),
               child: Text(l10n.deleteAccountConfirm),
             ),
           ],
@@ -525,17 +515,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             smsCode: smsCode,
           );
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.accountDeletedSuccess)),
-            );
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (_) => false);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.accountDeletedSuccess)));
+            Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
           }
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.accountDeleteFailed)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l10n.accountDeleteFailed)));
           }
         }
       }
@@ -602,8 +591,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? l10n.subscriptionStatusPremium
                                 : l10n.subscriptionStatusFree,
                           ),
-                          backgroundColor:
-                              _isPremium ? Colors.green : Colors.grey,
+                          backgroundColor: _isPremium
+                              ? Colors.green
+                              : Colors.grey,
                         ),
                       ],
                     ),

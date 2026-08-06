@@ -44,10 +44,7 @@ class AnalyticsService {
       await _analytics.logAppOpen();
       await _analytics.logEvent(
         name: 'app_open_detail',
-        parameters: {
-          'hour_of_day': _hourOfDay(),
-          'day_of_week': _dayOfWeek(),
-        },
+        parameters: {'hour_of_day': _hourOfDay(), 'day_of_week': _dayOfWeek()},
       );
     } catch (e) {
       debugPrint('AnalyticsService.trackAppOpen error: $e');
@@ -108,10 +105,7 @@ class AnalyticsService {
     try {
       await _analytics.logEvent(
         name: 'notification_tapped',
-        parameters: {
-          'hour_of_day': _hourOfDay(),
-          'day_of_week': _dayOfWeek(),
-        },
+        parameters: {'hour_of_day': _hourOfDay(), 'day_of_week': _dayOfWeek()},
       );
     } catch (e) {
       debugPrint('AnalyticsService.trackNotificationTapped error: $e');
@@ -168,10 +162,7 @@ class AnalyticsService {
     try {
       await _analytics.logEvent(
         name: 'challenge_started',
-        parameters: {
-          'duration_days': duration,
-          'timer_seconds': timerSeconds,
-        },
+        parameters: {'duration_days': duration, 'timer_seconds': timerSeconds},
       );
     } catch (e) {
       debugPrint('AnalyticsService.trackChallengeStarted error: $e');
@@ -196,10 +187,7 @@ class AnalyticsService {
     try {
       await _analytics.logEvent(
         name: 'challenge_failed',
-        parameters: {
-          'day_reached': dayReached,
-          'duration_days': durationDays,
-        },
+        parameters: {'day_reached': dayReached, 'duration_days': durationDays},
       );
     } catch (e) {
       debugPrint('AnalyticsService.trackChallengeFailed error: $e');

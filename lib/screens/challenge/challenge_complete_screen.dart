@@ -71,7 +71,9 @@ class ChallengeCompleteScreen extends StatelessWidget {
                       l10n.challengeCompletedDaysLabel(duration),
                       style: TextStyle(
                         fontSize: 16,
-                        color: colorScheme.onPrimaryContainer.withValues(alpha: 0.85),
+                        color: colorScheme.onPrimaryContainer.withValues(
+                          alpha: 0.85,
+                        ),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -202,7 +204,10 @@ class _RewardRow extends StatelessWidget {
               ),
               Text(
                 description,
-                style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

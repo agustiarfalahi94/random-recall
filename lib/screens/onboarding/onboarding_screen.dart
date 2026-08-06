@@ -150,12 +150,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ]);
 
       final user = FirebaseAuth.instance.currentUser;
-      final rawProvider = user?.providerData
+      final rawProvider =
+          user?.providerData
               .map((p) => p.providerId)
-              .firstWhere(
-                (id) => id != 'firebase',
-                orElse: () => 'unknown',
-              ) ??
+              .firstWhere((id) => id != 'firebase', orElse: () => 'unknown') ??
           'unknown';
       // Normalise provider IDs to match the values used in trackLogin().
       final authMethod = switch (rawProvider) {
@@ -198,7 +196,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             await Future.delayed(const Duration(milliseconds: 500));
             final homeContext =
                 NotificationService.instance.navigatorKey?.currentContext;
-            if (homeContext != null) await MiuiBatteryDialog.show(homeContext);
+            if (homeContext != null && homeContext.mounted) {
+              await MiuiBatteryDialog.show(homeContext);
+            }
           }
         } catch (e) {
           debugPrint('Onboarding: Background tasks failed: $e');

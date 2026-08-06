@@ -137,19 +137,14 @@ class AuthService {
       await _ensureUserDocument(userCredential.user!);
       await initializeUserSession();
       AnalyticsService.instance.trackLogin(method: 'phone').ignore();
-      AnalyticsService.instance
-          .identify(userCredential.user!.uid)
-          .ignore();
+      AnalyticsService.instance.identify(userCredential.user!.uid).ignore();
     }
     return userCredential;
   }
 
   /// Links a phone credential to the currently signed-in account.
   /// Use this when an existing email/Google user wants to add their phone.
-  Future<void> linkPhoneNumber(
-    String verificationId,
-    String smsCode,
-  ) async {
+  Future<void> linkPhoneNumber(String verificationId, String smsCode) async {
     final credential = PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
@@ -166,10 +161,7 @@ class AuthService {
 
   /// Changes the phone credential on the currently signed-in account.
   /// Unlinks the old phone provider then links the new credential.
-  Future<void> changePhoneNumber(
-    String verificationId,
-    String smsCode,
-  ) async {
+  Future<void> changePhoneNumber(String verificationId, String smsCode) async {
     final credential = PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
@@ -260,12 +252,27 @@ class AuthService {
       // 3. Clear local data so the next user starts fresh
       await DatabaseHelper.instance.clearAllData();
 
-      // 4. Selective cleanup: clear app-specific preferences
+      // 4. Clear all challenge-mode state so a new account on this device
+      //    does not inherit the previous user's challenge session.
+      await StreakService.instance.resetChallenge();
+
+      // 5. Selective cleanup: clear all user-specific preferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('onboarding_complete');
-      await prefs.remove('timer_streak_days');
-      await prefs.remove('timer_streak_last_date');
-      await prefs.remove('timer_streak_bonus_questions');
+      for (final key in const [
+        'onboarding_complete',
+        'timer_streak_days',
+        'timer_streak_last_date',
+        'timer_streak_bonus_questions',
+        'total_7day_completed',
+        'total_14day_completed',
+        'challenge_badge_unlocked',
+        'highest_title',
+        'is_premium',
+        'bonus_categories',
+        'notif_schedule_mirror',
+      ]) {
+        await prefs.remove(key);
+      }
     } catch (e) {
       // Log errors but never let them block the critical sign-out steps below.
       debugPrint('AuthService: Sign-out cleanup error (non-fatal): $e');

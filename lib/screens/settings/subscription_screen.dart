@@ -39,7 +39,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     setState(() => _isLoading = true);
     try {
       await SubscriptionService.instance.purchasePackage(package);
-      if (mounted && await PlanService.isPremium()) {
+      if (await PlanService.isPremium() && mounted) {
         Navigator.pop(context);
       }
     } catch (e) {
@@ -217,7 +217,7 @@ class _FeatureTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color),

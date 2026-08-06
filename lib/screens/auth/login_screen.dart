@@ -60,9 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
       await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const OptionalEmailPromptScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const OptionalEmailPromptScreen()),
       );
     }
     // The StreamBuilder in main.dart handles routing to home once auth state changes.
@@ -175,9 +173,7 @@ class _SocialLoginButton extends StatelessWidget {
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
         minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

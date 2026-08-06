@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/database/database_helper.dart';
+import '../../core/streak/streak_service.dart';
 import '../../core/utils/battery_optimization.dart';
 
 class DebugNotificationScreen extends StatefulWidget {
@@ -79,10 +79,10 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     try {
                       await NotificationService.instance.sendTestNotification();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text(
                             'Test alarm set for 1 second from now! 🔔',
@@ -90,8 +90,7 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                         ),
                       );
                     } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(
                           content: Text('Failed: $e'),
                           backgroundColor: Colors.red,
@@ -103,23 +102,17 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                   label: const Text('Fire Immediate Test Notification'),
                 ),
                 const SizedBox(height: 16),
-                _buildSectionHeader('Streak Dialog Testing'),
+                _buildSectionHeader('Challenge Testing'),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     try {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.remove('last_streak_asked_for_challenge');
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Streak dialog flag reset! Dialog will show again on next app open.',
-                          ),
-                        ),
+                      await StreakService.instance.resetChallenge();
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Challenge state reset!')),
                       );
                     } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(
                           content: Text('Failed to reset: $e'),
                           backgroundColor: Colors.red,
@@ -128,7 +121,7 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                     }
                   },
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Reset Existing Streak Dialog'),
+                  label: const Text('Reset Challenge State'),
                 ),
               ],
             ),

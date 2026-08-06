@@ -26,9 +26,16 @@ class NotificationService {
   GlobalKey<NavigatorState>? navigatorKey;
 
   bool _initialized = false;
+  bool _listenerRegistered = false;
   bool _isScheduling = false;
   Completer<void>? _initCompleter;
   Timer? _scheduleDebounceTimer;
+  // Set to true when _onNotificationTapped successfully handles a tap so that
+  // handleNotificationLaunch() doesn't push a second question screen for the
+  // same notification (double-navigation bug on MIUI/HyperOS background starts).
+  bool _notificationNavigationHandled = false;
+  int? _lastTappedQuestionId;
+  DateTime? _lastTapTime;
 
   // Fires whenever a notification is answered (tray cleared).
   // Home screen subscribes to this to refresh the badge immediately.
@@ -44,27 +51,11 @@ class NotificationService {
 
   Future<void> init() async {
     if (_initialized) return;
-    debugPrint('NotificationService: Initializing...');
 
-    // Listen for database changes to refresh the schedule.
-    // We debounce this to avoid rapid re-scheduling during sync/practice.
-    DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
-      if (_scheduleDebounceTimer?.isActive ?? false)
-        _scheduleDebounceTimer!.cancel();
-      _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
-        final prefs = await SharedPreferences.getInstance();
-        final lastCount = prefs.getInt('last_known_question_count') ?? 0;
-        final currentCount = await DatabaseHelper.instance.getQuestionCount();
-
-        if (currentCount != lastCount) {
-          await prefs.setInt('last_known_question_count', currentCount);
-          scheduleNotifications();
-        }
-      });
-    });
-
+    // Deduplicate concurrent init() calls — latecomers await the in-flight init.
     if (_initCompleter != null) return _initCompleter!.future;
 
+    debugPrint('NotificationService: Initializing...');
     final completer = Completer<void>();
     _initCompleter = completer;
 
@@ -72,18 +63,40 @@ class NotificationService {
       // Wrap in a defensive timeout. If the native side hangs (common on MIUI/HyperOS),
       // we complete the future anyway so the app can continue.
       await _actualInit().timeout(const Duration(seconds: 4));
-      _initialized =
-          true; // Mark as initialized only if _actualInit completes successfully
+      _initialized = true;
     } catch (e) {
       debugPrint('NotificationService: Initialization error: $e');
-      // We still mark as initialized if it was a timeout to avoid infinite waiting,
-      // but the plugin might not be fully ready.
-      _initialized = false;
+      // Mark initialized on timeout so we don't spin forever — the plugin
+      // state is indeterminate but repeated init loops are worse.
+      _initialized = true;
     } finally {
       if (!completer.isCompleted) {
         debugPrint('NotificationService: Init completer completed.');
         completer.complete();
       }
+      // Null the completer so a subsequent init() call can re-enter if needed.
+      _initCompleter = null;
+    }
+
+    // Register the database-change listener exactly once, AFTER init completes
+    // so that _listenerRegistered is only set when we know _initialized is true.
+    if (!_listenerRegistered) {
+      _listenerRegistered = true;
+      DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
+        if (_scheduleDebounceTimer?.isActive ?? false) {
+          _scheduleDebounceTimer!.cancel();
+        }
+        _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
+          final prefs = await SharedPreferences.getInstance();
+          final lastCount = prefs.getInt('last_known_question_count') ?? 0;
+          final currentCount = await DatabaseHelper.instance.getQuestionCount();
+
+          if (currentCount != lastCount) {
+            await prefs.setInt('last_known_question_count', currentCount);
+            await scheduleNotifications();
+          }
+        });
+      });
     }
   }
 
@@ -367,12 +380,21 @@ class NotificationService {
 
     if (slots.isEmpty) return;
 
-    // 1. Generate stable IDs and mirror log for the debug menu & tray matching
-    // Stable ID = days-since-epoch * 20 + slotIndex. Unique across the entire
+    // 1. Cancel all pending alarms before scheduling new ones.
+    // This is necessary when the user reduces their frequency: without cancelAll(),
+    // the old higher-frequency alarms remain active in the OS alongside the new ones.
+    // cancelAll() only affects pending (not yet fired) alarms — active tray
+    // notifications are NOT touched by this call.
+    await _plugin.cancelAll();
+
+    // 2. Generate stable IDs and mirror log for the debug menu & tray matching.
+    // Multiplier = 100 so that up to 100 slots/day can be safely accommodated
+    // (slider max is 50, so this gives 2x headroom with no cross-day collision).
+    // Stable ID = days-since-epoch * 100 + slotIndex. Unique across the entire
     // 8-day schedule window AND deterministic across reschedules (no week-collision).
     int idForSlot(tz.TZDateTime when, int slotIndex) {
       final daysSinceEpoch = when.toUtc().millisecondsSinceEpoch ~/ 86400000;
-      return (daysSinceEpoch * 20) + slotIndex;
+      return (daysSinceEpoch * 100) + slotIndex;
     }
 
     final futureList = slots.map((s) {
@@ -805,6 +827,21 @@ class NotificationService {
     // (no-score) screen so they don't pollute the user's score history.
     final isTest = payload.startsWith('test:');
     final questionId = int.tryParse(isTest ? payload.substring(5) : payload);
+    // On MIUI/HyperOS this callback can fire twice for a single tap, which
+    // would push two question screens. Absorb duplicates for the same question
+    // within a 3-second window. Different question IDs always pass through so
+    // the user can tap a second tray notification right after the first.
+    final now = DateTime.now();
+    if (_lastTappedQuestionId == questionId &&
+        _lastTapTime != null &&
+        now.difference(_lastTapTime!) < const Duration(seconds: 3)) {
+      return;
+    }
+    _lastTappedQuestionId = questionId;
+    _lastTapTime = now;
+    // Mark as handled so handleNotificationLaunch() doesn't push a second
+    // screen for the same tap (double-navigation on MIUI/HyperOS background starts).
+    _notificationNavigationHandled = true;
     // Pop everything back to root before pushing the answer screen.
     navigator.popUntil((route) => route.isFirst);
     navigator.pushNamed(
@@ -820,6 +857,10 @@ class NotificationService {
 
   Future<void> handleNotificationLaunch() async {
     if (!_initialized) await init();
+
+    // If _onNotificationTapped already handled this tap (app was in background),
+    // skip — otherwise we'd push a duplicate question screen on top.
+    if (_notificationNavigationHandled) return;
 
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details?.didNotificationLaunchApp != true) return;

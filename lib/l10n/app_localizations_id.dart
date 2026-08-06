@@ -1739,4 +1739,14 @@ class AppLocalizationsId extends AppLocalizations {
   String phoneDeleteReauthSubtitle(String phone) {
     return 'Kami akan mengirim kode verifikasi ke $phone untuk konfirmasi.';
   }
+
+  @override
+  String get rootWarningTitle => 'Perangkat ter-root terdeteksi';
+
+  @override
+  String get rootWarningBody =>
+      'Perangkat ini tampaknya ter-root atau jailbreak. Data Anda disimpan secara lokal di perangkat ini dan dicadangkan ke akun cloud pribadi Anda, tetapi perangkat yang ter-root lebih rentan terhadap aplikasi berbahaya. Kami menyarankan untuk menjaga keamanan perangkat Anda.';
+
+  @override
+  String get rootWarningGotIt => 'Mengerti';
 }
