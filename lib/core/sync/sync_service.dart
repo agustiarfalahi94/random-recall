@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart' show ConflictAlgorithm;
 import '../auth/auth_service.dart';
 import '../database/database_helper.dart';
+import '../../models/score_record.dart';
 
 /// Service responsible for synchronizing local SQLite data with Cloud Firestore.
 class SyncService {
@@ -58,33 +59,63 @@ class SyncService {
     await trace.start();
     try {
       final userDoc = _db.collection('users').doc(user.uid);
-      final batch = _db.batch();
+      final dbHelper = DatabaseHelper.instance;
 
-      // 1. Backup Categories
-      final categories = await _dbHelper.getAllCategories();
+      // 1. Push tombstones first — deletes propagate, journal cleared on success.
+      final tombstones = await dbHelper.getAllTombstones();
+      final deleteOps = <void Function(WriteBatch)>[];
+      for (final (collection, docId) in tombstonePlan(tombstones)) {
+        deleteOps.add(
+          (b) => b.delete(userDoc.collection(collection).doc(docId.toString())),
+        );
+      }
+      await _runBatched(deleteOps);
+      for (final entry in tombstones.entries) {
+        await dbHelper.removeTombstones(entry.key, entry.value);
+      }
+
+      // 2. Upsert live data in chunks.
+      final ops = <void Function(WriteBatch)>[];
+      final categories = await dbHelper.getAllCategories();
       for (final cat in categories) {
         if (cat.id == null) continue;
-        final docRef = userDoc.collection('categories').doc(cat.id.toString());
-        batch.set(docRef, cat.toMap(), SetOptions(merge: true));
+        final ref = userDoc.collection('categories').doc(cat.id.toString());
+        ops.add((b) => b.set(ref, cat.toMap(), SetOptions(merge: true)));
       }
-
-      // 2. Backup Questions
-      final questions = await _dbHelper.getAllQuestions();
+      final questions = await dbHelper.getAllQuestions();
       for (final q in questions) {
         if (q.id == null) continue;
-        final docRef = userDoc.collection('questions').doc(q.id.toString());
-        batch.set(docRef, q.toMap(), SetOptions(merge: true));
+        final ref = userDoc.collection('questions').doc(q.id.toString());
+        ops.add((b) => b.set(ref, q.toMap(), SetOptions(merge: true)));
       }
-
-      // 3. Backup Score Records
-      final scores = await _dbHelper.getAllScoreRecords();
-      for (final s in scores) {
+      // Scores: only within the sync window.
+      final cutoff = DateTime.now().subtract(
+        const Duration(days: _scoreSyncWindowDays),
+      );
+      final scores = await dbHelper.getAllScoreRecords();
+      final recentScores = scoresForSync(scores, cutoff);
+      for (final s in recentScores) {
         if (s.id == null) continue;
-        final docRef = userDoc.collection('score_records').doc(s.id.toString());
-        batch.set(docRef, s.toMap(), SetOptions(merge: true));
+        final ref = userDoc.collection('score_records').doc(s.id.toString());
+        ops.add((b) => b.set(ref, s.toMap(), SetOptions(merge: true)));
       }
 
-      // 4. Backup User Settings (SharedPreferences)
+      // 3. Prune cloud scores older than the window.
+      final oldQuery = await userDoc
+          .collection('score_records')
+          .where('answered_at', isLessThan: cutoff.toIso8601String())
+          .get();
+      final pruneOps = <void Function(WriteBatch)>[];
+      for (final doc in oldQuery.docs) {
+        pruneOps.add(
+          (b) => b.delete(userDoc.collection('score_records').doc(doc.id)),
+        );
+      }
+      await _runBatched(pruneOps);
+
+      await _runBatched(ops);
+
+      // 4. User-doc metadata as before.
       final prefs = await SharedPreferences.getInstance();
       final settings = {
         'notif_random_anytime': prefs.getBool('notif_random_anytime') ?? true,
@@ -99,7 +130,8 @@ class SyncService {
       // Record which device performed this backup
       final deviceId = prefs.getString('device_id') ?? 'unknown';
 
-      // 4. Commit all changes at once (include metadata in the same batch)
+      // 4. Commit metadata (unchanged from the original single-batch flow)
+      final batch = _db.batch();
       batch.set(userDoc, {
         'last_active_device_id': deviceId,
         'last_sync_at': FieldValue.serverTimestamp(),
@@ -110,7 +142,7 @@ class SyncService {
 
       trace.putAttribute('question_count', questions.length.toString());
       debugPrint(
-        'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${scores.length} scores synced.',
+        'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${recentScores.length} recent scores synced.',
       );
     } catch (e, st) {
       debugPrint('SyncService: Backup failed: $e');
@@ -124,6 +156,59 @@ class SyncService {
       _isSyncing = false;
     }
   }
+
+  static const int _scoreSyncWindowDays = 30;
+  static const int _batchChunkSize = 450;
+
+  /// Splits [total] items into (start, end) index ranges, each at most
+  /// [chunkSize] wide. Used to keep every Firestore batch under the 500-op cap.
+  static List<(int, int)> chunkRanges(
+    int total, {
+    int chunkSize = _batchChunkSize,
+  }) {
+    if (total <= 0) return const [];
+    final ranges = <(int, int)>[];
+    for (var start = 0; start < total; start += chunkSize) {
+      final end = (start + chunkSize) < total ? start + chunkSize : total;
+      ranges.add((start, end));
+    }
+    return ranges;
+  }
+
+  /// Runs [ops] against Firestore write batches, committing every [chunkSize]
+  /// operations. Keeps each commit under Firestore's 500-op batch cap.
+  Future<void> _runBatched(
+    List<void Function(WriteBatch)> ops, {
+    int chunkSize = _batchChunkSize,
+  }) async {
+    for (final (start, end) in chunkRanges(ops.length, chunkSize: chunkSize)) {
+      final batch = _db.batch();
+      for (var i = start; i < end; i++) {
+        ops[i](batch);
+      }
+      await batch.commit();
+    }
+  }
+
+  /// Flattens the tombstone journal into an ordered list of (collection, docId)
+  /// cloud deletes. Ordered by collection name then docId for determinism.
+  static List<(String, int)> tombstonePlan(Map<String, Set<int>> tombstones) {
+    final plan = <(String, int)>[];
+    final keys = tombstones.keys.toList()..sort();
+    for (final collection in keys) {
+      final ids = tombstones[collection]!.toList()..sort();
+      for (final id in ids) {
+        plan.add((collection, id));
+      }
+    }
+    return plan;
+  }
+
+  /// Returns score records within the sync window (not older than [cutoff]).
+  static List<ScoreRecord> scoresForSync(
+    List<ScoreRecord> all,
+    DateTime cutoff,
+  ) => all.where((s) => !s.answeredAt.isBefore(cutoff)).toList();
 
   /// Downloads all user data from Firestore and merges it into the local database.
   /// Used when logging into a new device or performing a manual refresh.
