@@ -77,11 +77,6 @@ Future<void> main() async {
         : const AndroidPlayIntegrityProvider(),
   );
 
-  // Root/jailbreak detection — informational only. Logs to Firebase Analytics
-  // (dev signal) and enables a one-time client warning. Never blocks features.
-  await RootDetectionService.instance.detect();
-  RootDetectionService.instance.trackStatus().ignore();
-
   // Crashlytics: route Flutter and async errors to Crashlytics
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
     !kDebugMode,
@@ -144,6 +139,11 @@ Future<void> main() async {
       'cold_start_post_frame',
     );
     await startupTrace.start();
+    // Root/jailbreak detection — informational only. Runs post-frame so it
+    // never delays the first frame. The one-time warning dialog renders in
+    // HomeScreen after auth.
+    await RootDetectionService.instance.detect();
+    RootDetectionService.instance.trackStatus().ignore();
     try {
       // Initialize service and check launch details
       await NotificationService.instance.init();
