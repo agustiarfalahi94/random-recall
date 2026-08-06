@@ -184,9 +184,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Password must be at least 6 characters';
 
   @override
-  String get errorNoAccount => 'No account found for this email.';
-
-  @override
   String get errorWrongPassword => 'Incorrect email or password.';
 
   @override

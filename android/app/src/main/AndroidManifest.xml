@@ -10,7 +10,9 @@
         android:label="Random Recall"
         android:name=".App"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
 
         <!-- Google Mobile Ads App ID (test ID — replace with real one when account is ready) -->
         <meta-data
@@ -38,14 +40,6 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="random_recall_channel"/>
-
-        <!-- PostHog: native Android SDK requires API key in manifest -->
-        <meta-data
-            android:name="com.posthog.posthog.API_KEY"
-            android:value="phc_wSTAkVqKt4mJDdvpZVQovyNZ7NzMsYop4ZPsmLeVspFv"/>
-        <meta-data
-            android:name="com.posthog.posthog.POSTHOG_HOST"
-            android:value="https://us.i.posthog.com"/>
 
         <receiver 
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" 

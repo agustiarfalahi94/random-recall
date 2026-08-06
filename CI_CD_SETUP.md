@@ -65,6 +65,18 @@ The Android RevenueCat key is no longer hardcoded in `subscription_service.dart`
 
 Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted/jailbroken devices via `flutter_jailbreak_detection`. The signal is (1) logged to Firebase Analytics (`device_root_status` event) for developer visibility and (2) shown to the user once via a dismissible dialog on first app open. Nothing is blocked. The unmaintained plugin required two compatibility shims in `android/build.gradle.kts` (AGP 8 namespace + per-plugin JVM-target matching), verified with a successful debug APK build.
 
+### Security hardening (2026-08-06, v0.13.15)
+
+- **FLAG_SECURE screenshot blocking** on quiz screens (Android only; native method channel in `MainActivity.kt`).
+- **Anti-enumeration login** — unknown emails and wrong passwords show one generic error.
+- **`allowBackup="false"`** — local data can't be pulled from Google Drive backups (cloud sync covers logged-in users).
+- **Dead config/deps removed** — PostHog meta-data (SDK not used) and the unused `http` package.
+- **Firestore rules: 100 KB/document write cap** — deploy via `firebase deploy --only firestore:rules`.
+
+### Pre-release checklist (still open)
+- Replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console.
+- Deploy the updated `firestore.rules` to Firebase.
+
 ---
 
 ## Current Workflow Branches
