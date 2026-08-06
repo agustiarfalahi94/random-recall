@@ -68,6 +68,7 @@ dev_dependencies:
   # Test-only: fake Firebase platforms for unit tests that touch Firebase singletons
   firebase_core_platform_interface: ^8.1.0
   firebase_auth_platform_interface: ^9.0.6
+  sqflite_common_ffi: ^2.3.0
 
 flutter_launcher_icons:
   android: true

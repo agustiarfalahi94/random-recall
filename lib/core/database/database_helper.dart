@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -9,11 +10,12 @@ import '../../models/score_record.dart';
 
 class DatabaseHelper {
   static const String _dbName = 'recall_quiz.db';
-  static const int _dbVersion = 4;
+  static const int _dbVersion = 5;
 
   static const String _tableCategories = 'categories';
   static const String _tableQuestions = 'questions';
   static const String _tableScoreRecords = 'score_records';
+  static const String _tableSyncDeletions = 'sync_deletions';
 
   DatabaseHelper._internal();
   static final DatabaseHelper instance = DatabaseHelper._internal();
@@ -34,6 +36,7 @@ class DatabaseHelper {
   }
 
   Database? _db;
+  String? _dbPathOverride;
 
   Future<Database> get database async {
     _db ??= await _initDatabase();
@@ -42,7 +45,7 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _dbName);
+    final path = join(dbPath, _dbPathOverride ?? _dbName);
     return openDatabase(
       path,
       version: _dbVersion,
@@ -92,6 +95,15 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE $_tableSyncDeletions (
+        collection TEXT NOT NULL,
+        doc_id     INTEGER NOT NULL,
+        deleted_at TEXT NOT NULL,
+        PRIMARY KEY (collection, doc_id)
+      )
+    ''');
+
     await _seedDefaultCategories(db);
   }
 
@@ -125,6 +137,17 @@ class DatabaseHelper {
       await db.execute(
         'ALTER TABLE $_tableScoreRecords ADD COLUMN updated_at TEXT NOT NULL DEFAULT "$now"',
       );
+    }
+    if (oldVersion < 5) {
+      // v4 → v5: add sync_deletions for tombstone-based delete propagation.
+      await db.execute('''
+        CREATE TABLE $_tableSyncDeletions (
+          collection TEXT NOT NULL,
+          doc_id     INTEGER NOT NULL,
+          deleted_at TEXT NOT NULL,
+          PRIMARY KEY (collection, doc_id)
+        )
+      ''');
     }
   }
 
@@ -347,6 +370,64 @@ class DatabaseHelper {
     return count;
   }
 
+  // ── Sync Deletions (tombstone journal) ───────────────────────────────────────
+
+  Future<void> addTombstone(String collection, int docId) async {
+    final db = await database;
+    await db.rawInsert(
+      'INSERT OR IGNORE INTO $_tableSyncDeletions (collection, doc_id, deleted_at) '
+      'VALUES (?, ?, ?)',
+      [collection, docId, DateTime.now().toIso8601String()],
+    );
+  }
+
+  Future<void> addTombstones(String collection, Iterable<int> docIds) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final docId in docIds) {
+        await txn.rawInsert(
+          'INSERT OR IGNORE INTO $_tableSyncDeletions (collection, doc_id, deleted_at) '
+          'VALUES (?, ?, ?)',
+          [collection, docId, DateTime.now().toIso8601String()],
+        );
+      }
+    });
+  }
+
+  Future<Map<String, Set<int>>> getAllTombstones() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT collection, doc_id FROM $_tableSyncDeletions',
+    );
+    final tombstones = <String, Set<int>>{};
+    for (final row in rows) {
+      final collection = row['collection'] as String;
+      final docId = row['doc_id'] as int;
+      tombstones.putIfAbsent(collection, () => <int>{}).add(docId);
+    }
+    return tombstones;
+  }
+
+  Future<void> removeTombstones(String collection, Iterable<int> docIds) async {
+    final ids = docIds.toList();
+    if (ids.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(ids.length, '?').join(', ');
+    await db.rawDelete(
+      'DELETE FROM $_tableSyncDeletions WHERE collection = ? AND doc_id IN ($placeholders)',
+      [collection, ...ids],
+    );
+  }
+
+  Future<Set<int>> getTombstonedIds(String collection) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT doc_id FROM $_tableSyncDeletions WHERE collection = ?',
+      [collection],
+    );
+    return rows.map((row) => row['doc_id'] as int).toSet();
+  }
+
   // ── Stats ────────────────────────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> getCategoryScoreStats() async {
@@ -393,6 +474,19 @@ class DatabaseHelper {
       await txn.delete(_tableQuestions);
       await txn.delete(_tableCategories, where: 'is_default = 0');
     });
+  }
+
+  /// The database file name (or overridden test path) currently in use.
+  /// Mirrors the path used by `_initDatabase()` minus the databases directory.
+  @visibleForTesting
+  String get dbPathForTesting => _dbPathOverride ?? _dbName;
+
+  /// Closes the open database and swaps the path used by the next `database`
+  /// access. Intended for tests that need an isolated database file.
+  @visibleForTesting
+  Future<void> overrideDbPathForTesting(String path) async {
+    await close();
+    _dbPathOverride = path;
   }
 
   Future<void> close() async {
