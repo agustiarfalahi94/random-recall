@@ -131,11 +131,11 @@ and verify everything on the code side and walk the user through the console ste
 
 > If you are a fresh agent session, this is where work stands. Read this before anything else.
 
-**Feature in progress: interactive spotlight tutorial (coach marks) for new users.**
+**Interactive spotlight tutorial (coach marks) — IMPLEMENTED, not yet released.**
 
-- **Design spec (committed):** `docs/superpowers/specs/2026-08-06-interactive-tutorial-design.md`
-- **Implementation plan:** NOT YET WRITTEN — next step is `superpowers:writing-plans` → `docs/superpowers/plans/2026-08-06-interactive-tutorial.md`
-- **State:** design approved by user (run-point = after onboarding on the real app; scope = core journey ~8 steps; Profile tab excluded). Spec committed on `develop`.
-- **Approach:** `showcaseview` package; `TourService` owns the `tour_completed` pref flag + step sequence; GlobalKeys on Home Practice Now / nav tabs / settings gear, Questions FAB, settings-sheet schedule tile; en+id ARB copy.
-- **Key design decisions to honor:** tour start gated on the display-name prompt resolving; advance-on-close rule for steps that push routes/open sheets; in-sheet spotlight for step 7 (with a text-overlay fallback).
-- **Also done earlier today (fully shipped, on device):** sync & stability batch — tombstone deletes, chunked ≤450-op backup, paginated tombstone-aware restore, isVerifiedUser consolidation, random-OFFSET question query, root detection post-frame. 105/105 tests, analyze 0. See `CHANGELOG.md` `[Unreleased]` + §10 file-map additions.
+- Design spec: `docs/superpowers/specs/2026-08-06-interactive-tutorial-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-08-06-interactive-tutorial.md`
+- **Status: Tasks 1–5 complete (showcaseview dep, TourService flag logic + 8 steps, en/id ARB copy, GlobalKeys on real controls, TourOverlay driver, auto-start after display-name/root-warning prompts resolve, Settings "Take a tour" replay tile). Task 6 (final validation + docs) is done too — 108/108 tests, 0 analyzer issues, debug APK builds.**
+- Wiring notes: `TourOverlay` wraps the HomeScreen Scaffold (`GlobalKey<TourOverlayState>`); `_HomeTabState._scheduleTourStart()` fires once after `_displayNameResolved` && !`_rootWarningVisible`; `TourService.initialize()` added in `main.dart`. Step 7 (`scheduleTileKey`) intentionally uses the text-overlay fallback (no in-sheet spotlight — documented decision).
+- **NOT RELEASED — everything since v0.13.18 is still only on local `develop` (19 commits, including the sync & stability batch). Next step: push develop → merge to main → tag a release (e.g. v0.13.19) so CI builds it and the user can test on device.**
+- Also done earlier today (fully shipped, on device): sync & stability batch — tombstone deletes, chunked ≤450-op backup, paginated tombstone-aware restore, isVerifiedUser consolidation, random-OFFSET question query, root detection post-frame. See `CHANGELOG.md` `[Unreleased]` + §10 file-map additions.

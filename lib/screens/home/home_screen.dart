@@ -15,6 +15,7 @@ import '../../main.dart' show navigatorKey;
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
 import '../../core/tutorial/tour_service.dart';
+import '../../widgets/tour/tour_overlay.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
 import '../profile/profile_screen.dart';
@@ -35,73 +36,82 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
+  // Key for the tour overlay so the Settings sheet can re-run the tour.
+  final _tourKey = GlobalKey<TourOverlayState>();
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.appTitle,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+    // TourOverlay must wrap the Scaffold (inside the Navigator's subtree) so
+    // its Showcase widgets can spotlight the app bar / nav bar / tabs.
+    return TourOverlay(
+      key: _tourKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            l10n.appTitle,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          actions: [
+            KeyedSubtree(
+              key: TourService.instance.settingsGearKey,
+              child: IconButton(
+                onPressed: () => _showSettingsSheet(context),
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: l10n.settingsTooltip,
+              ),
+            ),
+          ],
         ),
-        actions: [
-          KeyedSubtree(
-            key: TourService.instance.settingsGearKey,
-            child: IconButton(
-              onPressed: () => _showSettingsSheet(context),
-              icon: const Icon(Icons.settings_outlined),
-              tooltip: l10n.settingsTooltip,
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            _HomeTab(),
+            QuestionsListScreen(),
+            AnalyticsScreen(),
+            ProfileScreen(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) =>
+              setState(() => _currentIndex = index),
+          backgroundColor: colorScheme.surface,
+          indicatorColor: colorScheme.primaryContainer,
+          destinations: [
+            NavigationDestination(
+              icon: KeyedSubtree(
+                key: TourService.instance.navHomeKey,
+                child: const Icon(Icons.home_outlined),
+              ),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: l10n.navHome,
             ),
-          ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          _HomeTab(),
-          QuestionsListScreen(),
-          AnalyticsScreen(),
-          ProfileScreen(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primaryContainer,
-        destinations: [
-          NavigationDestination(
-            icon: KeyedSubtree(
-              key: TourService.instance.navHomeKey,
-              child: const Icon(Icons.home_outlined),
+            NavigationDestination(
+              icon: KeyedSubtree(
+                key: TourService.instance.navQuestionsKey,
+                child: const Icon(Icons.format_list_bulleted_outlined),
+              ),
+              selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
+              label: l10n.navQuestions,
             ),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: l10n.navHome,
-          ),
-          NavigationDestination(
-            icon: KeyedSubtree(
-              key: TourService.instance.navQuestionsKey,
-              child: const Icon(Icons.format_list_bulleted_outlined),
+            NavigationDestination(
+              icon: KeyedSubtree(
+                key: TourService.instance.navAnalyticsKey,
+                child: const Icon(Icons.bar_chart_outlined),
+              ),
+              selectedIcon: const Icon(Icons.bar_chart_rounded),
+              label: l10n.navAnalytics,
             ),
-            selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
-            label: l10n.navQuestions,
-          ),
-          NavigationDestination(
-            icon: KeyedSubtree(
-              key: TourService.instance.navAnalyticsKey,
-              child: const Icon(Icons.bar_chart_outlined),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outlined),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: l10n.profilePageTitle,
             ),
-            selectedIcon: const Icon(Icons.bar_chart_rounded),
-            label: l10n.navAnalytics,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outlined),
-            selectedIcon: const Icon(Icons.person_rounded),
-            label: l10n.profilePageTitle,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -113,7 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => const _SettingsSheet(),
+      builder: (context) =>
+          _SettingsSheet(onReplayTour: () => _tourKey.currentState?.start()),
     );
   }
 }
@@ -121,7 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
 // ── Settings bottom sheet ─────────────────────────────────────────────────────
 
 class _SettingsSheet extends StatefulWidget {
-  const _SettingsSheet();
+  const _SettingsSheet({this.onReplayTour});
+
+  /// Called (after the sheet dismisses) when the user taps "Take a tour".
+  final VoidCallback? onReplayTour;
 
   @override
   State<_SettingsSheet> createState() => _SettingsSheetState();
@@ -300,6 +314,35 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                     )
                   : const Icon(Icons.chevron_right_rounded),
               onTap: _isSendingTest ? null : _sendTestNotification,
+            ),
+
+            const Divider(),
+
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(child: Icon(Icons.tour_outlined, size: 20)),
+              ),
+              title: Text(
+                l10n.tourReplayTile,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(l10n.tourReplaySubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                final onReplay = widget.onReplayTour;
+                Navigator.of(context).pop();
+                // Let the sheet-close animation finish before spotlighting.
+                Future<void>.delayed(const Duration(milliseconds: 350), () {
+                  onReplay?.call();
+                });
+              },
             ),
 
             const Divider(),
@@ -662,6 +705,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   int _unansweredCount = 0;
   bool _displayNamePromptShown = false;
 
+  // Interactive-tour coordination: the tour starts only after the first-frame
+  // prompts (display name / rooted-device warning) have fully resolved.
+  bool _displayNameResolved = false;
+  bool _rootWarningVisible = false;
+  bool _tourStartPending = false;
+
   StreamSubscription<void>? _answeredSub;
   StreamSubscription<void>? _databaseUpdateSub;
   Timer? _nextNotifTimer;
@@ -737,8 +786,10 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             canDismiss: false,
             onComplete: () {
               debugPrint('HomeTab: Display name setup completed');
+              _displayNameResolved = true;
               // Dialog will auto-close, refresh home screen
               setState(() {});
+              _scheduleTourStart();
             },
           ),
         );
@@ -749,6 +800,8 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
       debugPrint(
         'HomeTab: User has displayName set or user is null, skipping dialog',
       );
+      _displayNameResolved = true;
+      _scheduleTourStart();
     }
   }
 
@@ -762,7 +815,8 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     if (!mounted) return;
 
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    _rootWarningVisible = true;
+    await showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.security_rounded),
@@ -776,6 +830,24 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         ],
       ),
     );
+    _rootWarningVisible = false;
+    _scheduleTourStart();
+  }
+
+  /// Schedules the interactive tour once the first-frame prompts (display name
+  /// / rooted-device warning) have resolved. Runs at most once per app session.
+  void _scheduleTourStart() {
+    if (_tourStartPending) return;
+    if (!_displayNameResolved) return; // re-triggered when it resolves
+    if (_rootWarningVisible) return; // re-triggered once the warning closes
+    if (!TourService.instance.shouldShowTour()) return;
+    _tourStartPending = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Let any closing dialog/sheet animation settle before spotlighting.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+      TourOverlay.start(context);
+    });
   }
 
   @override

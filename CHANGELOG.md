@@ -20,6 +20,9 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 ### Notes
 - Internal housekeeping: consolidated the app's verified-account checks (no user-visible change).
 
+### Added
+- **Interactive spotlight tutorial for new users** — after onboarding, a guided coach-mark tour highlights the core journey: Practice Now, the question list + add button, analytics, home, settings, and the notification schedule, ending with a "You're all set" overlay. Skip button on every step; re-runnable anytime from Settings → "Take a tour". English + Indonesian. (Uses `showcaseview`; the in-sheet schedule step uses a text-overlay fallback since an in-sheet spotlight isn't possible with the current sheet implementation.)
+
 ---
 
 ## [0.13.18] — 2026-08-06

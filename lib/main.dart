@@ -29,6 +29,7 @@ import 'core/plan/subscription_service.dart';
 import 'core/streak/streak_service.dart';
 import 'core/ads/ad_service.dart';
 import 'core/plan/plan_service.dart';
+import 'core/tutorial/tour_service.dart';
 import 'widgets/ad_banner_widget.dart';
 import 'screens/question/notification_question_screen.dart';
 import 'screens/question/permission_required_screen.dart';
@@ -121,6 +122,9 @@ Future<void> main() async {
   // Initialize StreakService local cache (SharedPreferences only — no Firestore).
   // Firestore sync happens in initializeUserSession() after auth is confirmed.
   await StreakService.instance.initialize();
+
+  // Initialize the interactive tour's local flag cache.
+  await TourService.instance.initialize();
 
   // Wire up navigator key so notification taps can navigate
   NotificationService.instance.navigatorKey = navigatorKey;
