@@ -54,6 +54,14 @@
     "placeholders": { "error": { "type": "String" } }
   },
 
+  "accountExistsTitle": "Akun sudah ada",
+  "accountExistsBody": "Akun dengan {email} sudah ada. Masukkan kata sandi untuk menautkan akun Google Anda.",
+  "@accountExistsBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "accountExistsLinkButton": "Tautkan & Masuk",
+  "accountExistsSuccess": "Akun Google berhasil ditautkan!",
+
   "emailAuthTitle": "Masuk",
   "welcomeBack": "Selamat datang kembali!",
   "emailAddress": "Alamat Email",

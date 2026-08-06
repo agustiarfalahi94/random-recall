@@ -144,6 +144,20 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get accountExistsTitle => 'Akun sudah ada';
+
+  @override
+  String accountExistsBody(String email) {
+    return 'Akun dengan $email sudah ada. Masukkan kata sandi untuk menautkan akun Google Anda.';
+  }
+
+  @override
+  String get accountExistsLinkButton => 'Tautkan & Masuk';
+
+  @override
+  String get accountExistsSuccess => 'Akun Google berhasil ditautkan!';
+
+  @override
   String get emailAuthTitle => 'Masuk';
 
   @override

@@ -5,6 +5,26 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.17] — 2026-08-06
+
+### Fixed
+- **Google Sign-In broken after google_sign_in 7 migration** — the v7 Credential Manager flow requires `serverClientId` passed to `initialize()` (it no longer reads it from google-services.json). Without it, the plugin threw `missingServerClientId`, which was swallowed silently, kicking the user back to the login screen with no error. Fixed by passing the server client ID explicitly and no longer swallowing non-cancellation `GoogleSignInException`s.
+- **Google sign-in with an email that already has an email/password account** — Firebase rejects the collision (`account-exists-with-different-credential`). New `AccountExistsException` + login-screen dialog: enter your password to prove ownership, and the Google credential is linked to the existing account (both providers then sign in to the same account).
+- **~5s black screen on cold start** — AdMob SDK initialization (a network call) was awaited before `runApp()`. Now deferred to the background (the premium gate still runs first), so the first frame renders immediately.
+
+### Notes
+- 77/77 tests, 0 analyzer issues.
+
+---
+
+## [0.13.16] — 2026-08-06
+
+### Changed
+- **Dependency update pass** — Firebase family to latest majors (core 4, auth 6, firestore 6, analytics 12, crashlytics 5, app_check 0.4, remote_config 6, storage 13, performance 0.11), `flutter_local_notifications` 22 (named-param API migration), `google_mobile_ads` 9, `purchases_flutter` 10, `workmanager` 0.10, `device_info_plus` 13, `app_settings` 7, `android_intent_plus` 6, `google_sign_in` 7, `timezone` 0.11, `flutter_lints` 6, `desugar_jdk_libs` 2.1.4.
+- **Skipped intentionally:** `app_settings` 8 (Swift Package Manager-only), `intl` 0.20.3 (SDK-locked by `flutter_localizations`).
+
+---
+
 ## [0.13.15] — 2026-08-06
 
 ### Security

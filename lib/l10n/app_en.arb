@@ -54,6 +54,14 @@
     "placeholders": { "error": { "type": "String" } }
   },
 
+  "accountExistsTitle": "Account already exists",
+  "accountExistsBody": "An account with {email} already exists. Enter your password to link your Google account.",
+  "@accountExistsBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "accountExistsLinkButton": "Link & Sign In",
+  "accountExistsSuccess": "Google account linked! You're signed in.",
+
   "emailAuthTitle": "Login",
   "welcomeBack": "Welcome back!",
   "emailAddress": "Email Address",
