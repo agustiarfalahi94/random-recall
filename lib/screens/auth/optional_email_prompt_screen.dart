@@ -11,8 +11,7 @@ class OptionalEmailPromptScreen extends StatefulWidget {
       _OptionalEmailPromptScreenState();
 }
 
-class _OptionalEmailPromptScreenState
-    extends State<OptionalEmailPromptScreen> {
+class _OptionalEmailPromptScreenState extends State<OptionalEmailPromptScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -40,13 +39,9 @@ class _OptionalEmailPromptScreenState
   Future<void> _incrementPromptedCount() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set(
-          {'phone_only_prompted': FieldValue.increment(1)},
-          SetOptions(merge: true),
-        );
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'phone_only_prompted': FieldValue.increment(1),
+    }, SetOptions(merge: true));
   }
 
   Future<void> _addEmail() async {
@@ -83,13 +78,9 @@ class _OptionalEmailPromptScreenState
       await user.sendEmailVerification();
 
       // Update Firestore email field
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({
-        'email': email,
-        'updated_at': FieldValue.serverTimestamp(),
-      });
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+        {'email': email, 'updated_at': FieldValue.serverTimestamp()},
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -161,8 +152,9 @@ class _OptionalEmailPromptScreenState
               const SizedBox(height: 16),
               Text(
                 l10n.optionalEmailTitle,
-                style: theme.textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),

@@ -137,19 +137,14 @@ class AuthService {
       await _ensureUserDocument(userCredential.user!);
       await initializeUserSession();
       AnalyticsService.instance.trackLogin(method: 'phone').ignore();
-      AnalyticsService.instance
-          .identify(userCredential.user!.uid)
-          .ignore();
+      AnalyticsService.instance.identify(userCredential.user!.uid).ignore();
     }
     return userCredential;
   }
 
   /// Links a phone credential to the currently signed-in account.
   /// Use this when an existing email/Google user wants to add their phone.
-  Future<void> linkPhoneNumber(
-    String verificationId,
-    String smsCode,
-  ) async {
+  Future<void> linkPhoneNumber(String verificationId, String smsCode) async {
     final credential = PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
@@ -166,10 +161,7 @@ class AuthService {
 
   /// Changes the phone credential on the currently signed-in account.
   /// Unlinks the old phone provider then links the new credential.
-  Future<void> changePhoneNumber(
-    String verificationId,
-    String smsCode,
-  ) async {
+  Future<void> changePhoneNumber(String verificationId, String smsCode) async {
     final credential = PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
@@ -268,11 +260,15 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       for (final key in const [
         'onboarding_complete',
-        'timer_streak_days', 'timer_streak_last_date',
+        'timer_streak_days',
+        'timer_streak_last_date',
         'timer_streak_bonus_questions',
-        'total_7day_completed', 'total_14day_completed',
-        'challenge_badge_unlocked', 'highest_title',
-        'is_premium', 'bonus_categories',
+        'total_7day_completed',
+        'total_14day_completed',
+        'challenge_badge_unlocked',
+        'highest_title',
+        'is_premium',
+        'bonus_categories',
         'notif_schedule_mirror',
       ]) {
         await prefs.remove(key);

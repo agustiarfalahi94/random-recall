@@ -47,8 +47,8 @@ class SyncService {
   /// pushing them to the user's private collection using a write batch.
   Future<void> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
-    final isVerified = user != null &&
-        (user.emailVerified || user.phoneNumber != null);
+    final isVerified =
+        user != null && (user.emailVerified || user.phoneNumber != null);
     if (!isVerified || (_isSyncing && !force)) return;
 
     _isSyncing = true;
@@ -114,7 +114,11 @@ class SyncService {
       );
     } catch (e, st) {
       debugPrint('SyncService: Backup failed: $e');
-      FirebaseCrashlytics.instance.recordError(e, st, reason: 'sync_backup_failed');
+      FirebaseCrashlytics.instance.recordError(
+        e,
+        st,
+        reason: 'sync_backup_failed',
+      );
     } finally {
       await trace.stop();
       _isSyncing = false;
@@ -131,8 +135,8 @@ class SyncService {
     bool isInitialLogin = false,
   }) async {
     final user = AuthService.instance.currentUser;
-    final isVerifiedRestore = user != null &&
-        (user.emailVerified || user.phoneNumber != null);
+    final isVerifiedRestore =
+        user != null && (user.emailVerified || user.phoneNumber != null);
     if (!isVerifiedRestore) return;
 
     // If a restore is already running, wait for it rather than silently
@@ -194,7 +198,9 @@ class SyncService {
 
           // If it's a forced login restore, clean up local tables first to prevent ID conflicts
           if (isInitialLogin) {
-            debugPrint('SyncService: Clearing local tables for isInitialLogin...');
+            debugPrint(
+              'SyncService: Clearing local tables for isInitialLogin...',
+            );
             await txn.delete('score_records');
             debugPrint('SyncService: Cleared score_records');
             await txn.delete('questions');
@@ -254,30 +260,36 @@ class SyncService {
 
         if (userData.containsKey('settings')) {
           final s = userData['settings'] as Map<String, dynamic>;
-          if (s.containsKey('notif_random_anytime'))
+          if (s.containsKey('notif_random_anytime')) {
             await prefs.setBool(
               'notif_random_anytime',
               s['notif_random_anytime'] as bool,
             );
-          if (s.containsKey('notif_start_hour'))
+          }
+          if (s.containsKey('notif_start_hour')) {
             await prefs.setInt(
               'notif_start_hour',
               s['notif_start_hour'] as int,
             );
-          if (s.containsKey('notif_end_hour'))
+          }
+          if (s.containsKey('notif_end_hour')) {
             await prefs.setInt('notif_end_hour', s['notif_end_hour'] as int);
-          if (s.containsKey('notif_frequency'))
+          }
+          if (s.containsKey('notif_frequency')) {
             await prefs.setInt('notif_frequency', s['notif_frequency'] as int);
-          if (s.containsKey('notif_active_days'))
+          }
+          if (s.containsKey('notif_active_days')) {
             await prefs.setString(
               'notif_active_days',
               s['notif_active_days'] as String,
             );
-          if (s.containsKey('notif_timer_seconds'))
+          }
+          if (s.containsKey('notif_timer_seconds')) {
             await prefs.setInt(
               'notif_timer_seconds',
               s['notif_timer_seconds'] as int,
             );
+          }
         }
         // Streak data is NOT restored here — StreakService.loadFromCloud()
         // reads from the private/streakData subcollection which is the single

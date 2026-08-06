@@ -135,8 +135,11 @@ void main() {
       for (int day = 1; day <= 7; day++) {
         for (int slot = 0; slot < 10; slot++) {
           final id = notifId(day, slot);
-          expect(ids.contains(id), false,
-              reason: 'Duplicate ID $id for day=$day slot=$slot');
+          expect(
+            ids.contains(id),
+            false,
+            reason: 'Duplicate ID $id for day=$day slot=$slot',
+          );
           ids.add(id);
         }
       }
@@ -156,8 +159,10 @@ void main() {
 
     test('10/10 → 100%', () => expect(calcPercentage(10, 10), 100.0));
     test('0/10 → 0%', () => expect(calcPercentage(0, 10), 0.0));
-    test('0/0 → 0% (no division by zero)', () =>
-        expect(calcPercentage(0, 0), 0.0));
+    test(
+      '0/0 → 0% (no division by zero)',
+      () => expect(calcPercentage(0, 0), 0.0),
+    );
     test('1/2 → 50%', () => expect(calcPercentage(1, 2), 50.0));
     test('7/10 → 70%', () => expect(calcPercentage(7, 10), 70.0));
   });
@@ -234,8 +239,11 @@ void main() {
       );
       for (final slot in slots) {
         final weekday = slot.scheduledAt.weekday;
-        expect(weekdays.contains(weekday), true,
-            reason: 'Found weekend slot: ${slot.scheduledAt}');
+        expect(
+          weekdays.contains(weekday),
+          true,
+          reason: 'Found weekend slot: ${slot.scheduledAt}',
+        );
       }
     });
 
@@ -252,8 +260,11 @@ void main() {
       );
       for (final slot in slots) {
         final weekday = slot.scheduledAt.weekday;
-        expect(weekends.contains(weekday), true,
-            reason: 'Found weekday slot: ${slot.scheduledAt}');
+        expect(
+          weekends.contains(weekday),
+          true,
+          reason: 'Found weekday slot: ${slot.scheduledAt}',
+        );
       }
     });
 
@@ -269,15 +280,26 @@ void main() {
         random: Random(0),
       );
       for (final slot in slots) {
-        expect(slot.scheduledAt.isAfter(monday8am) ||
-               slot.scheduledAt.isAtSameMomentAs(monday8am), true,
-            reason: 'Slot in the past: ${slot.scheduledAt}');
+        expect(
+          slot.scheduledAt.isAfter(monday8am) ||
+              slot.scheduledAt.isAtSameMomentAs(monday8am),
+          true,
+          reason: 'Slot in the past: ${slot.scheduledAt}',
+        );
       }
     });
 
     test('all past slots excluded when now is late evening', () {
       // Saturday 23:50 — nearly all of today's slots should be in the past.
-      final lateNight = tz.TZDateTime(tz.local, 2026, 4, 11, 23, 50, 0); // Saturday
+      final lateNight = tz.TZDateTime(
+        tz.local,
+        2026,
+        4,
+        11,
+        23,
+        50,
+        0,
+      ); // Saturday
       final slots = NotificationScheduler.computeSlots(
         randomAnytime: false,
         startHour: 8,
@@ -289,8 +311,11 @@ void main() {
         random: Random(0),
       );
       for (final slot in slots) {
-        expect(slot.scheduledAt.isAfter(lateNight), true,
-            reason: 'Past slot not filtered: ${slot.scheduledAt}');
+        expect(
+          slot.scheduledAt.isAfter(lateNight),
+          true,
+          reason: 'Past slot not filtered: ${slot.scheduledAt}',
+        );
       }
     });
 
@@ -314,8 +339,11 @@ void main() {
       }
       for (final entry in byDay.entries) {
         final ids = entry.value;
-        expect(ids.toSet().length, ids.length,
-            reason: 'Duplicate question on ${entry.key}: $ids');
+        expect(
+          ids.toSet().length,
+          ids.length,
+          reason: 'Duplicate question on ${entry.key}: $ids',
+        );
       }
     });
 
@@ -332,10 +360,8 @@ void main() {
       );
       for (int i = 1; i < slots.length; i++) {
         expect(
-          slots[i].scheduledAt
-              .isAfter(slots[i - 1].scheduledAt) ||
-          slots[i].scheduledAt
-              .isAtSameMomentAs(slots[i - 1].scheduledAt),
+          slots[i].scheduledAt.isAfter(slots[i - 1].scheduledAt) ||
+              slots[i].scheduledAt.isAtSameMomentAs(slots[i - 1].scheduledAt),
           true,
           reason: 'Slots not sorted at index $i',
         );
@@ -398,8 +424,11 @@ void main() {
         byDay[key] = (byDay[key] ?? 0) + 1;
       }
       for (final entry in byDay.entries) {
-        expect(entry.value, lessThanOrEqualTo(freq),
-            reason: '${entry.key} has ${entry.value} slots, max is $freq');
+        expect(
+          entry.value,
+          lessThanOrEqualTo(freq),
+          reason: '${entry.key} has ${entry.value} slots, max is $freq',
+        );
       }
     });
 
@@ -416,8 +445,7 @@ void main() {
         questionIds: [1, 2, 3],
         random: Random(0),
       );
-      expect(slots, isNotEmpty,
-          reason: 'Overnight 23→2 should produce slots');
+      expect(slots, isNotEmpty, reason: 'Overnight 23→2 should produce slots');
     });
 
     test('overnight window 11PM–midnight (1h) produces slots', () {
@@ -431,11 +459,13 @@ void main() {
         questionIds: [1],
         random: Random(0),
       );
-      expect(slots, isNotEmpty,
-          reason: 'Overnight 23→0 should produce slots');
+      expect(slots, isNotEmpty, reason: 'Overnight 23→0 should produce slots');
       for (final slot in slots) {
-        expect(slot.scheduledAt.hour, 23,
-            reason: 'Single-hour overnight window: slot must be at hour 23');
+        expect(
+          slot.scheduledAt.hour,
+          23,
+          reason: 'Single-hour overnight window: slot must be at hour 23',
+        );
       }
     });
 
@@ -455,9 +485,13 @@ void main() {
           final h = slot.scheduledAt.hour;
           // Valid hours for 22→4: 22, 23, 0, 1, 2, 3
           final inWindow = h >= 22 || h < 4;
-          expect(inWindow, true,
-              reason: 'Seed $seed: hour $h outside overnight window 22→4 '
-                  '(${slot.scheduledAt})');
+          expect(
+            inWindow,
+            true,
+            reason:
+                'Seed $seed: hour $h outside overnight window 22→4 '
+                '(${slot.scheduledAt})',
+          );
         }
       }
     });
@@ -475,8 +509,11 @@ void main() {
         random: Random(0),
       );
       for (final slot in slots) {
-        expect(slot.scheduledAt.isAfter(lateNight), true,
-            reason: 'Past slot: ${slot.scheduledAt}');
+        expect(
+          slot.scheduledAt.isAfter(lateNight),
+          true,
+          reason: 'Past slot: ${slot.scheduledAt}',
+        );
       }
     });
   });

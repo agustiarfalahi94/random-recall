@@ -213,7 +213,7 @@ class _SettingsSheetState extends State<_SettingsSheet> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.sync_rounded, color: colorScheme.primary),
@@ -582,15 +582,15 @@ class _SettingsSheetState extends State<_SettingsSheet> {
           'submitted_at': FieldValue.serverTimestamp(),
         });
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.feedbackSentSnack)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.feedbackSentSnack)));
         }
       } catch (_) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.feedbackFailedSnack)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.feedbackFailedSnack)));
         }
       }
     }
@@ -608,23 +608,26 @@ class _SettingsSheetState extends State<_SettingsSheet> {
       builder: (ctx) => SimpleDialog(
         title: Text(l10n.language),
         children: [
-          RadioListTile<String>(
-            title: Text(l10n.languageEnglish),
-            value: 'en',
+          RadioGroup<String>(
             groupValue: currentLocale,
             onChanged: (v) {
-              appProvider.setLocale(const Locale('en'));
+              if (v == null) return;
+              appProvider.setLocale(Locale(v));
               Navigator.of(ctx).pop();
             },
-          ),
-          RadioListTile<String>(
-            title: Text(l10n.languageIndonesian),
-            value: 'id',
-            groupValue: currentLocale,
-            onChanged: (v) {
-              appProvider.setLocale(const Locale('id'));
-              Navigator.of(ctx).pop();
-            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: Text(l10n.languageEnglish),
+                  value: 'en',
+                ),
+                RadioListTile<String>(
+                  title: Text(l10n.languageIndonesian),
+                  value: 'id',
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -683,7 +686,6 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _checkAndShowDisplayNamePrompt(),
     );
-
   }
 
   @override
@@ -699,9 +701,12 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   Future<void> _checkAndShowDisplayNamePrompt() async {
     if (_displayNamePromptShown) return;
     final user = FirebaseAuth.instance.currentUser;
-    debugPrint('HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"');
+    debugPrint(
+      'HomeTab: Checking display name. User: ${user?.uid}, DisplayName: "${user?.displayName}"',
+    );
 
-    if (user != null && (user.displayName == null || user.displayName!.isEmpty)) {
+    if (user != null &&
+        (user.displayName == null || user.displayName!.isEmpty)) {
       _displayNamePromptShown = true;
       debugPrint('HomeTab: Showing display name setup dialog');
       // Show display name setup screen
@@ -722,10 +727,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         debugPrint('HomeTab: Widget not mounted, skipping display name dialog');
       }
     } else {
-      debugPrint('HomeTab: User has displayName set or user is null, skipping dialog');
+      debugPrint(
+        'HomeTab: User has displayName set or user is null, skipping dialog',
+      );
     }
   }
-
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -840,10 +846,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
           GestureDetector(
             onTap: () async {
               if (_unansweredCount > 0) {
+                final navigator = Navigator.of(context);
                 final questionId = await NotificationService.instance
                     .getOldestUnansweredQuestionId();
                 if (mounted) {
-                  Navigator.of(context)
+                  navigator
                       .push(
                         MaterialPageRoute(
                           builder: (_) => NotificationQuestionScreen(
@@ -866,7 +873,7 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
+                        color: colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
@@ -1004,7 +1011,10 @@ class _ChallengeModeCard extends StatelessWidget {
               ),
               if (isActive)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(20),
@@ -1057,7 +1067,9 @@ class _ChallengeModeCard extends StatelessWidget {
                 onPressed: onStopChallenge,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colorScheme.error,
-                  side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
+                  side: BorderSide(
+                    color: colorScheme.error.withValues(alpha: 0.5),
+                  ),
                   minimumSize: const Size(0, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

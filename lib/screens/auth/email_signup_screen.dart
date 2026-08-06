@@ -131,8 +131,9 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
                   prefixIcon: const Icon(Icons.email_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return l10n.validationEnterEmail;
+                  }
                   if (!RegExp(
                     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                   ).hasMatch(value)) {
@@ -165,8 +166,9 @@ class _EmailSignupScreenState extends State<EmailSignupScreen> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return l10n.validationEnterNewPassword;
+                  }
                   if (value.length < 6) return l10n.validationPasswordLength;
                   return null;
                 },

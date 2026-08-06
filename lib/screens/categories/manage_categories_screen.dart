@@ -164,7 +164,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                     }
 
                     final isPremium = snap.data?.$1 ?? false;
-                    final limit = snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
+                    final limit =
+                        snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
                     final warningThreshold = isPremium
                         ? RemoteConfigService.instance.categoryWarningThreshold
                         : limit; // Free has no warning, goes straight to red at limit
@@ -176,24 +177,29 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                     return Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: isAtLimit
                               ? colorScheme.errorContainer
                               : isWarning
-                                  ? Color.lerp(
-                                      colorScheme.surfaceContainerHigh,
-                                      colorScheme.error,
-                                      0.3,
-                                    ) // Amber-ish
-                                  : colorScheme.surfaceContainerHigh,
+                              ? Color.lerp(
+                                  colorScheme.surfaceContainerHigh,
+                                  colorScheme.error,
+                                  0.3,
+                                ) // Amber-ish
+                              : colorScheme.surfaceContainerHigh,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              isAtLimit ? Icons.lock_rounded : Icons.category_rounded,
+                              isAtLimit
+                                  ? Icons.lock_rounded
+                                  : Icons.category_rounded,
                               size: 14,
                               color: isAtLimit
                                   ? colorScheme.onErrorContainer
@@ -204,8 +210,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                               isAtLimit
                                   ? l10n.categoryLimitReached(current, limit)
                                   : isWarning
-                                      ? l10n.categoryWarning(current, limit)
-                                      : l10n.categoryCount(current, limit),
+                                  ? l10n.categoryWarning(current, limit)
+                                  : l10n.categoryCount(current, limit),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: isAtLimit
                                     ? colorScheme.onErrorContainer
@@ -229,9 +235,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
+                                const Text(
                                   '🏷️',
-                                  style: const TextStyle(fontSize: 48),
+                                  style: TextStyle(fontSize: 48),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -365,7 +371,7 @@ class _CategoryTile extends StatelessWidget {
               icon: Icon(
                 Icons.delete_outline_rounded,
                 color: hasQuestions
-                    ? colorScheme.onSurface.withOpacity(0.3)
+                    ? colorScheme.onSurface.withValues(alpha: 0.3)
                     : colorScheme.error,
               ),
               tooltip: hasQuestions
@@ -537,8 +543,9 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                 if (v == null || v.trim().isEmpty) {
                   return l10n.validationCategoryNameEmpty;
                 }
-                if (v.trim().length < 2)
+                if (v.trim().length < 2) {
                   return l10n.validationCategoryNameShort;
+                }
                 return null;
               },
             ),
@@ -553,7 +560,8 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
               ]).then((r) => (r[0] as bool, r[1] as int)),
               builder: (_, snap) {
                 final isPremium = snap.data?.$1 ?? false;
-                final limit = snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
+                final limit =
+                    snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Row(

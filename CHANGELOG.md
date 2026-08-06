@@ -5,6 +5,29 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.14] — 2026-08-06
+
+### Code Quality & Release Readiness
+- **Fixed all 69 analyzer issues** — `flutter analyze` now reports **0 issues**:
+  - Deprecated `withOpacity()` → `.withValues(alpha:)` across 11 files.
+  - Deprecated `RadioListTile.groupValue/onChanged` → `RadioGroup` ancestor (language picker).
+  - Deprecated `TextFormField.value` → `initialValue` (2 files).
+  - Deprecated RevenueCat `purchasePackage` → `purchase(PurchaseParams.package(...))`.
+  - `curly_braces_in_flow_control_structures` — braces added across 13 files.
+  - `use_build_context_synchronously` — `mounted` guards / capture-before-await across 6 files.
+  - `prefer_const_constructors` / `prefer_const_literals_to_create_immutables`.
+- **Removed dead code** — unused `_keyLastDate` field in `StreakService`; unused `streak_service.dart` import in `profile_service.dart`.
+- **Deleted stray empty files** — `android/app/auth_service.dart` and `android/app/login_screen.dart` (0-byte files accidentally placed outside `lib/`).
+- **Formatted codebase** — `dart format` applied across `lib/`; all files pass `dart format --set-exit-if-changed`.
+- **CI hardening** — `.github/workflows/flutter-build.yml` now runs plain `flutter analyze` (warnings/infos are fatal), so lint regressions block CI; release build guidance updated with `--obfuscate --split-debug-info` and `--dart-define=REVENUECAT_API_KEY`.
+- **RevenueCat key no longer in source** — `_apiKeyAndroid` is read from `String.fromEnvironment('REVENUECAT_API_KEY')` instead of a hardcoded placeholder; without the build-time define, behavior is unchanged (init skipped).
+- **Fixed 11 pre-existing test failures** — `streak_service_test.dart` now bootstraps fake `FirebasePlatform` / `FirebaseAuthPlatform` instances (no native channels needed), so challenge-mode tests run against an in-memory Firebase app. Test-only dev dependencies added: `firebase_core_platform_interface`, `firebase_auth_platform_interface`.
+
+### Notes
+- Test suite: **77/77 passing**. `flutter analyze`: 0 issues. No behavior changes — all edits are lint fixes, formatting, dead-code removal, or test-only fakes.
+
+---
+
 ## [0.13.13] — 2026-04-28
 
 ### Fixed

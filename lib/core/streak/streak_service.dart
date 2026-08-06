@@ -16,7 +16,6 @@ import '../utils/date_utils.dart' as date_utils;
 /// - Missing a day resets the streak to 1 (the current day).
 /// - Every 7-day streak milestone grants +1 bonus question for free-tier users.
 class StreakService {
-
   /// Maximum timer setting that qualifies for the streak challenge.
   /// Challenge Mode only counts for 5-10 second timers.
   /// Timers above 10s (e.g. 15s, 20s, 90s) are too relaxed to earn a streak —
@@ -24,7 +23,6 @@ class StreakService {
   static const int challengeThreshold = 10; // seconds
 
   static const _keyStreak = 'timer_streak_days';
-  static const _keyLastDate = 'timer_streak_last_date';
   static const _keyBonusQuestions = 'timer_streak_bonus_questions';
 
   // Challenge mode state constants
@@ -33,14 +31,18 @@ class StreakService {
   static const _keyChallengeModeDay = 'challenge_mode_day';
   static const _keyChallengeDuration = 'challenge_duration'; // 7 or 14
   static const _keyChallengeLockedFrequency = 'challenge_locked_frequency';
-  static const _keyChallengeLockedActiveDays = 'challenge_locked_active_days'; // csv, e.g. 1,2,3,4,5,6,7
-  static const _keyChallengeLockedRandomAnytime = 'challenge_locked_random_anytime'; // bool
-  static const _keyChallengeLockedTimerSeconds = 'challenge_locked_timer_seconds'; // int
+  static const _keyChallengeLockedActiveDays =
+      'challenge_locked_active_days'; // csv, e.g. 1,2,3,4,5,6,7
+  static const _keyChallengeLockedRandomAnytime =
+      'challenge_locked_random_anytime'; // bool
+  static const _keyChallengeLockedTimerSeconds =
+      'challenge_locked_timer_seconds'; // int
   static const _keyChallengeLastAnswerDate = 'challenge_last_answer_date';
   static const _keyTotal7DayCompleted = 'total_7day_completed';
   static const _keyTotal14DayCompleted = 'total_14day_completed';
   static const _keyChallengeBadgeUnlocked = 'challenge_badge_unlocked';
-  static const _keyHighestTitle = 'highest_title'; // Challenger, Champion, Legend
+  static const _keyHighestTitle =
+      'highest_title'; // Challenger, Champion, Legend
   static const _keyBonusCategories = 'bonus_categories'; // free-tier only
 
   // Reward constants
@@ -79,13 +81,17 @@ class StreakService {
 
   // ── Instance getters for challenge mode ─────────────────────────────────────
 
-  bool get isChallengeActive => _prefs.getBool(_keyChallengeModeActive) ?? false;
+  bool get isChallengeActive =>
+      _prefs.getBool(_keyChallengeModeActive) ?? false;
   int get challengeDay => _prefs.getInt(_keyChallengeModeDay) ?? 0;
   int get challengeDuration => _prefs.getInt(_keyChallengeDuration) ?? 7;
   int get lockedFrequency => _prefs.getInt(_keyChallengeLockedFrequency) ?? 0;
-  String? get lockedActiveDaysCsv => _prefs.getString(_keyChallengeLockedActiveDays);
-  bool? get lockedRandomAnytime => _prefs.getBool(_keyChallengeLockedRandomAnytime);
-  int get lockedTimerSeconds => _prefs.getInt(_keyChallengeLockedTimerSeconds) ?? 5;
+  String? get lockedActiveDaysCsv =>
+      _prefs.getString(_keyChallengeLockedActiveDays);
+  bool? get lockedRandomAnytime =>
+      _prefs.getBool(_keyChallengeLockedRandomAnytime);
+  int get lockedTimerSeconds =>
+      _prefs.getInt(_keyChallengeLockedTimerSeconds) ?? 5;
   int get total7DayCompleted => _prefs.getInt(_keyTotal7DayCompleted) ?? 0;
   int get total14DayCompleted => _prefs.getInt(_keyTotal14DayCompleted) ?? 0;
   bool get challengeBadgeUnlocked =>
@@ -110,23 +116,34 @@ class StreakService {
     await _prefs.setInt(_keyChallengeLockedFrequency, frequency);
     await _prefs.setInt(_keyChallengeLockedTimerSeconds, timerSeconds);
     if (lockedActiveDaysCsv != null) {
-      await _prefs.setString(_keyChallengeLockedActiveDays, lockedActiveDaysCsv);
+      await _prefs.setString(
+        _keyChallengeLockedActiveDays,
+        lockedActiveDaysCsv,
+      );
     }
     if (lockedRandomAnytime != null) {
-      await _prefs.setBool(_keyChallengeLockedRandomAnytime, lockedRandomAnytime);
+      await _prefs.setBool(
+        _keyChallengeLockedRandomAnytime,
+        lockedRandomAnytime,
+      );
     }
-    await _prefs.setString(_keyChallengeModeStartDate, DateTime.now().toIso8601String());
+    await _prefs.setString(
+      _keyChallengeModeStartDate,
+      DateTime.now().toIso8601String(),
+    );
     await _saveToFirestore();
-    AnalyticsService.instance.trackChallengeStarted(
-      duration: duration,
-      timerSeconds: timerSeconds,
-    ).ignore();
+    AnalyticsService.instance
+        .trackChallengeStarted(duration: duration, timerSeconds: timerSeconds)
+        .ignore();
   }
 
   Future<void> incrementChallengeDay() async {
     final newDay = challengeDay + 1;
     await _prefs.setInt(_keyChallengeModeDay, newDay);
-    await _prefs.setString(_keyChallengeLastAnswerDate, DateTime.now().toIso8601String());
+    await _prefs.setString(
+      _keyChallengeLastAnswerDate,
+      DateTime.now().toIso8601String(),
+    );
     await _saveToFirestore();
   }
 
@@ -205,7 +222,9 @@ class StreakService {
     }
 
     await resetChallenge(); // resetChallenge() calls _saveToFirestore()
-    AnalyticsService.instance.trackChallengeCompleted(duration: duration).ignore();
+    AnalyticsService.instance
+        .trackChallengeCompleted(duration: duration)
+        .ignore();
 
     return ChallengeCompletion(
       duration: duration,
@@ -230,12 +249,15 @@ class StreakService {
   Future<void> failChallenge() async {
     if (isChallengeActive) {
       final dayReached = challengeDay;
-      final durationDays = challengeDuration; // capture before resetChallenge() removes the key
+      final durationDays =
+          challengeDuration; // capture before resetChallenge() removes the key
       await resetChallenge(); // resets streak to 0 and calls _saveToFirestore() internally
-      AnalyticsService.instance.trackChallengeFailed(
-        dayReached: dayReached,
-        durationDays: durationDays,
-      ).ignore();
+      AnalyticsService.instance
+          .trackChallengeFailed(
+            dayReached: dayReached,
+            durationDays: durationDays,
+          )
+          .ignore();
     }
   }
 
@@ -266,12 +288,16 @@ class StreakService {
     required bool isPremiumUser,
   }) async {
     if (!isChallengeActive) {
-      return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.noChallenge);
+      return const ChallengeAnswerResult(
+        outcome: ChallengeAnswerOutcome.noChallenge,
+      );
     }
 
     if (!isCorrect) {
       await failChallenge();
-      return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.failed);
+      return const ChallengeAnswerResult(
+        outcome: ChallengeAnswerOutcome.failed,
+      );
     }
 
     final now = DateTime.now();
@@ -283,9 +309,14 @@ class StreakService {
     // day stays at 1 after the first answer, then 6 increments reach 7, then
     // the 8th-day check sees 7 >= 7 and completes.
     if (lastAnswerDateStr == null) {
-      await _prefs.setString(_keyChallengeLastAnswerDate, now.toIso8601String());
+      await _prefs.setString(
+        _keyChallengeLastAnswerDate,
+        now.toIso8601String(),
+      );
       await incrementChallengeDay();
-      return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.progressed);
+      return const ChallengeAnswerResult(
+        outcome: ChallengeAnswerOutcome.progressed,
+      );
     }
 
     final lastKey = _dateKey(DateTime.parse(lastAnswerDateStr));
@@ -308,7 +339,9 @@ class StreakService {
     }
 
     await incrementChallengeDay();
-    return const ChallengeAnswerResult(outcome: ChallengeAnswerOutcome.progressed);
+    return const ChallengeAnswerResult(
+      outcome: ChallengeAnswerOutcome.progressed,
+    );
   }
 
   // ── Firestore persistence ───────────────────────────────────────────────────
@@ -323,33 +356,30 @@ class StreakService {
           .doc(userId)
           .collection('private')
           .doc('streakData')
-          .set(
-            {
-              'challenge': {
-                'active': isChallengeActive,
-                'day': challengeDay,
-                'duration': challengeDuration,
-                'locked_frequency': lockedFrequency,
-                'locked_active_days': lockedActiveDaysCsv,
-                'locked_random_anytime': lockedRandomAnytime,
-                'locked_timer_seconds': lockedTimerSeconds,
-                'start_date': _prefs.getString(_keyChallengeModeStartDate),
-                'last_answer_date': _prefs.getString(_keyChallengeLastAnswerDate),
-              },
-              'streak': {
-                'total_7day_completed': total7DayCompleted,
-                'total_14day_completed': total14DayCompleted,
-              },
-              'rewards': {
-                'bonus_questions': bonusQuestions,
-                'bonus_categories': bonusCategories,
-                'challenge_badge_unlocked': challengeBadgeUnlocked,
-                'highest_title': highestTitle,
-              },
-              'updatedAt': FieldValue.serverTimestamp(),
+          .set({
+            'challenge': {
+              'active': isChallengeActive,
+              'day': challengeDay,
+              'duration': challengeDuration,
+              'locked_frequency': lockedFrequency,
+              'locked_active_days': lockedActiveDaysCsv,
+              'locked_random_anytime': lockedRandomAnytime,
+              'locked_timer_seconds': lockedTimerSeconds,
+              'start_date': _prefs.getString(_keyChallengeModeStartDate),
+              'last_answer_date': _prefs.getString(_keyChallengeLastAnswerDate),
             },
-            SetOptions(merge: true),
-          );
+            'streak': {
+              'total_7day_completed': total7DayCompleted,
+              'total_14day_completed': total14DayCompleted,
+            },
+            'rewards': {
+              'bonus_questions': bonusQuestions,
+              'bonus_categories': bonusCategories,
+              'challenge_badge_unlocked': challengeBadgeUnlocked,
+              'highest_title': highestTitle,
+            },
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error saving streak data to Firestore: $e');
     }
@@ -381,16 +411,29 @@ class StreakService {
 
           await _prefs.setBool(_keyChallengeModeActive, active);
           await _prefs.setInt(_keyChallengeModeDay, challenge['day'] ?? 0);
-          await _prefs.setInt(_keyChallengeDuration, challenge['duration'] ?? 7);
+          await _prefs.setInt(
+            _keyChallengeDuration,
+            challenge['duration'] ?? 7,
+          );
           await _prefs.setInt(_keyChallengeLockedFrequency, freq);
           await _prefs.setInt(_keyChallengeLockedTimerSeconds, timer);
-          if (daysCsv != null) await _prefs.setString(_keyChallengeLockedActiveDays, daysCsv);
-          if (anytime != null) await _prefs.setBool(_keyChallengeLockedRandomAnytime, anytime);
+          if (daysCsv != null) {
+            await _prefs.setString(_keyChallengeLockedActiveDays, daysCsv);
+          }
+          if (anytime != null) {
+            await _prefs.setBool(_keyChallengeLockedRandomAnytime, anytime);
+          }
           if (challenge['start_date'] != null) {
-            await _prefs.setString(_keyChallengeModeStartDate, challenge['start_date']);
+            await _prefs.setString(
+              _keyChallengeModeStartDate,
+              challenge['start_date'],
+            );
           }
           if (challenge['last_answer_date'] != null) {
-            await _prefs.setString(_keyChallengeLastAnswerDate, challenge['last_answer_date']);
+            await _prefs.setString(
+              _keyChallengeLastAnswerDate,
+              challenge['last_answer_date'],
+            );
           }
 
           // Re-apply locked notification settings to SharedPreferences so
@@ -398,8 +441,12 @@ class StreakService {
           if (active && freq > 0) {
             await _prefs.setInt('notif_frequency', freq);
             await _prefs.setInt('notif_timer_seconds', timer);
-            if (daysCsv != null) await _prefs.setString('notif_active_days', daysCsv);
-            if (anytime != null) await _prefs.setBool('notif_random_anytime', anytime);
+            if (daysCsv != null) {
+              await _prefs.setString('notif_active_days', daysCsv);
+            }
+            if (anytime != null) {
+              await _prefs.setBool('notif_random_anytime', anytime);
+            }
           }
         }
 
@@ -407,9 +454,18 @@ class StreakService {
         if (data['rewards'] != null) {
           final rewards = data['rewards'];
           // Restore both question and category bonuses
-          await _prefs.setInt(_keyBonusQuestions, rewards['bonus_questions'] ?? 0);
-          await _prefs.setInt(_keyBonusCategories, rewards['bonus_categories'] ?? 0);
-          await _prefs.setBool(_keyChallengeBadgeUnlocked, rewards['challenge_badge_unlocked'] ?? false);
+          await _prefs.setInt(
+            _keyBonusQuestions,
+            rewards['bonus_questions'] ?? 0,
+          );
+          await _prefs.setInt(
+            _keyBonusCategories,
+            rewards['bonus_categories'] ?? 0,
+          );
+          await _prefs.setBool(
+            _keyChallengeBadgeUnlocked,
+            rewards['challenge_badge_unlocked'] ?? false,
+          );
           if (rewards['highest_title'] != null) {
             await _prefs.setString(_keyHighestTitle, rewards['highest_title']);
           }
@@ -422,13 +478,18 @@ class StreakService {
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
-
   // ── Helper ─────────────────────────────────────────────────────────────────
 
   static String _dateKey(DateTime d) => date_utils.dateKey(d);
 }
 
-enum ChallengeAnswerOutcome { noChallenge, alreadyCompletedToday, progressed, completed, failed }
+enum ChallengeAnswerOutcome {
+  noChallenge,
+  alreadyCompletedToday,
+  progressed,
+  completed,
+  failed,
+}
 
 class ChallengeAnswerResult {
   final ChallengeAnswerOutcome outcome;

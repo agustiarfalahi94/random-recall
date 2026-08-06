@@ -214,7 +214,10 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
 
     // Determine pill color: red at limit, amber at warning for premium
     final isAtLimit = _totalQuestionCount >= _questionLimit;
-    final isAtWarning = _isPremium && _totalQuestionCount >= RemoteConfigService.instance.questionWarningThreshold;
+    final isAtWarning =
+        _isPremium &&
+        _totalQuestionCount >=
+            RemoteConfigService.instance.questionWarningThreshold;
     final pillIsError = isAtLimit;
     final pillIsWarning = isAtWarning && !isAtLimit;
 
@@ -236,8 +239,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                       color: pillIsError
                           ? colorScheme.errorContainer
                           : pillIsWarning
-                              ? colorScheme.tertiaryContainer
-                              : colorScheme.surfaceContainerHigh,
+                          ? colorScheme.tertiaryContainer
+                          : colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -251,8 +254,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                           color: pillIsError
                               ? colorScheme.onErrorContainer
                               : pillIsWarning
-                                  ? colorScheme.onTertiaryContainer
-                                  : colorScheme.onSurfaceVariant,
+                              ? colorScheme.onTertiaryContainer
+                              : colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 5),
                         Text(
@@ -262,20 +265,20 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                                   _questionLimit,
                                 )
                               : pillIsWarning
-                                  ? l10n.questionWarning(
-                                      _totalQuestionCount,
-                                      _questionLimit,
-                                    )
-                                  : l10n.questionCount(
-                                      _totalQuestionCount,
-                                      _questionLimit,
-                                    ),
+                              ? l10n.questionWarning(
+                                  _totalQuestionCount,
+                                  _questionLimit,
+                                )
+                              : l10n.questionCount(
+                                  _totalQuestionCount,
+                                  _questionLimit,
+                                ),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: pillIsError
                                 ? colorScheme.onErrorContainer
                                 : pillIsWarning
-                                    ? colorScheme.onTertiaryContainer
-                                    : colorScheme.onSurfaceVariant,
+                                ? colorScheme.onTertiaryContainer
+                                : colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -473,7 +476,7 @@ class _AddMenuTile extends StatelessWidget {
           color: colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: colorScheme.outlineVariant.withOpacity(0.4),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
           ),
         ),
         child: Row(

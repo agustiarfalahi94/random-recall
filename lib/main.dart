@@ -153,8 +153,7 @@ Future<void> main() async {
       await NotificationService.instance.handleNotificationLaunch();
 
       final prefs = await SharedPreferences.getInstance();
-      final onboardingComplete =
-          prefs.getBool('onboarding_complete') ?? false;
+      final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
 
       // Reload user on startup safely
       final currentUser = AuthService.instance.currentUser;
@@ -173,8 +172,8 @@ Future<void> main() async {
 
       final user = AuthService.instance.currentUser;
 
-      final isVerified = user != null &&
-          (user.emailVerified || user.phoneNumber != null);
+      final isVerified =
+          user != null && (user.emailVerified || user.phoneNumber != null);
       if (onboardingComplete && isVerified) {
         SyncService.instance.performRestore().ignore();
         await registerNotificationWorker().catchError(
@@ -257,7 +256,7 @@ class _RandomRecallAppState extends State<RandomRecallApp>
             title: 'Random Recall',
             debugShowCheckedModeBanner: false,
             navigatorKey: navigatorKey,
-            navigatorObservers: [],
+            navigatorObservers: const [],
             locale: locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -375,7 +374,9 @@ class _RandomRecallAppState extends State<RandomRecallApp>
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colorScheme.outlineVariant.withOpacity(0.5)),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
     );
@@ -414,8 +415,8 @@ class _HomeGateState extends State<_HomeGate> {
       debugPrint(
         'HomeGate: user=${user?.uid}, emailVerified=${user?.emailVerified}',
       );
-      final isVerified = user != null &&
-          (user.emailVerified || user.phoneNumber != null);
+      final isVerified =
+          user != null && (user.emailVerified || user.phoneNumber != null);
       if (isVerified) {
         debugPrint('HomeGate: Checking cloud for existing user data...');
         try {
@@ -555,8 +556,9 @@ class _AdBannerWrapper extends StatelessWidget {
         // When keyboard is up the keyboard already covers the banner, so we
         // don't add extra bottom padding (avoids double-compressing content).
         final bannerHeight = AdService.instance.bannerHeight;
-        final bottomPad =
-            (bannerVisible && !keyboardVisible) ? bannerHeight : 0.0;
+        final bottomPad = (bannerVisible && !keyboardVisible)
+            ? bannerHeight
+            : 0.0;
 
         return Stack(
           children: [

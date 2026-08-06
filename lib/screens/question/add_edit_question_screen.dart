@@ -183,7 +183,7 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int>(
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       decoration: InputDecoration(
                         hintText: l10n.selectCategory,
                       ),

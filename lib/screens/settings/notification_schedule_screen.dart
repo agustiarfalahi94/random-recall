@@ -122,15 +122,23 @@ class _NotificationScheduleScreenState
     final prefs = await SharedPreferences.getInstance();
     final daysStr = prefs.getString('notif_active_days') ?? '1,2,3,4,5,6,7';
     final loadedRandomAnytime = prefs.getBool('notif_random_anytime') ?? true;
-    final loadedStartTime = TimeOfDay(hour: prefs.getInt('notif_start_hour') ?? 8, minute: 0);
-    final loadedEndTime = TimeOfDay(hour: prefs.getInt('notif_end_hour') ?? 20, minute: 0);
+    final loadedStartTime = TimeOfDay(
+      hour: prefs.getInt('notif_start_hour') ?? 8,
+      minute: 0,
+    );
+    final loadedEndTime = TimeOfDay(
+      hour: prefs.getInt('notif_end_hour') ?? 20,
+      minute: 0,
+    );
     final loadedFrequency = (prefs.getInt('notif_frequency') ?? 3).clamp(1, 10);
     final loadedActiveDays = daysStr
         .split(',')
         .map(int.tryParse)
         .whereType<int>()
         .toSet();
-    if (loadedActiveDays.isEmpty) loadedActiveDays.addAll({1, 2, 3, 4, 5, 6, 7});
+    if (loadedActiveDays.isEmpty) {
+      loadedActiveDays.addAll({1, 2, 3, 4, 5, 6, 7});
+    }
     final loadedTimerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
 
     setState(() {
@@ -200,7 +208,8 @@ class _NotificationScheduleScreenState
     final isChallengeActive = StreakService.instance.isChallengeActive;
 
     // Challenge setup: timer must be 5 or 10 seconds only.
-    if (widget.isStartingChallenge && (_timerSeconds != 5 && _timerSeconds != 10)) {
+    if (widget.isStartingChallenge &&
+        (_timerSeconds != 5 && _timerSeconds != 10)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.challengeTimerRequirementSnack),
@@ -331,43 +340,50 @@ class _NotificationScheduleScreenState
     final d = widget.challengeDuration;
 
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.challengeConfirmTitle(d)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.challengeConfirmRequirementsTitle),
-              const SizedBox(height: 8),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementAnswers),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementTimer(_timerSeconds)),
-              _buildRequirementBullet(l10n.challengeConfirmRequirementDays(d)),
-              const SizedBox(height: 12),
-              Text(
-                l10n.challengeConfirmFooter,
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Colors.grey.shade600,
-                ),
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.challengeConfirmTitle(d)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.challengeConfirmRequirementsTitle),
+                  const SizedBox(height: 8),
+                  _buildRequirementBullet(
+                    l10n.challengeConfirmRequirementAnswers,
+                  ),
+                  _buildRequirementBullet(
+                    l10n.challengeConfirmRequirementTimer(_timerSeconds),
+                  ),
+                  _buildRequirementBullet(
+                    l10n.challengeConfirmRequirementDays(d),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.challengeConfirmFooter,
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.challengeWarningStart),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.challengeWarningStart),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
   }
 
   Widget _buildRequirementBullet(String text) {
@@ -400,7 +416,10 @@ class _NotificationScheduleScreenState
         _startTime = picked;
         // Auto-set end time to start + 1 hour, preserving the picked minutes.
         // e.g. start = 2:30 PM → end = 3:30 PM (not 3:00 PM).
-        _endTime = TimeOfDay(hour: (picked.hour + 1) % 24, minute: picked.minute);
+        _endTime = TimeOfDay(
+          hour: (picked.hour + 1) % 24,
+          minute: picked.minute,
+        );
       } else {
         _endTime = picked;
       }
@@ -549,7 +568,8 @@ class _NotificationScheduleScreenState
                             label: '$_timerSeconds${l10n.secondsUnit}',
                             onChanged: challengeActive
                                 ? null
-                                : (v) => setState(() => _timerSeconds = v.round()),
+                                : (v) =>
+                                      setState(() => _timerSeconds = v.round()),
                           ),
                         )
                       else
@@ -568,7 +588,9 @@ class _NotificationScheduleScreenState
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            (challengeActive || widget.isStartingChallenge) ? '5${l10n.secondsUnit}' : l10n.off,
+                            (challengeActive || widget.isStartingChallenge)
+                                ? '5${l10n.secondsUnit}'
+                                : l10n.off,
                             style: TextStyle(
                               fontSize: 11,
                               color: colorScheme.onSurfaceVariant,
@@ -607,7 +629,9 @@ class _NotificationScheduleScreenState
                             contentPadding: EdgeInsets.zero,
                             title: Text(
                               l10n.sendAtAnyTime,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             subtitle: Text(
                               l10n.sendAtAnyTimeSubtitle,
@@ -617,14 +641,17 @@ class _NotificationScheduleScreenState
                               ),
                             ),
                             value: effectiveAnytime,
-                            onChanged: (v) => setState(() => _randomAnytime = v),
+                            onChanged: (v) =>
+                                setState(() => _randomAnytime = v),
                           ),
                         ),
                       ),
 
                       Divider(
                         height: 1,
-                        color: colorScheme.outlineVariant.withOpacity(0.4),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
 
                       // Start time — always visible, dimmed when anytime is on
@@ -663,7 +690,9 @@ class _NotificationScheduleScreenState
 
                       Divider(
                         height: 1,
-                        color: colorScheme.outlineVariant.withOpacity(0.4),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
 
                       // End time — always visible, dimmed when anytime is on
@@ -759,9 +788,12 @@ class _NotificationScheduleScreenState
                         Opacity(
                           opacity: 0.5,
                           child: Slider(
-                            value: StreakService.instance.lockedFrequency.toDouble(),
-                            min: StreakService.instance.lockedFrequency.toDouble(),
-                            max: StreakService.instance.lockedFrequency.toDouble(),
+                            value: StreakService.instance.lockedFrequency
+                                .toDouble(),
+                            min: StreakService.instance.lockedFrequency
+                                .toDouble(),
+                            max: StreakService.instance.lockedFrequency
+                                .toDouble(),
                             divisions: 1,
                             label: '${StreakService.instance.lockedFrequency}',
                             onChanged: null,
@@ -839,8 +871,9 @@ class _NotificationScheduleScreenState
                                       _activeDays.length == 5 &&
                                       _activeDays.every((d) => d <= 5),
                                   colorScheme: colorScheme,
-                                  onTap: () =>
-                                      setState(() => _activeDays = {1, 2, 3, 4, 5}),
+                                  onTap: () => setState(
+                                    () => _activeDays = {1, 2, 3, 4, 5},
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -852,7 +885,8 @@ class _NotificationScheduleScreenState
                                       _activeDays.contains(6) &&
                                       _activeDays.contains(7),
                                   colorScheme: colorScheme,
-                                  onTap: () => setState(() => _activeDays = {6, 7}),
+                                  onTap: () =>
+                                      setState(() => _activeDays = {6, 7}),
                                 ),
                               ),
                             ],
@@ -930,15 +964,15 @@ class _NotificationScheduleScreenState
             onPressed: (_isLoading || _isSaving)
                 ? null
                 : _hasChanges
-                    ? _save
-                    : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.noSettingsChanged),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
+                ? _save
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.noSettingsChanged),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
             icon: _isSaving
                 ? const SizedBox(
                     width: 18,
@@ -950,28 +984,33 @@ class _NotificationScheduleScreenState
                   )
                 : const Icon(Icons.check_rounded),
             label: Text(_isSaving ? l10n.saving : l10n.saveSchedule),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              disabledBackgroundColor: null, // keep default disabled style
-            ).copyWith(
-              backgroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.disabled)) return null;
-                if (!_hasChanges) {
-                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
-                }
-                return null; // use default filled colour
-              }),
-              foregroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.disabled)) return null;
-                if (!_hasChanges) {
-                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
-                }
-                return null;
-              }),
-            ),
+            style:
+                FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  disabledBackgroundColor: null, // keep default disabled style
+                ).copyWith(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.disabled)) return null;
+                    if (!_hasChanges) {
+                      return Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.12);
+                    }
+                    return null; // use default filled colour
+                  }),
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.disabled)) return null;
+                    if (!_hasChanges) {
+                      return Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.38);
+                    }
+                    return null;
+                  }),
+                ),
           ),
         ),
       ),
@@ -1000,7 +1039,11 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _SettingCard extends StatelessWidget {
-  const _SettingCard({super.key, required this.colorScheme, required this.child});
+  const _SettingCard({
+    super.key,
+    required this.colorScheme,
+    required this.child,
+  });
   final ColorScheme colorScheme;
   final Widget child;
 
@@ -1011,7 +1054,9 @@ class _SettingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       child: child,
     );

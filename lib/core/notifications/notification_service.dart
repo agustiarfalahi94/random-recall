@@ -83,8 +83,9 @@ class NotificationService {
     if (!_listenerRegistered) {
       _listenerRegistered = true;
       DatabaseHelper.instance.onDatabaseUpdated.listen((_) {
-        if (_scheduleDebounceTimer?.isActive ?? false)
+        if (_scheduleDebounceTimer?.isActive ?? false) {
           _scheduleDebounceTimer!.cancel();
+        }
         _scheduleDebounceTimer = Timer(const Duration(seconds: 5), () async {
           final prefs = await SharedPreferences.getInstance();
           final lastCount = prefs.getInt('last_known_question_count') ?? 0;

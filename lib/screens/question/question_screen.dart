@@ -336,7 +336,10 @@ class _QuestionScreenState extends State<QuestionScreen>
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.tertiaryContainer,
                   borderRadius: BorderRadius.circular(20),
@@ -564,4 +567,3 @@ class _QuestionScreenState extends State<QuestionScreen>
     );
   }
 }
-

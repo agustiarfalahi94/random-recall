@@ -40,6 +40,29 @@ This GitHub Actions workflow automates testing and building for Random Recall. *
 
 ---
 
+## Code Quality Baseline (2026-08-06)
+
+A full release-readiness audit was performed. Before this pass the analyzer reported **69 issues**; after it, **`flutter analyze` reports 0 issues** and the whole `lib/` tree passes `dart format --set-exit-if-changed`.
+
+### What changed
+
+1. **Analyzer is now strict in CI** — the workflow runs plain `flutter analyze` (warnings AND infos are fatal). A lint regression now blocks the merge instead of being silently ignored. This prevents the 69 issues from coming back.
+2. **All deprecated API usage migrated** (Flutter 3.41.x): `withOpacity` → `withValues(alpha:)`, `RadioListTile.groupValue/onChanged` → `RadioGroup`, `TextFormField.value` → `initialValue`, RevenueCat `purchasePackage` → `purchase(PurchaseParams.package(...))`.
+3. **Async context safety** — every `use_build_context_synchronously` finding fixed with `mounted` guards or capture-before-await (prevents crashes from using a disposed BuildContext after `await`).
+4. **Dead code removed** — unused `_keyLastDate` constant and an unused import.
+5. **Stray files deleted** — `android/app/auth_service.dart` and `android/app/login_screen.dart` (0-byte files accidentally placed outside `lib/`; they would be packaged into release builds).
+6. **Release build guidance** — the commented Play Store deploy step now recommends `flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info` (R8 minification + `proguard-rules.pro` are already active in `android/app/build.gradle.kts`).
+
+### Test suite fixed (was: known test gap)
+
+`test/core/streak/streak_service_test.dart` had 11 failing tests because the test environment never called `Firebase.initializeApp()` — `StreakService.startChallenge` touches the `AnalyticsService` singleton which requires a Firebase app. **Resolved 2026-08-06**: the test now installs minimal in-memory fakes for `FirebasePlatform` and `FirebaseAuthPlatform` (via `firebase_core_platform_interface` + `firebase_auth_platform_interface`, added as dev-only dependencies) so Firebase singletons resolve without native channels. Test suite is now **77/77 passing**.
+
+### RevenueCat API key
+
+The Android RevenueCat key is no longer hardcoded in `subscription_service.dart`. It is read from `--dart-define=REVENUECAT_API_KEY=...` at build time; without it (or with a placeholder), RevenueCat init is skipped exactly as before. When deploying, add the key as a GitHub secret and pass it in the release build step (see `.github/workflows/flutter-build.yml`).
+
+---
+
 ## Current Workflow Branches
 
 ```

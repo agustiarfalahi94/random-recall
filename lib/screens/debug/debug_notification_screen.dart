@@ -79,10 +79,10 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     try {
                       await NotificationService.instance.sendTestNotification();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text(
                             'Test alarm set for 1 second from now! 🔔',
@@ -90,8 +90,7 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                         ),
                       );
                     } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(
                           content: Text('Failed: $e'),
                           backgroundColor: Colors.red,
@@ -106,17 +105,14 @@ class _DebugNotificationScreenState extends State<DebugNotificationScreen> {
                 _buildSectionHeader('Challenge Testing'),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     try {
                       await StreakService.instance.resetChallenge();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Challenge state reset!'),
-                        ),
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Challenge state reset!')),
                       );
                     } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(
                           content: Text('Failed to reset: $e'),
                           backgroundColor: Colors.red,

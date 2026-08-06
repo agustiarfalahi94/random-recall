@@ -7,7 +7,8 @@ import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:random_recall/services/display_name_service.dart';
 
 class DisplayNameSetupScreen extends StatefulWidget {
-  final bool canDismiss; // false for new users (can't skip), true for existing users (optional)
+  final bool
+  canDismiss; // false for new users (can't skip), true for existing users (optional)
   final VoidCallback? onComplete;
 
   const DisplayNameSetupScreen({
@@ -35,7 +36,8 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
     setState(() {
       final l10n = AppLocalizations.of(context)!;
 
-      if (value.trim().isEmpty) {  // Changed from isWhitespaceOnly()
+      if (value.trim().isEmpty) {
+        // Changed from isWhitespaceOnly()
         _errorMessage = l10n.displayNameEmpty;
       } else if (!DisplayNameService.isValidCharacters(value)) {
         _errorMessage = l10n.displayNameInvalidCharacters;
@@ -82,13 +84,10 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
         await user.updateDisplayName(name);
 
         // Verify save to Firestore
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .set(
-              {'name': name, 'updatedAt': FieldValue.serverTimestamp()},
-              SetOptions(merge: true),
-            );
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'name': name,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       } catch (firestoreError) {
         // Firestore write failed - revert Auth changes if possible
         await user.reload(); // Refresh user data from server
@@ -141,7 +140,9 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
                 Text(
                   l10n.displayNameMaxLength,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.7,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -154,8 +155,10 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
                     hintText: l10n.displayNameInputHint,
                     border: const OutlineInputBorder(),
                     errorText: _errorMessage,
-                    counterText: '${_controller.text.length}/${DisplayNameService.maxLength}',
-                    suffixIcon: _errorMessage == null && _controller.text.isNotEmpty
+                    counterText:
+                        '${_controller.text.length}/${DisplayNameService.maxLength}',
+                    suffixIcon:
+                        _errorMessage == null && _controller.text.isNotEmpty
                         ? const Icon(Icons.check_circle, color: Colors.green)
                         : null,
                   ),
@@ -166,7 +169,9 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
                     if (widget.canDismiss)
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: _isLoading ? null : () => Navigator.pop(context),
+                          onPressed: _isLoading
+                              ? null
+                              : () => Navigator.pop(context),
                           child: Text(l10n.displayNameCancel),
                         ),
                       ),
@@ -178,7 +183,9 @@ class _DisplayNameSetupScreenState extends State<DisplayNameSetupScreen> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(l10n.displayNameSubmit),
                       ),

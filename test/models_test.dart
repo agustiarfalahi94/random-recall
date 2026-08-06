@@ -48,7 +48,7 @@ void main() {
       final updated = original.copyWith(name: 'Study');
       expect(updated.name, 'Study');
       expect(updated.icon, '💼'); // unchanged
-      expect(updated.id, 1);     // unchanged
+      expect(updated.id, 1); // unchanged
     });
   });
 
@@ -107,7 +107,7 @@ void main() {
       final updated = original.copyWith(question: 'New question');
       expect(updated.question, 'New question');
       expect(updated.answer, 'Old answer'); // unchanged
-      expect(updated.categoryId, 2);        // unchanged
+      expect(updated.categoryId, 2); // unchanged
     });
   });
 

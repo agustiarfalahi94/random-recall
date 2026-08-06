@@ -209,14 +209,17 @@ class _OverallScoreCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withValues(alpha: 0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -235,7 +238,7 @@ class _OverallScoreCard extends StatelessWidget {
                   Text(
                     l10n.analyticsOverallScore,
                     style: TextStyle(
-                      color: colorScheme.onPrimary.withOpacity(0.8),
+                      color: colorScheme.onPrimary.withValues(alpha: 0.8),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -273,7 +276,7 @@ class _OverallScoreCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: percentage / 100,
-              backgroundColor: colorScheme.onPrimary.withOpacity(0.2),
+              backgroundColor: colorScheme.onPrimary.withValues(alpha: 0.2),
               valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
               minHeight: 8,
             ),
@@ -324,7 +327,7 @@ class _StatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.onPrimary.withOpacity(0.15),
+        color: colorScheme.onPrimary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -340,7 +343,7 @@ class _StatPill extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: colorScheme.onPrimary.withOpacity(0.8),
+              color: colorScheme.onPrimary.withValues(alpha: 0.8),
               fontSize: 11,
             ),
           ),
@@ -386,7 +389,9 @@ class _CategoryScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.4)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,7 +559,7 @@ class _LockedCategorySection extends StatelessWidget {
             color: colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.5),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
           ),
           child: Column(
@@ -624,7 +629,9 @@ class _LockedCategorySection extends StatelessWidget {
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                  child: Container(color: colorScheme.surface.withOpacity(0.5)),
+                  child: Container(
+                    color: colorScheme.surface.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
             ],

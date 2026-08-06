@@ -129,10 +129,12 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                   hintText: l10n.questionHintOnboarding,
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty)
+                  if (value == null || value.trim().isEmpty) {
                     return l10n.validationEnterQuestion;
-                  if (value.trim().length < 5)
+                  }
+                  if (value.trim().length < 5) {
                     return l10n.validationQuestionTooShort;
+                  }
                   return null;
                 },
               ),
@@ -150,8 +152,9 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                   hintText: l10n.answerHintOnboarding,
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty)
+                  if (value == null || value.trim().isEmpty) {
                     return l10n.validationEnterAnswer;
+                  }
                   return null;
                 },
               ),
@@ -177,7 +180,7 @@ class _FirstQuestionPageState extends State<FirstQuestionPage>
                 )
               else
                 DropdownButtonFormField<int>(
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   decoration: InputDecoration(hintText: l10n.selectCategory),
                   borderRadius: BorderRadius.circular(12),
                   items: _categories

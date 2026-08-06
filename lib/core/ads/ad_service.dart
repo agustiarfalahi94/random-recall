@@ -153,7 +153,9 @@ class AdService {
     _checkDailyReset();
     if (_adsShownToday >= _maxAdsPerDay) return false;
     if (_lastAdTime != null &&
-        DateTime.now().difference(_lastAdTime!) < _minAdGap) return false;
+        DateTime.now().difference(_lastAdTime!) < _minAdGap) {
+      return false;
+    }
     return true;
   }
 
@@ -209,7 +211,9 @@ class AdService {
     } else {
       _adsShownToday = 0;
     }
-    debugPrint('AdService: loaded — adsToday=$_adsShownToday, lastAd=$_lastAdTime');
+    debugPrint(
+      'AdService: loaded — adsToday=$_adsShownToday, lastAd=$_lastAdTime',
+    );
   }
 
   Future<void> _saveFrequencyState() async {
@@ -218,7 +222,9 @@ class AdService {
     await prefs.setInt('ad_count_today', _adsShownToday);
     if (_lastAdTime != null) {
       await prefs.setInt(
-          'ad_last_time_ms', _lastAdTime!.millisecondsSinceEpoch);
+        'ad_last_time_ms',
+        _lastAdTime!.millisecondsSinceEpoch,
+      );
     }
   }
 

@@ -63,7 +63,7 @@ class _WelcomePageState extends State<WelcomePage>
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.25),
+                        color: colorScheme.primary.withValues(alpha: 0.25),
                         blurRadius: 24,
                         offset: const Offset(0, 8),
                       ),
@@ -165,7 +165,7 @@ class _FeatureChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withOpacity(0.6),
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

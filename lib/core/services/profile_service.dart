@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
-import '../streak/streak_service.dart';
 
 class ProfileService {
   static final ProfileService _instance = ProfileService._internal();
@@ -181,17 +180,25 @@ class ProfileService {
       // avoid triggering _saveToFirestore() on the already-deleted Firestore doc.
       final prefs = await SharedPreferences.getInstance();
       for (final key in const [
-        'challenge_mode_active', 'challenge_mode_start_date',
-        'challenge_mode_day', 'challenge_duration',
-        'challenge_locked_frequency', 'challenge_locked_active_days',
-        'challenge_locked_random_anytime', 'challenge_locked_timer_seconds',
+        'challenge_mode_active',
+        'challenge_mode_start_date',
+        'challenge_mode_day',
+        'challenge_duration',
+        'challenge_locked_frequency',
+        'challenge_locked_active_days',
+        'challenge_locked_random_anytime',
+        'challenge_locked_timer_seconds',
         'challenge_last_answer_date',
-        'total_7day_completed', 'total_14day_completed',
-        'challenge_badge_unlocked', 'highest_title',
+        'total_7day_completed',
+        'total_14day_completed',
+        'challenge_badge_unlocked',
+        'highest_title',
         'onboarding_complete',
-        'timer_streak_days', 'timer_streak_last_date',
+        'timer_streak_days',
+        'timer_streak_last_date',
         'timer_streak_bonus_questions',
-        'is_premium', 'bonus_categories',
+        'is_premium',
+        'bonus_categories',
         'notif_schedule_mirror',
       ]) {
         await prefs.remove(key);
