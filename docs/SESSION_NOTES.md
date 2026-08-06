@@ -31,6 +31,8 @@
 | 0.13.17 | Google Sign-In fix (serverClientId + account linking), deferred AdMob init (cold start) |
 | 0.13.18 | Black launch screen fix (v31 theme variants), shared CI debug keystore (upgradeable test APKs) |
 
+**Current work (unreleased, on `develop`):** Sync & stability batch — tombstone-based deletes (`sync_deletions` table, schema v5), chunked ≤450-op backup (fixes the Firestore 500-op write cap) with tombstone-first writes + 30-day cloud score prune, paginated tombstone-aware restore (`_fetchAllDocs`, 500-doc pages, drops orphaned scores) + the `dataFound` fix (categories/scores-only users no longer pushed back to onboarding), `AuthService.isVerifiedUser` consolidation, random-OFFSET question query, root detection off the first frame. Tests: **105/105**. Version NOT bumped (still `0.13.18+49`) — changelog entry is under `[Unreleased]`.
+
 Branches: `develop` & `main` in sync. Working tree should be clean after commits.
 
 ## 4. Google Sign-In (v7) — critical knowledge
@@ -77,7 +79,8 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 - `lib/core/auth/auth_service.dart` — AuthService, AccountExistsException, Google v7 flow.
 - `lib/core/notifications/notification_service.dart` — scheduling (named-param API of v22), channel migration, mirror log, badge logic.
 - `lib/core/notifications/notification_scheduler.dart` — pure slot computation (heavily unit-tested).
-- `lib/core/sync/sync_service.dart` — Firestore backup/restore; device-claim write historically hit permission-denied when rules weren't deployed.
+- `lib/core/database/database_helper.dart` — schema v5 + `sync_deletions` tombstone journal table (categories/questions deleted locally get a journal row; the next backup deletes those cloud docs).
+- `lib/core/sync/sync_service.dart` — Firestore backup/restore; chunked ≤450-op tombstone-aware backup (delete-first, 30-day score prune) + paginated tombstone-aware restore via `_fetchAllDocs` (500-doc pages, skips tombstoned docs, drops orphaned score records); device-claim write historically hit permission-denied when rules weren't deployed.
 - `lib/core/ads/ad_service.dart` — premium gating, banner/interstitial, daily caps.
 - `lib/core/utils/screen_security.dart` + `MainActivity.kt` — FLAG_SECURE channel.
 - `lib/core/services/root_detection_service.dart` — jailbreak/root detection (informational).

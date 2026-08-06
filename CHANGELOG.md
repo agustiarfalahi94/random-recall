@@ -5,6 +5,23 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [Unreleased] — 2026-08-06
+
+### Fixed
+- **Cloud backup silently stopped working on large libraries** — Firestore limits a single write batch to 500 operations, but backups were written as one batch, so accounts with more than ~500 questions/categories/scores only uploaded part of their data (and a failed batch could leave older records overwriting newer ones). Backups are now split into small chunks and upload reliably no matter the library size.
+- **Deleted questions and categories could come back** — Deleting an item only removed it locally; the next backup didn't know it was gone, so a reinstall or a second device could resurrect it. Deletes are now tracked locally and pushed to the cloud on the next backup, so what you delete stays deleted.
+- **Restore could send you back to onboarding** — If your cloud data contained only categories and scores (no questions), the app treated the restore as empty and re-ran the setup flow. Restore now recognises all of your data.
+
+### Improved
+- **Faster, leaner cloud sync** — Backups run in smaller chunks with deletions cleared first, old score history is trimmed to the last 30 days, and restore reads the cloud in pages while skipping anything already deleted (orphaned score records are dropped safely).
+- **Faster random questions** — Picking a random question no longer re-sorts the whole question list, so it stays quick as your library grows.
+- **Snappier launch** — The device root/jailbreak check now runs after the first frame instead of delaying it.
+
+### Notes
+- Internal housekeeping: consolidated the app's verified-account checks (no user-visible change).
+
+---
+
 ## [0.13.18] — 2026-08-06
 
 ### Fixed
