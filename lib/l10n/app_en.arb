@@ -754,5 +754,17 @@
 
   "rootWarningTitle": "Rooted device detected",
   "rootWarningBody": "This device appears to be rooted or jailbroken. Your data is stored locally on this device and backed up to your private cloud account, but rooted devices can be more exposed to malicious apps. We recommend keeping your device secure.",
-  "rootWarningGotIt": "Got it"
+  "rootWarningGotIt": "Got it",
+
+  "tourPracticeBody": "Tap **Practice Now** to answer questions from your saved categories.",
+  "tourQuestionsBody": "Your **Questions** library lives here — add, edit, and organize.",
+  "tourAddBody": "Tap **+** to add a new question.",
+  "tourAnalyticsBody": "See your accuracy for each category in **Analytics**.",
+  "tourHomeBody": "Head back **Home** when you're ready to practice.",
+  "tourSettingsBody": "Open **Settings** to manage sync, notifications, and more.",
+  "tourScheduleBody": "Schedule when Random Recall sends you reminders.",
+  "tourDoneBody": "You're all set! 🎉 Tap anywhere to finish.",
+  "tourSkip": "Skip",
+  "tourReplayTile": "Take a tour",
+  "tourReplaySubtitle": "Replay the interactive guide"
 }

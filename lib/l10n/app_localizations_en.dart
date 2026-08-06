@@ -1752,4 +1752,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rootWarningGotIt => 'Got it';
+
+  @override
+  String get tourPracticeBody =>
+      'Tap **Practice Now** to answer questions from your saved categories.';
+
+  @override
+  String get tourQuestionsBody =>
+      'Your **Questions** library lives here — add, edit, and organize.';
+
+  @override
+  String get tourAddBody => 'Tap **+** to add a new question.';
+
+  @override
+  String get tourAnalyticsBody =>
+      'See your accuracy for each category in **Analytics**.';
+
+  @override
+  String get tourHomeBody =>
+      'Head back **Home** when you\'re ready to practice.';
+
+  @override
+  String get tourSettingsBody =>
+      'Open **Settings** to manage sync, notifications, and more.';
+
+  @override
+  String get tourScheduleBody =>
+      'Schedule when Random Recall sends you reminders.';
+
+  @override
+  String get tourDoneBody => 'You\'re all set! 🎉 Tap anywhere to finish.';
+
+  @override
+  String get tourSkip => 'Skip';
+
+  @override
+  String get tourReplayTile => 'Take a tour';
+
+  @override
+  String get tourReplaySubtitle => 'Replay the interactive guide';
 }
