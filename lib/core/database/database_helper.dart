@@ -243,7 +243,7 @@ class DatabaseHelper {
     final db = await database;
 
     // Merge all exclusions into one set
-    final allExcluded = <int>{if (excludeId != null) excludeId, ...?excludeIds};
+    final allExcluded = <int>{?excludeId, ...?excludeIds};
 
     final conditions = <String>[];
     final args = <dynamic>[];

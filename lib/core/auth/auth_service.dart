@@ -18,8 +18,18 @@ class AuthService {
   static final AuthService instance = AuthService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // google_sign_in 7.x requires initialize() to be called exactly once before
+  // any other method.
+  bool _googleSignInInitialized = false;
+
+  Future<void> _ensureGoogleInitialized() async {
+    if (_googleSignInInitialized) return;
+    await _googleSignIn.initialize();
+    _googleSignInInitialized = true;
+  }
 
   /// Stream of user authentication state changes.
   /// userChanges() notifies the UI whenever the user is reloaded (e.g., email verified).
@@ -33,13 +43,19 @@ class AuthService {
   /// Sign in with Google.
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
+      await _ensureGoogleInitialized();
+      final GoogleSignInAccount googleUser;
+      try {
+        googleUser = await _googleSignIn.authenticate();
+      } on GoogleSignInException {
+        // User cancelled or UI unavailable — same as the old signIn() null.
+        return null;
+      }
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      // google_sign_in 7.x only exposes the ID token (no access token);
+      // Firebase Auth accepts an idToken-only Google credential.
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
