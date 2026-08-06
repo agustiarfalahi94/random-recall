@@ -108,4 +108,37 @@ void main() {
       expect(SyncService.dropTombstoned(['abc', '4'], {4}), ['abc']);
     });
   });
+
+  group('SyncService.keepScoresForRestoredRefs', () {
+    ScoreRecord score(int questionId, int categoryId) => ScoreRecord(
+      questionId: questionId,
+      categoryId: categoryId,
+      isCorrect: true,
+      answeredAt: DateTime(2026, 8, 6),
+      updatedAt: DateTime(2026, 8, 6),
+    );
+
+    test('keeps a score whose question and category were both restored', () {
+      final kept = score(1, 1);
+      expect(SyncService.keepScoresForRestoredRefs([kept], {1}, {1}), [kept]);
+    });
+
+    test('drops a score whose question was NOT restored (orphaned)', () {
+      final kept = score(1, 1);
+      final orphanQuestion = score(99, 1);
+      expect(
+        SyncService.keepScoresForRestoredRefs([kept, orphanQuestion], {1}, {1}),
+        [kept],
+      );
+    });
+
+    test('drops a score whose category was NOT restored', () {
+      final kept = score(1, 1);
+      final orphanCategory = score(1, 99);
+      expect(
+        SyncService.keepScoresForRestoredRefs([kept, orphanCategory], {1}, {1}),
+        [kept],
+      );
+    });
+  });
 }

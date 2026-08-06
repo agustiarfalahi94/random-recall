@@ -227,6 +227,21 @@ class SyncService {
       .where((id) => !tombstonedIds.contains(int.tryParse(id)))
       .toList();
 
+  /// Drops score records whose referenced question/category was not restored
+  /// (e.g. the question was deleted and tombstoned). Without this, an insert
+  /// would violate the score_records FK and roll back the whole restore.
+  static List<ScoreRecord> keepScoresForRestoredRefs(
+    List<ScoreRecord> scores,
+    Set<int> restoredQuestionIds,
+    Set<int> restoredCategoryIds,
+  ) => scores
+      .where(
+        (s) =>
+            restoredQuestionIds.contains(s.questionId) &&
+            restoredCategoryIds.contains(s.categoryId),
+      )
+      .toList();
+
   /// Reads every document in [collection] in pages (ordered by document id)
   /// so a large collection never loads unbounded into memory. Firestore
   /// shells this in; not unit-tested.
@@ -250,23 +265,19 @@ class SyncService {
     return docs;
   }
 
-  /// Inserts [docs] into [table] using a transaction-scoped sqflite Batch,
+  /// Inserts [rows] into [table] using a transaction-scoped sqflite Batch,
   /// chunked so each commit stays small. Runs inside the open [txn]; a
   /// `txn.batch().commit(noResult: true)` executes within the transaction
   /// rather than committing it.
   Future<void> _batchInsertDocs(
     Transaction txn,
     String table,
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    List<Map<String, dynamic>> rows,
   ) async {
-    for (final (start, end) in chunkRanges(docs.length)) {
+    for (final (start, end) in chunkRanges(rows.length)) {
       final batch = txn.batch();
-      for (final doc in docs.sublist(start, end)) {
-        batch.insert(
-          table,
-          doc.data(),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+      for (final row in rows.sublist(start, end)) {
+        batch.insert(table, row, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await batch.commit(noResult: true);
     }
@@ -363,6 +374,24 @@ class SyncService {
         hasScores: sDocs.isNotEmpty,
       );
 
+      // Score records reference restored questions/categories. Drop any whose
+      // question or category was not restored (tombstoned, or already deleted
+      // from cloud) — otherwise the score_records FK would be violated and the
+      // whole restore would roll back.
+      final restoredCategoryIds = keptCatDocs
+          .map((d) => int.tryParse(d.id))
+          .whereType<int>()
+          .toSet();
+      final restoredQuestionIds = keptQDocs
+          .map((d) => int.tryParse(d.id))
+          .whereType<int>()
+          .toSet();
+      final scoreRecords = keepScoresForRestoredRefs(
+        sDocs.map((d) => ScoreRecord.fromMap(d.data())).toList(),
+        restoredQuestionIds,
+        restoredCategoryIds,
+      );
+
       // Execute everything in a single transaction with Foreign Keys enabled.
       // Inserts stay FK-ordered (categories → questions → scores) and the
       // isInitialLogin wipe runs children-first, so constraints are always met.
@@ -382,13 +411,25 @@ class SyncService {
           }
 
           // 1. Restore Categories
-          await _batchInsertDocs(txn, 'categories', keptCatDocs);
+          await _batchInsertDocs(
+            txn,
+            'categories',
+            keptCatDocs.map((d) => d.data()).toList(),
+          );
 
           // 2. Restore Questions
-          await _batchInsertDocs(txn, 'questions', keptQDocs);
+          await _batchInsertDocs(
+            txn,
+            'questions',
+            keptQDocs.map((d) => d.data()).toList(),
+          );
 
           // 3. Restore Score Records
-          await _batchInsertDocs(txn, 'score_records', sDocs);
+          await _batchInsertDocs(
+            txn,
+            'score_records',
+            scoreRecords.map((s) => s.toMap()).toList(),
+          );
         });
         debugPrint('SyncService: Transaction completed successfully');
       } catch (e) {
@@ -398,7 +439,7 @@ class SyncService {
 
       debugPrint(
         'SyncService: SQLite insert done — '
-        '${keptCatDocs.length} cats, ${keptQDocs.length} qs, ${sDocs.length} scores',
+        '${keptCatDocs.length} cats, ${keptQDocs.length} qs, ${scoreRecords.length} scores',
       );
 
       // 4. Restore SharedPreferences (Settings & Streak)
