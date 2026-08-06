@@ -5,7 +5,21 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.20] — 2026-08-06
+
+### Fixed
+- **Notifications never fired on Android 14+** — scheduling always used `exactAllowWhileIdle`, which requires the `SCHEDULE_EXACT_ALARM` permission (denied by default on Android 14+; the log showed it denied). The exact-mode call threw, the error was swallowed, and zero alarms were scheduled. Now checks `canScheduleExactNotifications()` once per run and falls back to `inexactAllowWhileIdle` (no permission needed — notifications fire, possibly with slight delay), with a per-alarm retry as a safety net.
+- **Interactive tour crash ("RenderBox was not laid out")** — the tour overlay shared GlobalKeys between the real target widgets and the showcaseview widgets, corrupting the element tree. **The tour is now disabled** (no auto-start, no Settings entry) until it is redesigned around showcaseview's real wrapping API. Code is gated behind `TourService.enabled`.
+
+### Notes
+- 108/108 tests, 0 analyzer issues, debug APK verified.
+
+---
+
 ## [0.13.19] — 2026-08-06
+
+### Added
+- **Interactive spotlight tutorial for new users** — after onboarding, a guided coach-mark tour highlights the core journey: Practice Now, the question list + add button, analytics, home, settings, and the notification schedule, ending with a "You're all set" overlay. Skip button on every step; re-runnable anytime from Settings → "Take a tour". English + Indonesian. (Uses `showcaseview`; the in-sheet schedule step uses a text-overlay fallback since an in-sheet spotlight isn't possible with the current sheet implementation.)
 
 ### Fixed
 - **Cloud backup silently stopped working on large libraries** — Firestore limits a single write batch to 500 operations, but backups were written as one batch, so accounts with more than ~500 questions/categories/scores only uploaded part of their data (and a failed batch could leave older records overwriting newer ones). Backups are now split into small chunks and upload reliably no matter the library size.
@@ -19,9 +33,6 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ### Notes
 - Internal housekeeping: consolidated the app's verified-account checks (no user-visible change).
-
-### Added
-- **Interactive spotlight tutorial for new users** — after onboarding, a guided coach-mark tour highlights the core journey: Practice Now, the question list + add button, analytics, home, settings, and the notification schedule, ending with a "You're all set" overlay. Skip button on every step; re-runnable anytime from Settings → "Take a tour". English + Indonesian. (Uses `showcaseview`; the in-sheet schedule step uses a text-overlay fallback since an in-sheet spotlight isn't possible with the current sheet implementation.)
 
 ---
 

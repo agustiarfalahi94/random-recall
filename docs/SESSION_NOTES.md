@@ -131,11 +131,11 @@ and verify everything on the code side and walk the user through the console ste
 
 > If you are a fresh agent session, this is where work stands. Read this before anything else.
 
-**Interactive spotlight tutorial (coach marks) — IMPLEMENTED, not yet released.**
+**Interactive spotlight tutorial — DISABLED (v0.13.20), needs redesign.**
 
 - Design spec: `docs/superpowers/specs/2026-08-06-interactive-tutorial-design.md`
 - Implementation plan: `docs/superpowers/plans/2026-08-06-interactive-tutorial.md`
-- **Status: Tasks 1–5 complete (showcaseview dep, TourService flag logic + 8 steps, en/id ARB copy, GlobalKeys on real controls, TourOverlay driver, auto-start after display-name/root-warning prompts resolve, Settings "Take a tour" replay tile). Task 6 (final validation + docs) is done too — 108/108 tests, 0 analyzer issues, debug APK builds.**
-- Wiring notes: `TourOverlay` wraps the HomeScreen Scaffold (`GlobalKey<TourOverlayState>`); `_HomeTabState._scheduleTourStart()` fires once after `_displayNameResolved` && !`_rootWarningVisible`; `TourService.initialize()` added in `main.dart`. Step 7 (`scheduleTileKey`) intentionally uses the text-overlay fallback (no in-sheet spotlight — documented decision).
-- **NOT RELEASED — everything since v0.13.18 is still only on local `develop` (19 commits, including the sync & stability batch). Next step: push develop → merge to main → tag a release (e.g. v0.13.19) so CI builds it and the user can test on device.**
-- Also done earlier today (fully shipped, on device): sync & stability batch — tombstone deletes, chunked ≤450-op backup, paginated tombstone-aware restore, isVerifiedUser consolidation, random-OFFSET question query, root detection post-frame. See `CHANGELOG.md` `[Unreleased]` + §10 file-map additions.
+- **Status: implemented then DISABLED on device-testing.** The `TourOverlay` approach (Positioned overlay boxes + reusing the target GlobalKeys on `Showcase` widgets) corrupts the element tree: showcaseview 5.x attaches its `key` to an internal child (`key: widget.showcaseKey`), so the same GlobalKey ends up on two live elements → the real target's element gets stolen → "RenderBox was not laid out" crash on step transitions, and the tooltip doesn't advance after the practice route pops.
+- **How to re-enable:** gate behind `TourService.enabled` (currently `false`; also hides the Settings "Take a tour" tile). Redesign must wrap the REAL widgets with `Showcase(child: ...)` (the package's intended API) instead of faking overlay boxes — then the registry keys are unique per showcase and the target keeps its own element. Needs on-device iteration.
+- **Also fixed in v0.13.20:** notifications never fired on Android 14+ because scheduling always used `exactAllowWhileIdle` without the (denied by default) `SCHEDULE_EXACT_ALARM` permission → the call threw and errors were swallowed. Now checks `canScheduleExactNotifications()` once per run, falls back to `inexactAllowWhileIdle`, with a per-alarm retry.
+- **NOT RELEASED YET (v0.13.20):** sync & stability batch + tour code + these fixes are on local `develop` only; CI was down (GitHub Actions major outage on 2026-08-06). Next: push develop → merge to main → tag `v0.13.20` (the earlier `v0.13.19` tag was deleted — its CI never completed and the code had the notification bug).
