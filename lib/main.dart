@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/notifications/background_worker.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/services/analytics_service.dart';
+import 'core/services/root_detection_service.dart';
 import 'core/utils/battery_optimization.dart';
 import 'providers/app_provider.dart';
 import 'screens/home/home_screen.dart';
@@ -75,6 +76,11 @@ Future<void> main() async {
         ? AndroidProvider.debug
         : AndroidProvider.playIntegrity,
   );
+
+  // Root/jailbreak detection — informational only. Logs to Firebase Analytics
+  // (dev signal) and enables a one-time client warning. Never blocks features.
+  await RootDetectionService.instance.detect();
+  RootDetectionService.instance.trackStatus().ignore();
 
   // Crashlytics: route Flutter and async errors to Crashlytics
   await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(

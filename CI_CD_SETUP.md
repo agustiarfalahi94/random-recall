@@ -61,6 +61,10 @@ A full release-readiness audit was performed. Before this pass the analyzer repo
 
 The Android RevenueCat key is no longer hardcoded in `subscription_service.dart`. It is read from `--dart-define=REVENUECAT_API_KEY=...` at build time; without it (or with a placeholder), RevenueCat init is skipped exactly as before. When deploying, add the key as a GitHub secret and pass it in the release build step (see `.github/workflows/flutter-build.yml`).
 
+### Root/jailbreak detection (informational)
+
+Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted/jailbroken devices via `flutter_jailbreak_detection`. The signal is (1) logged to Firebase Analytics (`device_root_status` event) for developer visibility and (2) shown to the user once via a dismissible dialog on first app open. Nothing is blocked. The unmaintained plugin required two compatibility shims in `android/build.gradle.kts` (AGP 8 namespace + per-plugin JVM-target matching), verified with a successful debug APK build.
+
 ---
 
 ## Current Workflow Branches

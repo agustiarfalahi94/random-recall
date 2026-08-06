@@ -743,5 +743,9 @@
   "phoneDeleteReauthSubtitle": "Kami akan mengirim kode verifikasi ke {phone} untuk konfirmasi.",
   "@phoneDeleteReauthSubtitle": {
     "placeholders": { "phone": { "type": "String" } }
-  }
+  },
+
+  "rootWarningTitle": "Perangkat ter-root terdeteksi",
+  "rootWarningBody": "Perangkat ini tampaknya ter-root atau jailbreak. Data Anda disimpan secara lokal di perangkat ini dan dicadangkan ke akun cloud pribadi Anda, tetapi perangkat yang ter-root lebih rentan terhadap aplikasi berbahaya. Kami menyarankan untuk menjaga keamanan perangkat Anda.",
+  "rootWarningGotIt": "Mengerti"
 }

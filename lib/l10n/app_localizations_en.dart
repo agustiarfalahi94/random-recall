@@ -1730,4 +1730,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String phoneDeleteReauthSubtitle(String phone) {
     return 'We\'ll send a verification code to $phone to confirm.';
   }
+
+  @override
+  String get rootWarningTitle => 'Rooted device detected';
+
+  @override
+  String get rootWarningBody =>
+      'This device appears to be rooted or jailbroken. Your data is stored locally on this device and backed up to your private cloud account, but rooted devices can be more exposed to malicious apps. We recommend keeping your device secure.';
+
+  @override
+  String get rootWarningGotIt => 'Got it';
 }

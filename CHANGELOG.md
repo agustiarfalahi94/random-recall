@@ -23,8 +23,11 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 - **RevenueCat key no longer in source** — `_apiKeyAndroid` is read from `String.fromEnvironment('REVENUECAT_API_KEY')` instead of a hardcoded placeholder; without the build-time define, behavior is unchanged (init skipped).
 - **Fixed 11 pre-existing test failures** — `streak_service_test.dart` now bootstraps fake `FirebasePlatform` / `FirebaseAuthPlatform` instances (no native channels needed), so challenge-mode tests run against an in-memory Firebase app. Test-only dev dependencies added: `firebase_core_platform_interface`, `firebase_auth_platform_interface`.
 
+### Added
+- **Root/jailbreak detection (informational, non-blocking)** — new `RootDetectionService` (`flutter_jailbreak_detection`) reports the device's root status to Firebase Analytics as a `device_root_status` event for dev visibility, and shows a one-time, dismissible warning dialog on first app open (English + Indonesian). No features are blocked or hidden based on this signal. `android/build.gradle.kts` gained a namespace + per-plugin JVM-target compatibility shim so the unmaintained plugin compiles under AGP 8 / Kotlin 2.x (debug APK build verified).
+
 ### Notes
-- Test suite: **77/77 passing**. `flutter analyze`: 0 issues. No behavior changes — all edits are lint fixes, formatting, dead-code removal, or test-only fakes.
+- Test suite: **77/77 passing**. `flutter analyze`: 0 issues. App behavior unchanged except the new informational warning dialog.
 
 ---
 

@@ -3109,6 +3109,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'We\'ll send a verification code to {phone} to confirm.'**
   String phoneDeleteReauthSubtitle(String phone);
+
+  /// No description provided for @rootWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rooted device detected'**
+  String get rootWarningTitle;
+
+  /// No description provided for @rootWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device appears to be rooted or jailbroken. Your data is stored locally on this device and backed up to your private cloud account, but rooted devices can be more exposed to malicious apps. We recommend keeping your device secure.'**
+  String get rootWarningBody;
+
+  /// No description provided for @rootWarningGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get rootWarningGotIt;
 }
 
 class _AppLocalizationsDelegate

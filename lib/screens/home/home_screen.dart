@@ -10,6 +10,7 @@ import '../../providers/app_provider.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
+import '../../core/services/root_detection_service.dart';
 import '../../main.dart' show navigatorKey;
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
@@ -686,6 +687,11 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _checkAndShowDisplayNamePrompt(),
     );
+
+    // One-time rooted-device warning (informational — never blocks anything).
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _checkAndShowRootWarning(),
+    );
   }
 
   @override
@@ -731,6 +737,32 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
         'HomeTab: User has displayName set or user is null, skipping dialog',
       );
     }
+  }
+
+  /// Shows a one-time, dismissible warning when the device is rooted or
+  /// jailbroken. Informational only — no features are blocked or hidden.
+  Future<void> _checkAndShowRootWarning() async {
+    if (!await RootDetectionService.instance.shouldShowWarning()) return;
+    if (!mounted) return;
+
+    await RootDetectionService.instance.markWarningShown();
+    if (!mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.security_rounded),
+        title: Text(l10n.rootWarningTitle),
+        content: Text(l10n.rootWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.rootWarningGotIt),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
