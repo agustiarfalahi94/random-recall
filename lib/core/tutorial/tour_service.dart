@@ -22,6 +22,12 @@ class TourService {
   TourService._();
   static final TourService instance = TourService._();
 
+  /// Whether the interactive tour is live. DISABLED: the tour overlay's
+  /// implementation shares GlobalKeys between the real targets and the
+  /// showcaseview widgets, which corrupts the element tree ("RenderBox was
+  /// not laid out" crash). Needs a redesign before re-enabling.
+  static const bool enabled = false;
+
   // Public factory so callers (and tests) can write `TourService()` while
   // still receiving the single shared instance. Same pattern as StreakService.
   factory TourService() => instance;

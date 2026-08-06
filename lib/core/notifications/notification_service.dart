@@ -327,6 +327,15 @@ class NotificationService {
       return;
     }
 
+    // Android 12+ requires SCHEDULE_EXACT_ALARM for exact alarms, and Android
+    // 14+ / 16 refuse it by default for most apps. Check ONCE per run and fall
+    // back to inexact scheduling so notifications still fire without it.
+    final canScheduleExact = await _canScheduleExactAlarms();
+    debugPrint(
+      'NotificationService: Exact alarm permission granted: $canScheduleExact — '
+      'using ${canScheduleExact ? 'exact' : 'inexact'} scheduling.',
+    );
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload(); // Force refresh to catch recent UI changes
     _sanitizeNotificationPrefs(prefs);
@@ -498,6 +507,7 @@ class NotificationService {
         id: notifId,
         scheduledDate: scheduledDate,
         question: question,
+        canScheduleExact: canScheduleExact,
       );
 
       if (i == 0) {
@@ -722,6 +732,24 @@ class NotificationService {
     }
   }
 
+  /// Whether the OS currently allows exact alarms (SCHEDULE_EXACT_ALARM).
+  /// Defaults to true when unknown so scheduling is never blocked by the
+  /// check itself; the per-alarm fallback below catches permission errors.
+  Future<bool> _canScheduleExactAlarms() async {
+    try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await android?.canScheduleExactNotifications() ?? true;
+    } catch (e) {
+      debugPrint(
+        'NotificationService: canScheduleExactNotifications check failed: $e',
+      );
+      return true;
+    }
+  }
+
   // ── Fire a single one-time notification (no matchDateTimeComponents) ──────
 
   Future<void> _scheduleOneTimeNotification({
@@ -729,6 +757,7 @@ class NotificationService {
     required tz.TZDateTime scheduledDate,
     required Question question,
     bool isTest = false,
+    bool canScheduleExact = true,
   }) async {
     final isChallenge = StreakService.instance.isChallengeActive && !isTest;
     final androidDetails = AndroidNotificationDetails(
@@ -755,19 +784,35 @@ class NotificationService {
         prefs.getString(isTest ? 'test_notif_body' : 'notif_body') ??
         'Tap to answer the question';
 
-    await _plugin.zonedSchedule(
-      id: id,
-      title: isChallenge ? '🔥 $title' : title,
-      body: body,
-      scheduledDate: scheduledDate,
-      notificationDetails: NotificationDetails(android: androidDetails),
-      // alarmClock is intercepted by Xiaomi HyperOS power management for
-      // third-party apps. exactAllowWhileIdle uses setExactAndAllowWhileIdle()
-      // which bypasses that interception while still being exact and
-      // Doze-exempt. SCHEDULE_EXACT_ALARM permission is already declared.
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      payload: isTest ? 'test:${question.id}' : question.id?.toString(),
-    );
+    // exactAllowWhileIdle is Doze-exempt but REQUIRES the SCHEDULE_EXACT_ALARM
+    // permission (denied by default on Android 14+). inexactAllowWhileIdle
+    // needs no permission — the OS may delay delivery slightly, but the
+    // notification always fires. Fall back on any error too (e.g. the user
+    // revoked the permission after the check).
+    Future<void> scheduleWith(AndroidScheduleMode mode) {
+      return _plugin.zonedSchedule(
+        id: id,
+        title: isChallenge ? '🔥 $title' : title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: NotificationDetails(android: androidDetails),
+        androidScheduleMode: mode,
+        payload: isTest ? 'test:${question.id}' : question.id?.toString(),
+      );
+    }
+
+    try {
+      await scheduleWith(
+        canScheduleExact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    } catch (e) {
+      debugPrint(
+        'NotificationService: Exact scheduling failed ($e); retrying inexact.',
+      );
+      await scheduleWith(AndroidScheduleMode.inexactAllowWhileIdle);
+    }
   }
 
   // ── Immediate test notification ───────────────────────────────────────────

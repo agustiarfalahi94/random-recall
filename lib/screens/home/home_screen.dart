@@ -318,32 +318,35 @@ class _SettingsSheetState extends State<_SettingsSheet> {
 
             const Divider(),
 
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(12),
+            if (TourService.enabled)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.tour_outlined, size: 20),
+                  ),
                 ),
-                child: const Center(child: Icon(Icons.tour_outlined, size: 20)),
+                title: Text(
+                  l10n.tourReplayTile,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(l10n.tourReplaySubtitle),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  final onReplay = widget.onReplayTour;
+                  Navigator.of(context).pop();
+                  // Let the sheet-close animation finish before spotlighting.
+                  Future<void>.delayed(const Duration(milliseconds: 350), () {
+                    onReplay?.call();
+                  });
+                },
               ),
-              title: Text(
-                l10n.tourReplayTile,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Text(l10n.tourReplaySubtitle),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                final onReplay = widget.onReplayTour;
-                Navigator.of(context).pop();
-                // Let the sheet-close animation finish before spotlighting.
-                Future<void>.delayed(const Duration(milliseconds: 350), () {
-                  onReplay?.call();
-                });
-              },
-            ),
 
             const Divider(),
 
@@ -836,7 +839,9 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
 
   /// Schedules the interactive tour once the first-frame prompts (display name
   /// / rooted-device warning) have resolved. Runs at most once per app session.
+  /// No-op while the tour is disabled.
   void _scheduleTourStart() {
+    if (!TourService.enabled) return;
     if (_tourStartPending) return;
     if (!_displayNameResolved) return; // re-triggered when it resolves
     if (_rootWarningVisible) return; // re-triggered once the warning closes
