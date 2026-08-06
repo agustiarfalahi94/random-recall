@@ -130,10 +130,11 @@ Future<void> main() async {
   // Wire up navigator key so notification taps can navigate
   NotificationService.instance.navigatorKey = navigatorKey;
 
-  // Initialize AdService — premium check happens here so ads are never
-  // shown to premium users from the very first frame.
+  // Initialize AdService in the background — the premium check still runs
+  // first (fast prefs read) so premium users never see ads, but the AdMob SDK
+  // init (a network call) must NOT block the first frame on cold start.
   final isPremium = await PlanService.isPremium();
-  await AdService.instance.initialize(isPremium: isPremium);
+  AdService.instance.initialize(isPremium: isPremium).ignore();
 
   runApp(const RandomRecallApp());
 

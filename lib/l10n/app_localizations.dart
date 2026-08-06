@@ -362,6 +362,30 @@ abstract class AppLocalizations {
   /// **'Login failed: {error}'**
   String loginFailedSnack(String error);
 
+  /// No description provided for @accountExistsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account already exists'**
+  String get accountExistsTitle;
+
+  /// No description provided for @accountExistsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with {email} already exists. Enter your password to link your Google account.'**
+  String accountExistsBody(String email);
+
+  /// No description provided for @accountExistsLinkButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Link & Sign In'**
+  String get accountExistsLinkButton;
+
+  /// No description provided for @accountExistsSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account linked! You\'re signed in.'**
+  String get accountExistsSuccess;
+
   /// No description provided for @emailAuthTitle.
   ///
   /// In en, this message translates to:

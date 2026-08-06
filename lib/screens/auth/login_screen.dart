@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 import 'display_name_setup_screen.dart';
@@ -21,6 +22,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoggingIn = true);
     try {
       await AuthService.instance.signInWithGoogle();
+    } on AccountExistsException catch (e) {
+      // Email already used by an email/password account — offer to link.
+      if (mounted) {
+        await _showAccountLinkDialog(e);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -29,6 +35,104 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoggingIn = false);
+    }
+  }
+
+  /// An account with this email already exists (email/password). Ask for the
+  /// password to prove ownership, then link the Google credential so both
+  /// providers sign in to the same account.
+  Future<void> _showAccountLinkDialog(AccountExistsException e) async {
+    final l10n = AppLocalizations.of(context)!;
+    final passwordController = TextEditingController();
+    String? errorMessage;
+
+    final linked = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(l10n.accountExistsTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.accountExistsBody(e.email)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l10n.password,
+                  border: const OutlineInputBorder(),
+                  errorText: errorMessage,
+                ),
+                onSubmitted: (_) async {
+                  final error = await _linkGoogleAccount(
+                    dialogContext,
+                    e,
+                    passwordController.text,
+                  );
+                  if (error == null) {
+                    Navigator.of(dialogContext).pop(true);
+                  } else {
+                    setDialogState(() => errorMessage = error);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final error = await _linkGoogleAccount(
+                  dialogContext,
+                  e,
+                  passwordController.text,
+                );
+                if (error == null) {
+                  Navigator.of(dialogContext).pop(true);
+                } else {
+                  setDialogState(() => errorMessage = error);
+                }
+              },
+              child: Text(l10n.accountExistsLinkButton),
+            ),
+          ],
+        ),
+      ),
+    );
+    passwordController.dispose();
+
+    if (linked == true && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.accountExistsSuccess)));
+    }
+  }
+
+  /// Returns null on success, or a localized error message to show in the
+  /// dialog on failure.
+  Future<String?> _linkGoogleAccount(
+    BuildContext dialogContext,
+    AccountExistsException e,
+    String password,
+  ) async {
+    final l10n = AppLocalizations.of(dialogContext)!;
+    try {
+      await AuthService.instance.linkGoogleToExistingAccount(
+        email: e.email,
+        password: password,
+        googleCredential: e.googleCredential,
+      );
+      return null;
+    } catch (error) {
+      debugPrint('LoginScreen: Account link failed: $error');
+      return l10n.errorWrongPassword;
     }
   }
 

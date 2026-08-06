@@ -13,6 +13,21 @@ import '../streak/streak_service.dart';
 import '../sync/sync_service.dart';
 import '../plan/subscription_service.dart';
 
+/// Thrown when Google Sign-In hits an email that is already registered to an
+/// email/password account. Carries the Google credential so the UI can link
+/// the two providers after verifying the password.
+class AccountExistsException implements Exception {
+  final String email;
+  final AuthCredential googleCredential;
+  const AccountExistsException({
+    required this.email,
+    required this.googleCredential,
+  });
+
+  @override
+  String toString() => 'AccountExistsException(email: $email)';
+}
+
 class AuthService {
   AuthService._internal();
   static final AuthService instance = AuthService._internal();
@@ -27,7 +42,14 @@ class AuthService {
 
   Future<void> _ensureGoogleInitialized() async {
     if (_googleSignInInitialized) return;
-    await _googleSignIn.initialize();
+    // CRITICAL: the v7 Credential Manager flow REQUIRES the server client ID
+    // passed explicitly — it no longer reads it from google-services.json.
+    // Without it the plugin throws missingServerClientId and sign-in fails.
+    // Mirrors oauth_client type 3 in android/app/google-services.json.
+    await _googleSignIn.initialize(
+      serverClientId:
+          '737631418905-koc163grfi8e1v5rmusnlii4cvjm8b02.apps.googleusercontent.com',
+    );
     _googleSignInInitialized = true;
   }
 
@@ -42,22 +64,32 @@ class AuthService {
 
   /// Sign in with Google.
   Future<UserCredential?> signInWithGoogle() async {
+    AuthCredential? credential;
     try {
       await _ensureGoogleInitialized();
       final GoogleSignInAccount googleUser;
       try {
         googleUser = await _googleSignIn.authenticate();
-      } on GoogleSignInException {
-        // User cancelled or UI unavailable — same as the old signIn() null.
-        return null;
+      } on GoogleSignInException catch (e) {
+        // Only user-initiated cancellations are expected non-results.
+        // Everything else must surface so the UI can show what went wrong.
+        if (e.code == GoogleSignInExceptionCode.canceled ||
+            e.code == GoogleSignInExceptionCode.interrupted ||
+            e.code == GoogleSignInExceptionCode.uiUnavailable) {
+          debugPrint('AuthService: Google Sign-In cancelled (${e.code.name})');
+          return null;
+        }
+        debugPrint('AuthService: Google Sign-In failed: ${e.code.name}: $e');
+        rethrow;
       }
 
-      // google_sign_in 7.x only exposes the ID token (no access token);
-      // Firebase Auth accepts an idToken-only Google credential.
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+      final googleAuth = googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        debugPrint('AuthService: Google Sign-In returned no ID token');
+        throw StateError('Google Sign-In returned no ID token');
+      }
+      credential = GoogleAuthProvider.credential(idToken: idToken);
 
       final userCredential = await _auth.signInWithCredential(credential);
       if (userCredential.user != null) {
@@ -72,10 +104,45 @@ class AuthService {
             .ignore();
       }
       return userCredential;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'account-exists-with-different-credential') {
+        // The email is already registered to an email/password account.
+        // Surface a friendly exception carrying the Google credential so the
+        // UI can verify the password and link the two providers.
+        debugPrint('AuthService: Google email already registered: ${e.email}');
+        throw AccountExistsException(
+          email: e.email ?? '',
+          googleCredential: e.credential ?? credential!,
+        );
+      }
+      debugPrint('AuthService: Google Sign-In failed: $e');
+      rethrow;
     } catch (e) {
       debugPrint('AuthService: Google Sign-In failed: $e');
       rethrow;
     }
+  }
+
+  /// After a Google sign-in collision ([AccountExistsException]), proves
+  /// ownership of the existing email/password account and links the Google
+  /// credential so both providers sign in to the same account.
+  Future<void> linkGoogleToExistingAccount({
+    required String email,
+    required String password,
+    required AuthCredential googleCredential,
+  }) async {
+    final userCredential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final user = userCredential.user;
+    if (user == null) throw Exception('Sign-in returned no user');
+    await user.linkWithCredential(googleCredential);
+    await user.reload();
+    await _ensureUserDocument(user);
+    await initializeUserSession();
+    AnalyticsService.instance.trackLogin(method: 'google').ignore();
+    AnalyticsService.instance.identify(user.uid, email: user.email).ignore();
   }
 
   /// Sign in with Email and Password.

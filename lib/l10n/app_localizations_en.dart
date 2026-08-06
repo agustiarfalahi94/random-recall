@@ -144,6 +144,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get accountExistsTitle => 'Account already exists';
+
+  @override
+  String accountExistsBody(String email) {
+    return 'An account with $email already exists. Enter your password to link your Google account.';
+  }
+
+  @override
+  String get accountExistsLinkButton => 'Link & Sign In';
+
+  @override
+  String get accountExistsSuccess =>
+      'Google account linked! You\'re signed in.';
+
+  @override
   String get emailAuthTitle => 'Login';
 
   @override
