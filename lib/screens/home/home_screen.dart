@@ -14,6 +14,7 @@ import '../../core/services/root_detection_service.dart';
 import '../../main.dart' show navigatorKey;
 import '../../core/streak/streak_service.dart';
 import '../../core/sync/sync_service.dart';
+import '../../core/tutorial/tour_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../categories/manage_categories_screen.dart';
 import '../profile/profile_screen.dart';
@@ -46,10 +47,13 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
-          IconButton(
-            onPressed: () => _showSettingsSheet(context),
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: l10n.settingsTooltip,
+          KeyedSubtree(
+            key: TourService.instance.settingsGearKey,
+            child: IconButton(
+              onPressed: () => _showSettingsSheet(context),
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: l10n.settingsTooltip,
+            ),
           ),
         ],
       ),
@@ -69,17 +73,26 @@ class _HomeScreenState extends State<HomeScreen> {
         indicatorColor: colorScheme.primaryContainer,
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
+            icon: KeyedSubtree(
+              key: TourService.instance.navHomeKey,
+              child: const Icon(Icons.home_outlined),
+            ),
             selectedIcon: const Icon(Icons.home_rounded),
             label: l10n.navHome,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.format_list_bulleted_outlined),
+            icon: KeyedSubtree(
+              key: TourService.instance.navQuestionsKey,
+              child: const Icon(Icons.format_list_bulleted_outlined),
+            ),
             selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
             label: l10n.navQuestions,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.bar_chart_outlined),
+            icon: KeyedSubtree(
+              key: TourService.instance.navAnalyticsKey,
+              child: const Icon(Icons.bar_chart_outlined),
+            ),
             selectedIcon: const Icon(Icons.bar_chart_rounded),
             label: l10n.navAnalytics,
           ),
@@ -966,18 +979,21 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context)
-                  .push(
-                    MaterialPageRoute(
-                      builder: (_) => const QuestionScreen(isPractice: true),
-                    ),
-                  )
-                  .then((_) => _refreshData()); // refresh on return
-            },
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: Text(l10n.practiceNow),
+          KeyedSubtree(
+            key: TourService.instance.practiceButtonKey,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context)
+                    .push(
+                      MaterialPageRoute(
+                        builder: (_) => const QuestionScreen(isPractice: true),
+                      ),
+                    )
+                    .then((_) => _refreshData()); // refresh on return
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(l10n.practiceNow),
+            ),
           ),
 
           const SizedBox(height: 32),
