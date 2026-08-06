@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import '../../core/auth/auth_service.dart';
 import 'display_name_setup_screen.dart';
@@ -73,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     e,
                     passwordController.text,
                   );
+                  if (!dialogContext.mounted) return;
                   if (error == null) {
                     Navigator.of(dialogContext).pop(true);
                   } else {
@@ -94,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   e,
                   passwordController.text,
                 );
+                if (!dialogContext.mounted) return;
                 if (error == null) {
                   Navigator.of(dialogContext).pop(true);
                 } else {
