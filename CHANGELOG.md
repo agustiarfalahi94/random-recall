@@ -5,7 +5,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [Unreleased] — 2026-08-06
+## [0.13.19] — 2026-08-06
 
 ### Fixed
 - **Cloud backup silently stopped working on large libraries** — Firestore limits a single write batch to 500 operations, but backups were written as one batch, so accounts with more than ~500 questions/categories/scores only uploaded part of their data (and a failed batch could leave older records overwriting newer ones). Backups are now split into small chunks and upload reliably no matter the library size.
