@@ -73,4 +73,39 @@ void main() {
       expect(result, [boundary, recent]);
     });
   });
+
+  group('SyncService.hasCloudData', () {
+    test('true if questions or scores exist', () {
+      expect(
+        SyncService.hasCloudData(hasQuestions: true, hasScores: false),
+        true,
+      );
+      expect(
+        SyncService.hasCloudData(hasQuestions: false, hasScores: true),
+        true,
+      );
+      expect(
+        SyncService.hasCloudData(hasQuestions: true, hasScores: true),
+        true,
+      );
+      expect(
+        SyncService.hasCloudData(hasQuestions: false, hasScores: false),
+        false,
+      );
+    });
+  });
+
+  group('SyncService.dropTombstoned', () {
+    test('drops cloud doc ids present in the tombstone set', () {
+      expect(SyncService.dropTombstoned(['1', '2', '3'], {2}), ['1', '3']);
+    });
+
+    test('keeps all when tombstone set is empty', () {
+      expect(SyncService.dropTombstoned(['1', '2'], {}), ['1', '2']);
+    });
+
+    test('ignores non-numeric cloud ids safely', () {
+      expect(SyncService.dropTombstoned(['abc', '4'], {4}), ['abc']);
+    });
+  });
 }

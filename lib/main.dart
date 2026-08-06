@@ -431,7 +431,11 @@ class _HomeGateState extends State<_HomeGate> {
               .collection('users')
               .doc(user.uid);
           final qSnap = await userDoc.collection('questions').limit(1).get();
-          final hasCloudData = qSnap.docs.isNotEmpty;
+          final sSnap = await userDoc
+              .collection('score_records')
+              .limit(1)
+              .get();
+          final hasCloudData = qSnap.docs.isNotEmpty || sSnap.docs.isNotEmpty;
           debugPrint('HomeGate: Cloud data check — hasCloudData=$hasCloudData');
 
           if (hasCloudData) {
