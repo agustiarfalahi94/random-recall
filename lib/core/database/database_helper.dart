@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart';
@@ -293,20 +294,42 @@ class DatabaseHelper {
       args.addAll(allExcluded);
     }
 
-    final rows = await db.query(
-      _tableQuestions,
-      where: conditions.isEmpty ? null : conditions.join(' AND '),
-      whereArgs: args.isEmpty ? null : args,
-      orderBy: 'RANDOM()',
-      limit: 1,
-    );
+    final where = conditions.isEmpty ? null : conditions.join(' AND ');
 
-    // Fallback: if nothing left after exclusions, allow any question
-    if (rows.isEmpty && allExcluded.isNotEmpty) {
-      return getRandomQuestion(categoryId: categoryId);
+    // Count candidate rows so we can pick a random OFFSET. This replaces the
+    // full-table ORDER BY RANDOM() sort on every quiz question with a COUNT
+    // + LIMIT/OFFSET scan.
+    final countRows = await db.rawQuery(
+      'SELECT COUNT(*) AS c FROM $_tableQuestions'
+      '${where == null ? '' : ' WHERE $where'}',
+      args.isEmpty ? null : args,
+    );
+    final count = countRows.first['c'] as int;
+    if (count == 0) {
+      if (allExcluded.isNotEmpty) {
+        // No rows after exclusions — fall back to any question.
+        return getRandomQuestion(categoryId: categoryId);
+      }
+      // Nothing to pick from at all — returning null here avoids recursing
+      // forever on an empty table (the previous ORDER BY RANDOM() path also
+      // returned null in this case).
+      return null;
     }
 
-    return rows.isEmpty ? null : Question.fromMap(rows.first);
+    final offset = Random().nextInt(count);
+    final rows = await db.query(
+      _tableQuestions,
+      where: where,
+      whereArgs: args.isEmpty ? null : args,
+      orderBy: 'id',
+      limit: 1,
+      offset: offset,
+    );
+    if (rows.isEmpty) {
+      // Fallback: offset past end (shouldn't happen, but be safe).
+      return getRandomQuestion(categoryId: categoryId);
+    }
+    return Question.fromMap(rows.first);
   }
 
   Future<int> getQuestionCount() async {

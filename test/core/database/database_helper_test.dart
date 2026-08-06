@@ -163,5 +163,60 @@ void main() {
         expect(all['questions'], isNot(contains(qB)));
       },
     );
+
+    test('getRandomQuestion returns a seeded question', () async {
+      final catId = await db.insertCategory(
+        Category(
+          name: 'R',
+          icon: '📌',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      for (var i = 0; i < 5; i++) {
+        await db.insertQuestion(
+          Question(
+            question: 'q$i',
+            answer: 'a',
+            categoryId: catId,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+      }
+      final q = await db.getRandomQuestion(categoryId: catId);
+      expect(q, isNotNull);
+      expect(q!.categoryId, catId);
+    });
+
+    test('getRandomQuestion respects excludeIds', () async {
+      final catId = await db.insertCategory(
+        Category(
+          name: 'R',
+          icon: '📌',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      final ids = <int>[];
+      for (var i = 0; i < 5; i++) {
+        final id = await db.insertQuestion(
+          Question(
+            question: 'q$i',
+            answer: 'a',
+            categoryId: catId,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        ids.add(id);
+      }
+      final q = await db.getRandomQuestion(
+        categoryId: catId,
+        excludeIds: ids.toSet(),
+      );
+      // Excluded all — should fall back to any question
+      expect(q, isNotNull);
+    });
   });
 }
