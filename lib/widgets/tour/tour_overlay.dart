@@ -92,12 +92,18 @@ class TourOverlayState extends State<TourOverlay> {
     super.didChangeDependencies();
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
-    // A Skip button on every tooltip.
+    // A Skip button on every tooltip. Hidden for the managed placeholder steps
+    // (7 & 8): their tooltip is zero-size/invisible and the full-screen overlay
+    // owns the tap + its own Skip button.
     _showcaseView.globalTooltipActions = [
       TooltipActionButton(
         type: TooltipDefaultActionType.skip,
         name: l10n.tourSkip,
         onTap: _skip,
+        hideActionWidgetForShowcase: [
+          TourService.instance.scheduleTileKey,
+          TourService.instance.donePlaceholderKey,
+        ],
       ),
     ];
   }
@@ -137,16 +143,16 @@ class TourOverlayState extends State<TourOverlay> {
         for (final step in _steps)
           if (step.behavior == TourStepBehavior.tapThrough ||
               step.behavior == TourStepBehavior.done)
-            // Fully inert: this placeholder fills the stack (tight constraints)
-            // but sits under the managed full-screen overlay, which owns the
-            // tap. Disable BOTH the barrier and target gestures so a stray tap
-            // during a step transition can never advance the sequence on its
-            // own.
-            Showcase(
+            // Fully inert AND invisible: the managed full-screen overlay owns
+            // the tap and the copy for these steps. A zero-size custom tooltip
+            // (container) means the placeholder's own tooltip never renders —
+            // no stray white bubble behind/over the overlay. Target + barrier
+            // gestures are disabled so a stray tap during a step transition
+            // can never advance the sequence on its own.
+            Showcase.withWidget(
               key: step.targetKey,
               scope: TourOverlay.scopeName,
-              title: null,
-              description: '',
+              container: const SizedBox.shrink(),
               disableBarrierInteraction: true,
               disableDefaultTargetGestures: true,
               child: const SizedBox.shrink(),
@@ -178,11 +184,14 @@ class TourOverlayState extends State<TourOverlay> {
         // sheet), so use the documented fallback: a text overlay over the
         // sheet.
         _showManagedOverlay(step, onTap: _onStep7Tapped);
+        break;
       case TourStepBehavior.done:
         // Step 8: "You're all set" overlay, tap anywhere to finish.
         _showManagedOverlay(step, onTap: _onDoneTapped);
+        break;
       case TourStepBehavior.runAction:
       case TourStepBehavior.tabSwitch:
+      case TourStepBehavior.tapToAdvance:
         break;
     }
   }
@@ -213,8 +222,17 @@ class TourOverlayState extends State<TourOverlay> {
       case TourStepBehavior.runAction:
         final fired = _fireRealAction(step);
         _handleRunActionAdvance(step, fired: fired);
+        break; // NB: Dart 3.11 switch cases FALL THROUGH without break — the
+        // missing breaks here caused every runAction step to also run
+        // `_performTabSwitch` (double-advance + stray tab switches).
       case TourStepBehavior.tabSwitch:
         _performTabSwitch(step);
+        break;
+      case TourStepBehavior.tapToAdvance:
+        // Step 3: the + FAB is only being pointed at — no real action to fire,
+        // just advance. No timers, no sheets — can't lag or get stuck.
+        _advance();
+        break;
       case TourStepBehavior.tapThrough:
       case TourStepBehavior.done:
         break; // handled by the managed full-screen overlays
@@ -238,8 +256,14 @@ class TourOverlayState extends State<TourOverlay> {
   bool _fireButtonIn(Element element) {
     final onPressed = _onPressedOf(element.widget);
     if (onPressed != null) {
-      onPressed();
-      return true;
+      try {
+        onPressed();
+        return true;
+      } catch (e, st) {
+        // Never let a real-action exception strand the tour mid-step.
+        debugPrint('TourOverlay: button onPressed threw: $e\n$st');
+        return false;
+      }
     }
     var fired = false;
     element.visitChildElements((child) {
@@ -262,18 +286,19 @@ class TourOverlayState extends State<TourOverlay> {
     if (step.copyKey == 'tourPracticeBody') {
       // Step 1: Practice Now pushes a route — advance when the user comes back.
       unawaited(_waitForRoutePop());
-    } else if (step.closesSheetOnAdvance) {
-      // Step 3: the Add FAB opens the Add-menu sheet — close it, then advance.
-      _pendingTimer = Timer(Duration(milliseconds: fired ? 600 : 400), () {
-        if (fired) navigatorKey.currentState?.pop();
-        _advance();
-      });
-    } else {
-      // Step 6: the settings gear opens the settings sheet. Keep it open — the
-      // step 7 overlay floats over it. Advance once the sheet has settled.
-      _sheetOpenForTour = fired;
-      _pendingTimer = Timer(const Duration(milliseconds: 400), _advance);
+      return;
     }
+    // Step 6: the settings gear opens the settings sheet. Keep it open — the
+    // step 7 overlay floats over it. Advance once the sheet has settled.
+    if (!fired) {
+      debugPrint(
+        'TourOverlay: ${step.copyKey} — real action did not fire; '
+        'staying on this step',
+      );
+      return;
+    }
+    _sheetOpenForTour = true;
+    _pendingTimer = Timer(const Duration(milliseconds: 400), _advance);
   }
 
   /// Polls until the route pushed by the practice button pops (user backs out),

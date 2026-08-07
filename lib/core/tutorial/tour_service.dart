@@ -4,19 +4,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
 
-enum TourStepBehavior { runAction, tapThrough, tabSwitch, done }
+enum TourStepBehavior { runAction, tapThrough, tabSwitch, tapToAdvance, done }
 
 class TourStep {
   final GlobalKey targetKey;
   final String copyKey; // ARB key for this step's body text
   final TourStepBehavior behavior;
-  final bool closesSheetOnAdvance; // only for runAction steps that open a sheet
 
   const TourStep({
     required this.targetKey,
     required this.copyKey,
     required this.behavior,
-    this.closesSheetOnAdvance = false,
   });
 }
 
@@ -96,8 +94,10 @@ class TourService {
     TourStep(
       targetKey: addFabKey,
       copyKey: 'tourAddBody',
-      behavior: TourStepBehavior.runAction,
-      closesSheetOnAdvance: true,
+      // Tap-to-advance: the + FAB is just being pointed at — do NOT fire its
+      // real action (which would open/close the add menu and feel like a
+      // delay), and never risk getting stuck behind a sheet.
+      behavior: TourStepBehavior.tapToAdvance,
     ),
     TourStep(
       targetKey: navAnalyticsKey,
