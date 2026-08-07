@@ -7,6 +7,7 @@ import '../../core/config/remote_config_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/plan/plan_service.dart';
 import '../../core/tutorial/tour_service.dart';
+import '../../widgets/tour/tour_overlay.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
 import '../../widgets/upgrade_bottom_sheet.dart';
@@ -400,8 +401,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
           ),
         ],
       ),
-      floatingActionButton: KeyedSubtree(
-        key: TourService.instance.addFabKey,
+      floatingActionButton: TourTarget(
+        targetKey: TourService.instance.addFabKey,
         child: FloatingActionButton(
           onPressed: pillIsError ? null : _showAddMenu,
           backgroundColor: colorScheme.primary,

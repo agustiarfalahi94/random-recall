@@ -1,35 +1,30 @@
 // lib/widgets/tour/tour_overlay.dart
+//
+// REDESIGNED (2026-08-06): the tour now uses showcaseview's intended API —
+// the REAL target widgets are wrapped in `Showcase(key: ..., child: ...)` via
+// [TourTarget]. Each GlobalKey belongs to exactly ONE showcase, so the element
+// tree stays consistent. This file hosts the ShowcaseView controller, the
+// step-advance logic, and the managed full-screen overlays for the two steps
+// that have no real target (the in-sheet schedule step + the done step).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 import '../../core/tutorial/tour_service.dart';
-import '../../l10n/app_localizations.dart';
 import '../../main.dart' show navigatorKey;
 
-/// Drives the interactive tutorial: wraps the app content with one [Showcase]
-/// per [TourStep] and orchestrates the advance rules (runAction / tabSwitch /
-/// tapThrough / done) + the skip button.
-///
-/// ## Placement constraint (important)
-/// [TourOverlay] must be mounted **inside the Navigator's subtree** (e.g.
-/// wrapping the Home screen content). The `Showcase` widgets resolve the root
-/// `Overlay` via `context.findRootAncestorStateOfType<OverlayState>()`; if the
-/// overlay is mounted above the Navigator (e.g. inside `MaterialApp.builder`),
-/// that lookup returns null and the spotlight overlay silently fails to render.
-///
-/// ## Why the overlay drives the real actions itself
-/// ShowcaseView's translucent `TargetWidget` sits on top of the target and wins
-/// the tap arena, so the real button's `onPressed` / the `NavigationBar`'s tap
-/// never fire on their own. Step 1–6 therefore use `onTargetClick` to (a) fire
-/// the real action by traversing the target's element tree, and (b) control the
-/// advance.
+/// Wraps the app content with the tour's showcase controller. Must be mounted
+/// inside the Navigator's subtree (e.g. wrapping the Home screen scaffold).
 class TourOverlay extends StatefulWidget {
   const TourOverlay({super.key, required this.child});
 
   /// The app content the tour highlights.
   final Widget child;
+
+  /// Scope used to link [TourTarget] showcases to this controller.
+  static const String scopeName = 'random_recall_tour';
 
   /// Convenience: starts the tour from any context that is a descendant of
   /// [TourOverlay] (e.g. from the Home screen), after the UI has settled.
@@ -37,15 +32,21 @@ class TourOverlay extends StatefulWidget {
     context.findAncestorStateOfType<TourOverlayState>()?.start();
   }
 
+  /// Called by the [TourTarget] wrappers when their highlighted target is
+  /// tapped while the tour is running.
+  static void handleTargetTap(BuildContext context, GlobalKey targetKey) {
+    context.findAncestorStateOfType<TourOverlayState>()?.onTargetTapped(
+      targetKey,
+    );
+  }
+
   @override
   State<TourOverlay> createState() => TourOverlayState();
 }
 
 /// Public state so callers can hold a `GlobalKey<TourOverlayState>` and call
-/// [TourOverlayState.start] after the first frame.
+/// [start] after the first frame.
 class TourOverlayState extends State<TourOverlay> {
-  static const String _scopeName = 'random_recall_tour';
-
   late final ShowcaseView _showcaseView;
 
   List<TourStep> _steps = const [];
@@ -58,10 +59,8 @@ class TourOverlayState extends State<TourOverlay> {
   @override
   void initState() {
     super.initState();
-    // `ShowcaseView.register` (v5 API) is used instead of the deprecated
-    // `ShowCaseWidget` so `flutter analyze` stays clean.
     _showcaseView = ShowcaseView.register(
-      scope: _scopeName,
+      scope: TourOverlay.scopeName,
       onStart: _onStepStart,
       onComplete: _onStepComplete,
       onFinish: _onShowcaseFinished,
@@ -103,15 +102,33 @@ class TourOverlayState extends State<TourOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Stack(
       fit: StackFit.expand,
       children: [
         widget.child,
+        // Steps without a real target (in-sheet schedule fallback + done)
+        // still need a registered Showcase so the controller can advance to
+        // them. They are zero-size and fully covered by the managed overlays.
         for (final step in _steps)
-          _TourShowcase(step: step, l10n: l10n, onStepAction: _onStepAction),
+          if (step.behavior == TourStepBehavior.tapThrough ||
+              step.behavior == TourStepBehavior.done)
+            Showcase(
+              key: step.targetKey,
+              scope: TourOverlay.scopeName,
+              title: null,
+              description: '',
+              child: const SizedBox.shrink(),
+            ),
       ],
     );
+  }
+
+  /// Invoked by [TourTarget] when the user taps the highlighted target.
+  void onTargetTapped(GlobalKey key) {
+    if (_skipping) return;
+    final step = _stepByKey(key);
+    if (step == null) return;
+    _onStepAction(step);
   }
 
   // ── Step lifecycle ──────────────────────────────────────────────────────
@@ -121,9 +138,9 @@ class TourOverlayState extends State<TourOverlay> {
     if (step == null) return;
     switch (step.behavior) {
       case TourStepBehavior.tapThrough:
-        // Step 7: `scheduleTileKey` has no context (not attached in this task
-        // scope), so the real in-sheet spotlight is impossible. Use the
-        // documented fallback: a plain text overlay over the sheet.
+        // Step 7: `scheduleTileKey` has no real target (inside the settings
+        // sheet), so use the documented fallback: a text overlay over the
+        // sheet.
         _showManagedOverlay(step, onTap: _onStep7Tapped);
       case TourStepBehavior.done:
         // Step 8: "You're all set" overlay, tap anywhere to finish.
@@ -168,9 +185,9 @@ class TourOverlayState extends State<TourOverlay> {
     }
   }
 
-  /// The overlay's translucent TargetWidget wins the tap arena, so the real
-  /// button's `onPressed` never fires on its own. Walk the target's element
-  /// tree to find the button and invoke it directly.
+  /// The showcase's TargetWidget wins the tap arena, so the real button's
+  /// `onPressed` never fires on its own. Walk the target's element tree to
+  /// find the button and invoke it directly.
   bool _fireRealAction(TourStep step) {
     final ctx = step.targetKey.currentContext;
     if (ctx == null) return false;
@@ -264,7 +281,7 @@ class TourOverlayState extends State<TourOverlay> {
     if (l10n == null) return;
     _insertManagedEntry(
       _TourOverlayScreen(
-        body: _tourCopy(l10n, step.copyKey).replaceAll('**', ''),
+        body: TourService.instance.copyFor(l10n, step.targetKey),
         onTap: onTap,
         onSkip: _skip,
         skipLabel: l10n.tourSkip,
@@ -348,95 +365,45 @@ class TourOverlayState extends State<TourOverlay> {
   }
 }
 
-/// One `Showcase` for one `TourStep`, positioned exactly over the step's target
-/// via a [Positioned] box.
+/// Wraps a REAL target widget with the tour's `Showcase`.
 ///
-/// The `Showcase`'s `key` is a registry id in showcaseview 5.x (never attached
-/// to the element), so reusing the same `GlobalKey` as the screen's KeyedSubtree
-/// is safe. The overlay computes the target rect from this box via
-/// `box.localToGlobal(ancestor: rootOverlay)`.
-class _TourShowcase extends StatefulWidget {
-  const _TourShowcase({
-    required this.step,
-    required this.l10n,
-    required this.onStepAction,
-  });
+/// Inert when the tour is disabled (renders [child] untouched). When enabled,
+/// the widget registers the target in the tour's scope; tapping the
+/// highlighted target while the tour is running fires [TourOverlay]'s step
+/// logic. Each [targetKey] is used by exactly one showcase.
+class TourTarget extends StatelessWidget {
+  const TourTarget({super.key, required this.targetKey, required this.child});
 
-  final TourStep step;
-  final AppLocalizations l10n;
-  final ValueChanged<TourStep> onStepAction;
-
-  @override
-  State<_TourShowcase> createState() => _TourShowcaseState();
-}
-
-class _TourShowcaseState extends State<_TourShowcase> {
-  Rect? _rect;
-
-  Rect? _measureNow() {
-    final ctx = widget.step.targetKey.currentContext;
-    final box = ctx?.findRenderObject() as RenderBox?;
-    if (box == null || !box.attached || !box.hasSize) return null;
-    return Rect.fromLTWH(
-      box.localToGlobal(Offset.zero).dx,
-      box.localToGlobal(Offset.zero).dy,
-      box.size.width,
-      box.size.height,
-    );
-  }
+  final GlobalKey targetKey;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    // Measure in build (targets are laid out by the time the tour starts) and
-    // re-measure post-frame to catch any later size/position changes.
-    final measured = _measureNow();
-    if (measured != _rect) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() {});
-      });
-      _rect = measured;
-    }
+    final l10n = AppLocalizations.of(context);
+    if (!TourService.enabled || l10n == null) return child;
 
-    final rect = _rect;
-    final behavior = widget.step.behavior;
+    final step = TourService.instance.stepForKey(targetKey);
     final isManaged =
-        behavior == TourStepBehavior.tapThrough ||
-        behavior == TourStepBehavior.done;
+        step?.behavior == TourStepBehavior.tapThrough ||
+        step?.behavior == TourStepBehavior.done;
 
-    final showcase = Showcase(
-      key: widget.step.targetKey,
+    return Showcase(
+      key: targetKey,
+      scope: TourOverlay.scopeName,
       title: null,
-      description: isManaged
+      description: step == null
           ? ''
-          : _tourCopy(widget.l10n, widget.step.copyKey).replaceAll('**', ''),
-      targetPadding: const EdgeInsets.all(8),
+          : TourService.instance.copyFor(l10n, targetKey),
       // runAction: a barrier tap must not advance/strand the tour behind a
       // route. Managed steps are fully covered by the custom overlay, so their
       // placeholder Showcase must not react to taps either.
       disableBarrierInteraction:
-          isManaged || behavior == TourStepBehavior.runAction,
-      onTargetClick: isManaged ? null : () => widget.onStepAction(widget.step),
+          isManaged || step?.behavior == TourStepBehavior.runAction,
+      onTargetClick: isManaged
+          ? null
+          : () => TourOverlay.handleTargetTap(context, targetKey),
       disposeOnTap: isManaged ? null : false,
-      child: SizedBox(width: rect?.width ?? 0, height: rect?.height ?? 0),
-    );
-
-    if (!isManaged && rect != null) {
-      return Positioned(
-        left: rect.left,
-        top: rect.top,
-        width: rect.width,
-        height: rect.height,
-        child: showcase,
-      );
-    }
-    // Placeholder (steps 7–8): zero-size, hidden behind the managed overlay,
-    // but still registered so the controller does not auto-finish the tour.
-    return const Positioned(
-      left: 0,
-      top: 0,
-      width: 0,
-      height: 0,
-      child: SizedBox.shrink(),
+      child: child,
     );
   }
 }
@@ -494,29 +461,5 @@ class _TourOverlayScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-/// Resolves the localized copy for a tour `copyKey`.
-String _tourCopy(AppLocalizations l10n, String copyKey) {
-  switch (copyKey) {
-    case 'tourPracticeBody':
-      return l10n.tourPracticeBody;
-    case 'tourQuestionsBody':
-      return l10n.tourQuestionsBody;
-    case 'tourAddBody':
-      return l10n.tourAddBody;
-    case 'tourAnalyticsBody':
-      return l10n.tourAnalyticsBody;
-    case 'tourHomeBody':
-      return l10n.tourHomeBody;
-    case 'tourSettingsBody':
-      return l10n.tourSettingsBody;
-    case 'tourScheduleBody':
-      return l10n.tourScheduleBody;
-    case 'tourDoneBody':
-      return l10n.tourDoneBody;
-    default:
-      return copyKey;
   }
 }

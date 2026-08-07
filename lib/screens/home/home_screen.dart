@@ -55,8 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           actions: [
-            KeyedSubtree(
-              key: TourService.instance.settingsGearKey,
+            TourTarget(
+              targetKey: TourService.instance.settingsGearKey,
               child: IconButton(
                 onPressed: () => _showSettingsSheet(context),
                 icon: const Icon(Icons.settings_outlined),
@@ -82,24 +82,24 @@ class _HomeScreenState extends State<HomeScreen> {
           indicatorColor: colorScheme.primaryContainer,
           destinations: [
             NavigationDestination(
-              icon: KeyedSubtree(
-                key: TourService.instance.navHomeKey,
+              icon: TourTarget(
+                targetKey: TourService.instance.navHomeKey,
                 child: const Icon(Icons.home_outlined),
               ),
               selectedIcon: const Icon(Icons.home_rounded),
               label: l10n.navHome,
             ),
             NavigationDestination(
-              icon: KeyedSubtree(
-                key: TourService.instance.navQuestionsKey,
+              icon: TourTarget(
+                targetKey: TourService.instance.navQuestionsKey,
                 child: const Icon(Icons.format_list_bulleted_outlined),
               ),
               selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
               label: l10n.navQuestions,
             ),
             NavigationDestination(
-              icon: KeyedSubtree(
-                key: TourService.instance.navAnalyticsKey,
+              icon: TourTarget(
+                targetKey: TourService.instance.navAnalyticsKey,
                 child: const Icon(Icons.bar_chart_outlined),
               ),
               selectedIcon: const Icon(Icons.bar_chart_rounded),
@@ -1056,8 +1056,8 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          KeyedSubtree(
-            key: TourService.instance.practiceButtonKey,
+          TourTarget(
+            targetKey: TourService.instance.practiceButtonKey,
             child: ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context)
