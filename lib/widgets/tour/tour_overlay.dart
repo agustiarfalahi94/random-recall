@@ -18,10 +18,14 @@ import '../../main.dart' show navigatorKey;
 /// Wraps the app content with the tour's showcase controller. Must be mounted
 /// inside the Navigator's subtree (e.g. wrapping the Home screen scaffold).
 class TourOverlay extends StatefulWidget {
-  const TourOverlay({super.key, required this.child});
+  const TourOverlay({super.key, required this.child, this.onBeforeStart});
 
   /// The app content the tour highlights.
   final Widget child;
+
+  /// Called right before the tour starts — used to reset the visible tab to
+  /// Home, since the tour's step sequence assumes it starts on the Home tab.
+  final VoidCallback? onBeforeStart;
 
   /// Scope used to link [TourTarget] showcases to this controller.
   static const String scopeName = 'random_recall_tour';
@@ -89,6 +93,10 @@ class TourOverlayState extends State<TourOverlay> {
   /// again later (e.g. re-running the tour from the Settings sheet).
   void start() {
     if (_showcaseView.isShowcaseRunning) return;
+    // The tour's step sequence starts on the Home tab (practice button, nav
+    // icons...). If the user launched the tour from another tab, jump Home
+    // first; the post-frame driver below runs after that frame settles.
+    widget.onBeforeStart?.call();
     setState(() {
       _steps = TourService.instance.steps;
     });

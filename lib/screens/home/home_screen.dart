@@ -48,6 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // its Showcase widgets can spotlight the app bar / nav bar / tabs.
     return TourOverlay(
       key: _tourKey,
+      // The tour's steps start on the Home tab — reset the visible tab so a
+      // replay from Settings/another tab always begins at the practice button.
+      onBeforeStart: () => setState(() => _currentIndex = 0),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
