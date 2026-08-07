@@ -23,6 +23,7 @@ class TourOverlay extends StatefulWidget {
     required this.child,
     this.onBeforeStart,
     this.onSwitchTab,
+    this.onOpenSettings,
   });
 
   /// The app content the tour highlights.
@@ -36,6 +37,10 @@ class TourOverlay extends StatefulWidget {
   /// passes its own `setState` (the same one the NavigationBar calls), so the
   /// tour never depends on widget-tree reflection to change tabs.
   final ValueChanged<int>? onSwitchTab;
+
+  /// Called to open the settings sheet during the gear step — the screen's
+  /// own handler, invoked directly instead of walking the element tree.
+  final VoidCallback? onOpenSettings;
 
   /// Scope used to link [TourTarget] showcases to this controller.
   static const String scopeName = 'random_recall_tour';
@@ -220,7 +225,22 @@ class TourOverlayState extends State<TourOverlay> {
   void _onStepAction(TourStep step) {
     switch (step.behavior) {
       case TourStepBehavior.runAction:
-        final fired = _fireRealAction(step);
+        // The settings gear is driven through the screen's own callback — the
+        // same handler a real tap invokes — so opening the sheet never depends
+        // on element-tree reflection. Practice (step 1) still uses the generic
+        // element walk.
+        var fired = false;
+        if (step.copyKey == 'tourSettingsBody' &&
+            widget.onOpenSettings != null) {
+          try {
+            widget.onOpenSettings!();
+            fired = true;
+          } catch (e, st) {
+            debugPrint('TourOverlay: onOpenSettings threw: $e\n$st');
+          }
+        } else {
+          fired = _fireRealAction(step);
+        }
         _handleRunActionAdvance(step, fired: fired);
         break; // NB: Dart 3.11 switch cases FALL THROUGH without break — the
         // missing breaks here caused every runAction step to also run

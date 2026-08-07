@@ -171,13 +171,28 @@ Future<void> main() async {
       if (currentUser != null) {
         try {
           await currentUser.reload();
+        } on FirebaseAuthException catch (e) {
+          // Only end the session on definitive account-level failures (user
+          // deleted/disabled, credentials revoked). Transient failures (no
+          // network yet at cold start, timeouts) must NOT sign the user out —
+          // HyperOS aggressively kills the app in the background, so every
+          // reopen is a cold start and a momentary network hiccup would
+          // otherwise log the user out on every launch.
+          if (e.code == 'user-not-found' ||
+              e.code == 'user-disabled' ||
+              e.code == 'invalid-user-token' ||
+              e.code == 'user-token-expired') {
+            debugPrint('main.dart: User reload failed (${e.code}). Signing out...');
+            await AuthService.instance.signOut();
+          } else {
+            debugPrint(
+              'main.dart: User reload failed (${e.code}) — keeping session.',
+            );
+          }
         } catch (e) {
-          // If reload fails for any reason (e.g., token expired, user deleted),
-          // treat it as a sign-out event to clear the local session.
-          debugPrint('main.dart: User reload failed: $e. Signing out...');
-          // Explicitly call signOut to ensure all local state is cleared.
-          // The authStateChanges stream will then handle navigation to LoginScreen.
-          await AuthService.instance.signOut();
+          // Non-Firebase errors (SocketException, TimeoutException, ...) are
+          // almost always transient — keep the persisted session.
+          debugPrint('main.dart: User reload failed ($e) — keeping session.');
         }
       }
 
@@ -508,9 +523,10 @@ class _HomeGateState extends State<_HomeGate> {
         return;
       }
 
-      final userDoc = await FirebaseFirestore.instance
+      final userDocRef = FirebaseFirestore.instance
           .collection('users')
-          .doc(user.uid)
+          .doc(user.uid);
+      final userDoc = await userDocRef
           .get(const GetOptions(source: Source.server))
           .timeout(const Duration(seconds: 5));
 
@@ -522,12 +538,23 @@ class _HomeGateState extends State<_HomeGate> {
       );
 
       if (remoteDeviceId != null && remoteDeviceId != localDeviceId) {
-        // Another device is now active. Silent logout.
+        // The cloud claim is stale: a previous installation wrote it, or an
+        // earlier claim write failed (e.g. before the Firestore rules were
+        // deployed). A mismatch alone is NOT proof that another device is
+        // active, so silently signing out here logs the user out on every
+        // cold start after any reinstall — instead, re-claim this device
+        // (this device is in use right now).
         debugPrint(
-          'HomeGate: MISMATCH — another device logged in. Signing out.',
+          'HomeGate: Mismatch — re-claiming device $localDeviceId',
         );
-        if (mounted) {
-          await AuthService.instance.signOut();
+        try {
+          await userDocRef.set(
+            {'last_active_device_id': localDeviceId},
+            SetOptions(merge: true),
+          );
+        } catch (e) {
+          // Never sign out because a claim write failed.
+          debugPrint('HomeGate: Re-claim failed (staying logged in): $e');
         }
       }
     } catch (e) {

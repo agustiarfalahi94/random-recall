@@ -54,6 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
       // The tour drives tab changes through the screen's own setState — the
       // same mechanism as a real nav tap.
       onSwitchTab: (index) => setState(() => _currentIndex = index),
+      // The gear step opens the settings sheet through the screen's own
+      // handler (same as a real tap) — no element-tree walking.
+      onOpenSettings: () => _showSettingsSheet(context),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
