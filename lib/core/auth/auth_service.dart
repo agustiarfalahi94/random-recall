@@ -330,13 +330,23 @@ class AuthService {
     try {
       final user = currentUser;
 
-      // 1. Attempt final backup — timeout after 8 s so a slow connection
-      //    never blocks the sign-out flow indefinitely.
+      // 1. Attempt final backup — 20 s budget. A slow connection must not
+      //    silently lose the user's latest scores.
+      var backedUp = false;
       if (user != null) {
-        await SyncService.instance
+        backedUp = await SyncService.instance
             .performBackup(force: true)
-            .timeout(const Duration(seconds: 8))
-            .catchError((e) => debugPrint('Signout backup failed: $e'));
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () {
+                debugPrint('AuthService: Signout backup timed out');
+                return false;
+              },
+            )
+            .catchError((e) {
+              debugPrint('Signout backup failed: $e');
+              return false;
+            });
       }
 
       // 2. Subscription and Google logout
@@ -345,15 +355,27 @@ class AuthService {
       );
       await _googleSignIn.signOut().catchError((_) => null);
 
-      // 3. Clear local data so the next user starts fresh
-      await DatabaseHelper.instance.clearAllData();
+      // 3. Clear local data so the next user starts fresh — but ONLY when the
+      //    backup succeeded (or the local data belongs to a different account).
+      //    On a failed backup, keep the data: the next login uploads it before
+      //    the restore wipes it (SyncService._preWipeBackupIfLocalDataBelongsTo).
+      final prefs = await SharedPreferences.getInstance();
+      final localOwner = prefs.getString(SyncService.localDataOwnerKey);
+      final belongsToUser = localOwner == null || localOwner == user?.uid;
+      if (backedUp || !belongsToUser) {
+        await DatabaseHelper.instance.clearAllData();
+        await prefs.remove(SyncService.localDataOwnerKey);
+      } else {
+        debugPrint(
+          'AuthService: Backup failed — keeping local data for next login',
+        );
+      }
 
       // 4. Clear all challenge-mode state so a new account on this device
       //    does not inherit the previous user's challenge session.
       await StreakService.instance.resetChallenge();
 
       // 5. Selective cleanup: clear all user-specific preferences
-      final prefs = await SharedPreferences.getInstance();
       for (final key in const [
         'onboarding_complete',
         'timer_streak_days',

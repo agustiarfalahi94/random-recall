@@ -380,13 +380,16 @@ class TourOverlayState extends State<TourOverlay> {
   void _showManagedOverlay(TourStep step, {required VoidCallback onTap}) {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+    final isDone = step.behavior == TourStepBehavior.done;
     _insertManagedEntry(
       _TourOverlayScreen(
         body: TourService.instance.copyFor(l10n, step.targetKey),
         onTap: onTap,
-        onSkip: _skip,
-        skipLabel: l10n.tourSkip,
-        dim: step.behavior == TourStepBehavior.done,
+        // The final step's button finishes the tour (same as tapping
+        // anywhere); the step-7 overlay keeps the Skip behaviour.
+        onSkip: isDone ? _onDoneTapped : _skip,
+        skipLabel: isDone ? l10n.tourFinish : l10n.tourSkip,
+        dim: isDone,
       ),
     );
   }

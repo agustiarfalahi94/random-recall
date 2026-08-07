@@ -1787,6 +1787,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tourSkip => 'Skip';
 
   @override
+  String get tourFinish => 'Finish';
+
+  @override
   String get tourReplayTile => 'Take a tour';
 
   @override

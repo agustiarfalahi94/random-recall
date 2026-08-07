@@ -3200,6 +3200,12 @@ abstract class AppLocalizations {
   /// **'Skip'**
   String get tourSkip;
 
+  /// No description provided for @tourFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get tourFinish;
+
   /// No description provided for @tourReplayTile.
   ///
   /// In en, this message translates to:

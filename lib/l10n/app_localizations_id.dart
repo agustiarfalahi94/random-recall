@@ -1793,6 +1793,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get tourSkip => 'Lewati';
 
   @override
+  String get tourFinish => 'Selesai';
+
+  @override
   String get tourReplayTile => 'Panduan interaktif';
 
   @override
