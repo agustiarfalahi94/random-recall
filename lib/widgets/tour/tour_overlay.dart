@@ -18,7 +18,12 @@ import '../../main.dart' show navigatorKey;
 /// Wraps the app content with the tour's showcase controller. Must be mounted
 /// inside the Navigator's subtree (e.g. wrapping the Home screen scaffold).
 class TourOverlay extends StatefulWidget {
-  const TourOverlay({super.key, required this.child, this.onBeforeStart});
+  const TourOverlay({
+    super.key,
+    required this.child,
+    this.onBeforeStart,
+    this.onSwitchTab,
+  });
 
   /// The app content the tour highlights.
   final Widget child;
@@ -26,6 +31,11 @@ class TourOverlay extends StatefulWidget {
   /// Called right before the tour starts — used to reset the visible tab to
   /// Home, since the tour's step sequence assumes it starts on the Home tab.
   final VoidCallback? onBeforeStart;
+
+  /// Called to switch the visible tab during `tabSwitch` steps. The screen
+  /// passes its own `setState` (the same one the NavigationBar calls), so the
+  /// tour never depends on widget-tree reflection to change tabs.
+  final ValueChanged<int>? onSwitchTab;
 
   /// Scope used to link [TourTarget] showcases to this controller.
   static const String scopeName = 'random_recall_tour';
@@ -39,9 +49,12 @@ class TourOverlay extends StatefulWidget {
   /// Called by the [TourTarget] wrappers when their highlighted target is
   /// tapped while the tour is running.
   static void handleTargetTap(BuildContext context, GlobalKey targetKey) {
-    context.findAncestorStateOfType<TourOverlayState>()?.onTargetTapped(
-      targetKey,
-    );
+    final state = context.findAncestorStateOfType<TourOverlayState>();
+    if (state == null) {
+      debugPrint('TourOverlay: handleTargetTap — TourOverlayState not found');
+      return;
+    }
+    state.onTargetTapped(targetKey);
   }
 
   @override
@@ -213,8 +226,13 @@ class TourOverlayState extends State<TourOverlay> {
   /// find the button and invoke it directly.
   bool _fireRealAction(TourStep step) {
     final ctx = step.targetKey.currentContext;
-    if (ctx == null) return false;
-    return _fireButtonIn(ctx as Element);
+    if (ctx == null) {
+      debugPrint('TourOverlay: runAction — no context for ${step.copyKey}');
+      return false;
+    }
+    final fired = _fireButtonIn(ctx as Element);
+    debugPrint('TourOverlay: runAction ${step.copyKey} fired=$fired');
+    return fired;
   }
 
   bool _fireButtonIn(Element element) {
@@ -275,10 +293,25 @@ class TourOverlayState extends State<TourOverlay> {
   /// handles it), and the overlay captures the tap anyway — so drive the tab
   /// switch directly, then advance once the new tab has settled.
   void _performTabSwitch(TourStep step) {
-    final ctx = step.targetKey.currentContext;
-    final navBar = ctx?.findAncestorWidgetOfExactType<NavigationBar>();
-    if (navBar == null) return;
-    navBar.onDestinationSelected?.call(_tabIndexFor(step.copyKey));
+    final index = _tabIndexFor(step.copyKey);
+    // Preferred path: the screen handed us its own tab setState — identical to
+    // what a real nav tap does. Fall back to driving the NavigationBar widget
+    // (tree reflection) for robustness.
+    if (widget.onSwitchTab != null) {
+      widget.onSwitchTab!(index);
+      debugPrint('TourOverlay: tabSwitch ${step.copyKey} → index $index');
+    } else {
+      final ctx = step.targetKey.currentContext;
+      final navBar = ctx?.findAncestorWidgetOfExactType<NavigationBar>();
+      if (navBar == null) {
+        debugPrint(
+          'TourOverlay: tabSwitch ${step.copyKey} — NavigationBar not found',
+        );
+        return;
+      }
+      navBar.onDestinationSelected?.call(index);
+      debugPrint('TourOverlay: tabSwitch ${step.copyKey} → index $index');
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_skipping) _advance();
     });

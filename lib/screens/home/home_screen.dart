@@ -51,6 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
       // The tour's steps start on the Home tab — reset the visible tab so a
       // replay from Settings/another tab always begins at the practice button.
       onBeforeStart: () => setState(() => _currentIndex = 0),
+      // The tour drives tab changes through the screen's own setState — the
+      // same mechanism as a real nav tap.
+      onSwitchTab: (index) => setState(() => _currentIndex = index),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
