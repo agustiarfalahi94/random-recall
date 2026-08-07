@@ -124,11 +124,18 @@ class TourOverlayState extends State<TourOverlay> {
         for (final step in _steps)
           if (step.behavior == TourStepBehavior.tapThrough ||
               step.behavior == TourStepBehavior.done)
+            // Fully inert: this placeholder fills the stack (tight constraints)
+            // but sits under the managed full-screen overlay, which owns the
+            // tap. Disable BOTH the barrier and target gestures so a stray tap
+            // during a step transition can never advance the sequence on its
+            // own.
             Showcase(
               key: step.targetKey,
               scope: TourOverlay.scopeName,
               title: null,
               description: '',
+              disableBarrierInteraction: true,
+              disableDefaultTargetGestures: true,
               child: const SizedBox.shrink(),
             ),
       ],
@@ -410,11 +417,12 @@ class TourTarget extends StatelessWidget {
       description: step == null
           ? ''
           : TourService.instance.copyFor(l10n, targetKey),
-      // runAction: a barrier tap must not advance/strand the tour behind a
-      // route. Managed steps are fully covered by the custom overlay, so their
-      // placeholder Showcase must not react to taps either.
-      disableBarrierInteraction:
-          isManaged || step?.behavior == TourStepBehavior.runAction,
+      // Every step locks the screen: showcaseview's default barrier tap calls
+      // `next()`, which would advance the tour WITHOUT performing the step's
+      // real action (e.g. switching tabs — the step-2 bug). Barrier taps are
+      // therefore inert everywhere; the tour only advances through the
+      // explicit handlers (target tap / managed overlay tap / Skip).
+      disableBarrierInteraction: true,
       onTargetClick: isManaged
           ? null
           : () => TourOverlay.handleTargetTap(context, targetKey),
