@@ -97,6 +97,10 @@ class TourOverlayState extends State<TourOverlay> {
 
   void _startDriver() {
     if (!mounted || _steps.isEmpty) return;
+    debugPrint(
+      'TourOverlay: startShowCase with ${_steps.length} steps: '
+      '${_steps.map((s) => s.copyKey).join(', ')}',
+    );
     _showcaseView.startShowCase([for (final s in _steps) s.targetKey]);
   }
 
@@ -127,7 +131,11 @@ class TourOverlayState extends State<TourOverlay> {
   void onTargetTapped(GlobalKey key) {
     if (_skipping) return;
     final step = _stepByKey(key);
-    if (step == null) return;
+    if (step == null) {
+      debugPrint('TourOverlay: No step for tapped key $key');
+      return;
+    }
+    debugPrint('TourOverlay: Target tapped — ${step.copyKey}');
     _onStepAction(step);
   }
 

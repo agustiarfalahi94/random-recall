@@ -50,6 +50,10 @@ class TourService {
   Future<void> markCompleted() async => _prefs.setBool(_completedKey, true);
   Future<void> markSkipped() async => _prefs.setBool(_completedKey, true);
 
+  /// Dev/testing helper: clears the completion flag so the tour auto-starts
+  /// again (or can be re-run from Settings).
+  Future<void> resetCompleted() async => _prefs.remove(_completedKey);
+
   // The GlobalKeys are created here so screens and the overlay share them.
   // The keys are attached to the `Showcase` wrappers in each screen (via
   // `TourTarget`), and each key is used by EXACTLY ONE showcase.

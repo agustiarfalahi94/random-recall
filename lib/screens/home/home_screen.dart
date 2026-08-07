@@ -841,16 +841,24 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   /// / rooted-device warning) have resolved. Runs at most once per app session.
   /// No-op while the tour is disabled.
   void _scheduleTourStart() {
-    if (!TourService.enabled) return;
+    if (!TourService.enabled) {
+      debugPrint('HomeTab: Tour disabled, skipping auto-start.');
+      return;
+    }
     if (_tourStartPending) return;
     if (!_displayNameResolved) return; // re-triggered when it resolves
     if (_rootWarningVisible) return; // re-triggered once the warning closes
-    if (!TourService.instance.shouldShowTour()) return;
+    if (!TourService.instance.shouldShowTour()) {
+      debugPrint('HomeTab: Tour already completed/skipped, not auto-starting.');
+      return;
+    }
     _tourStartPending = true;
+    debugPrint('HomeTab: Scheduling tour start...');
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Let any closing dialog/sheet animation settle before spotlighting.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
+      debugPrint('HomeTab: Starting tour now.');
       TourOverlay.start(context);
     });
   }
