@@ -5,34 +5,29 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [0.13.20] — 2026-08-06
-
-### Fixed
-- **Notifications never fired on Android 14+** — scheduling always used `exactAllowWhileIdle`, which requires the `SCHEDULE_EXACT_ALARM` permission (denied by default on Android 14+; the log showed it denied). The exact-mode call threw, the error was swallowed, and zero alarms were scheduled. Now checks `canScheduleExactNotifications()` once per run and falls back to `inexactAllowWhileIdle` (no permission needed — notifications fire, possibly with slight delay), with a per-alarm retry as a safety net.
-- **Interactive tour crash ("RenderBox was not laid out")** — the tour overlay shared GlobalKeys between the real target widgets and the showcaseview widgets, corrupting the element tree. **The tour is now disabled** (no auto-start, no Settings entry) until it is redesigned around showcaseview's real wrapping API. Code is gated behind `TourService.enabled`.
-
-### Notes
-- 108/108 tests, 0 analyzer issues, debug APK verified.
-
----
-
-## [0.13.19] — 2026-08-06
+## [0.13.20] — 2026-08-07
 
 ### Added
-- **Interactive spotlight tutorial for new users** — after onboarding, a guided coach-mark tour highlights the core journey: Practice Now, the question list + add button, analytics, home, settings, and the notification schedule, ending with a "You're all set" overlay. Skip button on every step; re-runnable anytime from Settings → "Take a tour". English + Indonesian. (Uses `showcaseview`; the in-sheet schedule step uses a text-overlay fallback since an in-sheet spotlight isn't possible with the current sheet implementation.)
+- **Interactive spotlight tutorial for new users** — after onboarding, a guided coach-mark tour highlights the core journey: Practice Now, the question list + add button, analytics, home, settings, and the notification schedule, ending with a "You're all set" overlay (Finish button). Skip on every step; re-runnable from Settings → "Take a tour". English + Indonesian. The in-sheet schedule step uses a text-overlay fallback (the sheet stays open underneath so the tile is reachable).
 
 ### Fixed
-- **Cloud backup silently stopped working on large libraries** — Firestore limits a single write batch to 500 operations, but backups were written as one batch, so accounts with more than ~500 questions/categories/scores only uploaded part of their data (and a failed batch could leave older records overwriting newer ones). Backups are now split into small chunks and upload reliably no matter the library size.
-- **Deleted questions and categories could come back** — Deleting an item only removed it locally; the next backup didn't know it was gone, so a reinstall or a second device could resurrect it. Deletes are now tracked locally and pushed to the cloud on the next backup, so what you delete stays deleted.
-- **Restore could send you back to onboarding** — If your cloud data contained only categories and scores (no questions), the app treated the restore as empty and re-ran the setup flow. Restore now recognises all of your data.
+- **Notifications never fired on Android 14+** — scheduling always used `exactAllowWhileIdle`, which requires the `SCHEDULE_EXACT_ALARM` permission (denied by default; the log showed it denied). The exact-mode call threw, the error was swallowed, and zero alarms were scheduled. Now checks `canScheduleExactNotifications()` once per run and falls back to `inexactAllowWhileIdle` (no permission needed), with a per-alarm retry.
+- **Tour crash ("RenderBox was not laid out")** — the old overlay approach shared GlobalKeys between real targets and showcaseview, corrupting the element tree. Redesigned around showcaseview's real wrapping API (`Showcase` + `TourTarget`).
+- **Tour steps could advance out of order** — Dart 3.11 switch cases fall through without `break`; the tour's switches were missing breaks, so `runAction` steps also ran the tab-switch logic (double-advances, wrong-page tooltips, stuck steps). Every step now advances exactly once, and only through its real interaction (target tap / overlay tap / Skip).
+- **Tour could get stuck or lag at the + button** — the FAB step no longer fires the real action (no open/close sheet dance, no timers); the settings step opens the sheet through the screen's own handler and only advances when the sheet actually opened.
+- **Silent logouts on every app restart** — two cold-start paths signed the user out: `currentUser.reload()` signed out on ANY failure (now only on definitive account errors), and the device-claim check silently signed out on a cloud/local device-ID mismatch (now re-claims the device instead).
+- **Analytics/score data lost across logout → login** — the backup only uploaded the last 30 days of scores and deleted older cloud scores; the sign-out backup had an 8 s silently-swallowed timeout; the login restore wiped local tables first. Now: full score history is backed up (no pruning), the sign-out backup has a 20 s budget and reports success, local data is kept when the backup fails, and the restore uploads local data before wiping (gated by a per-account marker).
+- **Cloud backup silently stopped working on large libraries** — backups are chunked (≤450 ops/batch) so accounts with more than ~500 items upload reliably.
+- **Deleted questions/categories could come back** — deletes are tracked locally and pushed to the cloud (tombstone journal).
+- **Restore could send you back to onboarding** — categories/scores-only accounts are now recognised as having data.
 
 ### Improved
-- **Faster, leaner cloud sync** — Backups run in smaller chunks with deletions cleared first, old score history is trimmed to the last 30 days, and restore reads the cloud in pages while skipping anything already deleted (orphaned score records are dropped safely).
-- **Faster random questions** — Picking a random question no longer re-sorts the whole question list, so it stays quick as your library grows.
-- **Snappier launch** — The device root/jailbreak check now runs after the first frame instead of delaying it.
+- **GitHub Releases now attach a release-signed APK** (`RandomRecall-vX.Y.Z.apk`) so Google Sign-In works for anyone downloading the app from GitHub (Credential Manager validates the signing-cert SHA-1; the release fingerprint is registered). The debug APK is attached alongside for internal testing.
+- **Faster random questions** — no more full-list re-sort on random picks.
+- **Snappier launch** — root/jailbreak check runs after the first frame.
 
 ### Notes
-- Internal housekeeping: consolidated the app's verified-account checks (no user-visible change).
+- 108/108 tests (later 107/107 after the 30-day sync-window test was removed with the feature), 0 analyzer issues, debug + release APKs verified.
 
 ---
 

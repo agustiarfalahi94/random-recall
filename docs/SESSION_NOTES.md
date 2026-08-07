@@ -9,7 +9,7 @@
 ## 1. Project at a glance
 
 - **App:** Random Recall — Flutter quiz/notification app (questions + categories + score tracking, challenge mode, streak, subscriptions, ads).
-- **Version:** `0.13.18+49` (pubspec.yaml).
+- **Version:** `0.13.20+51` (pubspec.yaml).
 - **Stack:** Flutter 3.41.6 / Dart 3.11.4 · Firebase (Auth, Firestore, Storage, Analytics, Crashlytics, Performance, Remote Config, App Check) · RevenueCat (`purchases_flutter`) · AdMob (`google_mobile_ads`) · sqflite local DB · `provider` state mgmt · l10n EN/ID.
 - **Android:** package `com.inkpebble.randomrecall`, minSdk 21, R8 enabled, release keystore `android/app/release-keystore.jks` (gitignored), `key.properties` (gitignored).
 - **Test device:** Xiaomi 15 · Android 16 · HyperOS 3.0.302.0 · timezone Asia/Kuala_Lumpur.
@@ -127,15 +127,25 @@ and verify everything on the code side and walk the user through the console ste
 
 ---
 
-## 11. CURRENT WORK — resume point (2026-08-06)
+## 11. CURRENT WORK — resume point (2026-08-07)
 
 > If you are a fresh agent session, this is where work stands. Read this before anything else.
 
-**Interactive spotlight tutorial — DISABLED (v0.13.20), needs redesign.**
+**Interactive spotlight tutorial — REDESIGNED, ENABLED, on-device-tested.**
 
 - Design spec: `docs/superpowers/specs/2026-08-06-interactive-tutorial-design.md`
 - Implementation plan: `docs/superpowers/plans/2026-08-06-interactive-tutorial.md`
-- **Status: implemented then DISABLED on device-testing.** The `TourOverlay` approach (Positioned overlay boxes + reusing the target GlobalKeys on `Showcase` widgets) corrupts the element tree: showcaseview 5.x attaches its `key` to an internal child (`key: widget.showcaseKey`), so the same GlobalKey ends up on two live elements → the real target's element gets stolen → "RenderBox was not laid out" crash on step transitions, and the tooltip doesn't advance after the practice route pops.
-- **How to re-enable:** gate behind `TourService.enabled` (currently `false`; also hides the Settings "Take a tour" tile). Redesign must wrap the REAL widgets with `Showcase(child: ...)` (the package's intended API) instead of faking overlay boxes — then the registry keys are unique per showcase and the target keeps its own element. Needs on-device iteration.
-- **Also fixed in v0.13.20:** notifications never fired on Android 14+ because scheduling always used `exactAllowWhileIdle` without the (denied by default) `SCHEDULE_EXACT_ALARM` permission → the call threw and errors were swallowed. Now checks `canScheduleExactNotifications()` once per run, falls back to `inexactAllowWhileIdle`, with a per-alarm retry.
-- **NOT RELEASED YET (v0.13.20):** sync & stability batch + tour code + these fixes are on local `develop` only; CI was down (GitHub Actions major outage on 2026-08-06). Next: push develop → merge to main → tag `v0.13.20` (the earlier `v0.13.19` tag was deleted — its CI never completed and the code had the notification bug).
+- **How it works now (stable):** real target widgets are wrapped in `Showcase(key: ..., child: ...)` via `TourTarget` (`lib/widgets/tour/tour_overlay.dart`); `TourOverlay` hosts the controller + step logic around the HomeScreen Scaffold; `TourService.enabled = true`. Every step locks the screen (`disableBarrierInteraction: true` everywhere — the default barrier tap calls `next()` and used to advance the tour without doing the step's real action). Steps 1–8: practice → Questions tab → + FAB (tap-to-advance — fires no real action) → Analytics tab → Home tab → settings gear (sheet opens via `onOpenSettings` callback, only advances when it actually opened) → text overlay over the sheet → done overlay (button says **Finish**; step 7 keeps Skip). Placeholder showcases for steps 7/8 are `Showcase.withWidget(container: SizedBox.shrink())` + the global Skip action is hidden for them, so no stray white tooltip bubble can render.
+- **CRITICAL Dart 3.11 gotcha (root of several "tour does nothing/double-advance" bugs): switch statement cases FALL THROUGH without `break`.** Every switch with non-empty cases must end each case with `break`/`return`. Verified empirically with a standalone snippet. All tour switches now have explicit breaks.
+- **Do NOT reuse a target's GlobalKey on a showcase** — showcaseview attaches its key to an internal child; shared keys corrupt the element tree ("RenderBox was not laid out"). One key per showcase, created once in `TourService` (never `GlobalKey()` inline in a getter).
+- Debug aids: `TourOverlay` logs every transition (`Target tapped —`, `tabSwitch … → index`, `runAction … fired=`, `onOpenSettings threw`). `TourService.resetCompleted()` re-enables auto-start.
+- **Notifications exact-alarm fix (v0.13.20)** — `canScheduleExactNotifications()` check with `inexactAllowWhileIdle` fallback + per-alarm retry. **User still needs to confirm an organic (scheduled) notification actually fires** — pending on-device verification.
+
+**Auth/session fixes (v0.13.20, all on local `develop`, NOT pushed):**
+- `main.dart` no longer signs out on transient `currentUser.reload()` failures — only definitive account errors (`user-not-found`, `user-disabled`, `invalid-user-token`, `user-token-expired`).
+- `_HomeGate._checkActiveDevice` no longer silently signs out on a cloud/local device-ID mismatch (fresh installs + failed claim writes caused a logout loop) — it re-claims the current device instead.
+- `SyncService`: full score history is backed up (30-day window + cloud prune REMOVED — analytics data must survive logout/login); `performBackup` returns success/failure; sign-out backup budget is 20 s and local data is kept when it fails; initial-login restore uploads local data BEFORE the wipe (pre-wipe backup, gated by `SyncService.localDataOwnerKey` marker so accounts never mix).
+
+**GitHub distribution (v0.13.20):** the workflow now builds a **release APK** signed with the release keystore and attaches `RandomRecall-vX.Y.Z.apk` to GitHub Releases (debug APK kept alongside for internal testing). This is what makes Google Sign-In work for downloaders (Credential Manager validates the signing-cert SHA-1; release fingerprint `D3:A4:…` is registered). **USER TODO (one-time):** add secrets — `base64 -i android/app/release-keystore.jks | gh secret set KEYSTORE_BASE64` and `gh secret set KEYSTORE_PROPERTIES < android/key.properties`. The build job fails loudly if they're missing. Release APK verified locally (R8 + signing) on 2026-08-07.
+
+**NOT RELEASED YET:** everything above is on local `develop` only (CI outage from 2026-08-06 is over — the earlier `v0.13.19` tag was deleted; `v0.13.20` tag was pushed but its CI never ran). Next: user confirms the organic notification fires → push develop → merge to main → tag `v0.13.20` → CI runs (now also producing the distribution APK).
