@@ -24,6 +24,6 @@ adb logcat -s flutter -v time     # app logs on the test device
 1. `google_sign_in` 7.x needs `serverClientId` in `initialize()` — never drop it.
 2. Google Sign-In "canceled" on device = SHA-1 fingerprint missing in Firebase console (see SESSION_NOTES §4).
 3. Don't swallow `GoogleSignInException` silently — surface real errors.
-4. CI test APKs share the `DEBUG_KEYSTORE_BASE64` keystore — don't change it.
+4. **GitHub publishes the release-signed APK only.** Debug APKs are built locally (`flutter build apk --debug`) for device testing and never uploaded. CI's debug build is a compile check, so its signing key is irrelevant. (Previously CI published a debug APK signed with a per-run random key — that broke Google Sign-In for downloaders and forced an uninstall before every install.)
 5. HyperOS refuses `adb install` → push APK to `/sdcard/Download/` and install manually.
 6. After big dependency bumps: `flutter clean` if the build complains about stale plugin registrants.

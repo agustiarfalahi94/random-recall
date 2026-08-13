@@ -111,34 +111,20 @@ jobs:
       - name: Generate l10n files
         run: flutter gen-l10n
 
-      # Use the shared debug keystore so every CI-built APK has the SAME
-      # signature — otherwise each ephemeral runner generates a random one
-      # and newer APKs can't be installed over older ones (signature
-      # mismatch). Set once via: base64 -i ci-debug.keystore | gh secret set DEBUG_KEYSTORE_BASE64
-      - name: Install shared debug keystore
-        env:
-          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
-        run: |
-          mkdir -p ~/.android
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
-
-      - name: Build APK (debug)
+      # ────────────────────────────────────────────────────────────
+      # COMPILE CHECK ONLY — this APK is never uploaded or published.
+      # It exists to catch Android/Gradle build breakage that `analyze`
+      # and `test` can't see. Debug APKs are built LOCALLY for device
+      # testing; GitHub only ever distributes the release build below.
+      #
+      # Because nothing is distributed from this step, the signing key
+      # is irrelevant — the runner's auto-generated debug key is fine.
+      # (CI used to publish this APK signed with a per-run random key,
+      # which broke Google Sign-In for downloaders and forced an
+      # uninstall before every install. Solved by not shipping it.)
+      # ────────────────────────────────────────────────────────────
+      - name: Build APK (debug — compile check, not published)
         run: flutter build apk --debug
-
-      # ────────────────────────────────────────────────────────────
-      # STORE DEBUG ARTIFACT - For manual testing
-      # Uploaded BEFORE the release-signing steps on purpose: those steps
-      # hard-fail when the release keystore secrets are missing, and when
-      # they sat first a successfully-built debug APK was discarded with
-      # them (every artifact lost to one unset secret).
-      # ────────────────────────────────────────────────────────────
-      - name: Upload APK (debug) as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: random-recall-debug.apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 30
-          if-no-files-found: warn
 
       # ────────────────────────────────────────────────────────────
       # RELEASE APK (GitHub distribution) — signed with the release
@@ -241,12 +227,8 @@ jobs:
           name: random-recall-release.apk
           path: ./
 
-      - name: Download debug APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: random-recall-debug.apk
-          path: ./debug/
-
+      # Only the release-signed APK is published. Debug builds are made
+      # locally for device testing — see CLAUDE.md.
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -255,5 +237,4 @@ jobs:
           gh release create "$TAG_NAME" \
             --title "Random Recall $TAG_NAME" \
             --generate-notes \
-            "app-release.apk#RandomRecall-$TAG_NAME.apk" \
-            "debug/app-debug.apk#RandomRecall-$TAG_NAME-debug.apk"
+            "app-release.apk#RandomRecall-$TAG_NAME.apk"

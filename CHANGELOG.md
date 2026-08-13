@@ -5,6 +5,16 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [Unreleased]
+
+### Changed
+- **GitHub no longer publishes debug APKs** — only the release-signed APK is attached to a release. CI's debug build is kept purely as a compile check (it catches Android/Gradle breakage that `analyze` and `test` can't) and is never uploaded. Debug builds for device testing are made locally.
+
+### Fixed
+- **Google Sign-In failed on every APK downloaded from GitHub.** Credential Manager validates the signing-cert SHA-1, and the `DEBUG_KEYSTORE_BASE64` step never actually applied the shared key — each CI run signed with a *different random* debug key (verified: v0.13.18 = `70:79:F3:E4:…`, 2026-08-13 = `08:47:8A:81:…`, neither matching the `D8:3D:DF:7A:…` registered in Firebase). The step had no validation, unlike the google-services.json and release-keystore steps, so it failed silently. This also meant no CI APK could ever be installed over a previous one — the exact problem the shared key was meant to prevent. Fixed by not distributing debug APKs; the release APK's fingerprint (`D3:A4:…`) is registered and works.
+
+---
+
 ## [0.13.21] — 2026-08-14
 
 ### Fixed

@@ -40,7 +40,7 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 
 - `google_sign_in` 7.x uses Android **Credential Manager** and **requires `serverClientId` passed to `GoogleSignIn.initialize()`** — it no longer reads it from google-services.json. Implemented in `AuthService._ensureGoogleInitialized()` (value mirrors oauth_client type 3 in `android/app/google-services.json`).
 - **Silent `canceled` after picking an account = SHA-1 fingerprint not registered** in Firebase Console (Project settings → Your apps → Android → Add fingerprint). Registered fingerprints:
-  - CI test APKs: `D8:3D:DF:7A:0C:69:B8:AC:46:C6:B2:5B:43:F1:E6:6B:56:BF:5C:91`
+  - ~~CI test APKs: `D8:3D:DF:7A:0C:69:B8:AC:46:C6:B2:5B:43:F1:E6:6B:56:BF:5C:91`~~ — **obsolete (v0.13.21)**. CI never actually used this key: the `DEBUG_KEYSTORE_BASE64` step silently produced a *different random* fingerprint on every run (verified: v0.13.18 APK = `70:79:F3:E4:…`, 2026-08-13 APK = `08:47:8A:81:…`), so Google Sign-In could never work on a CI debug APK. CI no longer publishes debug APKs at all — build them locally, where the fingerprint below is registered. The `DEBUG_KEYSTORE_BASE64` secret is now unused and can be deleted.
   - Local debug builds: `A6:47:FF:68:C3:3F:36:3D:EC:6A:ED:76:C0:E9:94:89:DE:E0:64:E4`
   - Release keystore: `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD`
 - **`account-exists-with-different-credential`**: Google email already used by an email/password account → `AccountExistsException` → login dialog asks for the password → `linkGoogleToExistingAccount()` links both providers (v0.13.17).
