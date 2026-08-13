@@ -48,6 +48,15 @@ class _HomeScreenState extends State<HomeScreen> {
     // its Showcase widgets can spotlight the app bar / nav bar / tabs.
     return TourOverlay(
       key: _tourKey,
+      // The tour's steps start on the Home tab — reset the visible tab so a
+      // replay from Settings/another tab always begins at the practice button.
+      onBeforeStart: () => setState(() => _currentIndex = 0),
+      // The tour drives tab changes through the screen's own setState — the
+      // same mechanism as a real nav tap.
+      onSwitchTab: (index) => setState(() => _currentIndex = index),
+      // The gear step opens the settings sheet through the screen's own
+      // handler (same as a real tap) — no element-tree walking.
+      onOpenSettings: () => _showSettingsSheet(context),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
@@ -55,8 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           actions: [
-            KeyedSubtree(
-              key: TourService.instance.settingsGearKey,
+            TourTarget(
+              targetKey: TourService.instance.settingsGearKey,
               child: IconButton(
                 onPressed: () => _showSettingsSheet(context),
                 icon: const Icon(Icons.settings_outlined),
@@ -82,24 +91,24 @@ class _HomeScreenState extends State<HomeScreen> {
           indicatorColor: colorScheme.primaryContainer,
           destinations: [
             NavigationDestination(
-              icon: KeyedSubtree(
-                key: TourService.instance.navHomeKey,
+              icon: TourTarget(
+                targetKey: TourService.instance.navHomeKey,
                 child: const Icon(Icons.home_outlined),
               ),
               selectedIcon: const Icon(Icons.home_rounded),
               label: l10n.navHome,
             ),
             NavigationDestination(
-              icon: KeyedSubtree(
-                key: TourService.instance.navQuestionsKey,
+              icon: TourTarget(
+                targetKey: TourService.instance.navQuestionsKey,
                 child: const Icon(Icons.format_list_bulleted_outlined),
               ),
               selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
               label: l10n.navQuestions,
             ),
             NavigationDestination(
-              icon: KeyedSubtree(
-                key: TourService.instance.navAnalyticsKey,
+              icon: TourTarget(
+                targetKey: TourService.instance.navAnalyticsKey,
                 child: const Icon(Icons.bar_chart_outlined),
               ),
               selectedIcon: const Icon(Icons.bar_chart_rounded),
@@ -841,16 +850,24 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
   /// / rooted-device warning) have resolved. Runs at most once per app session.
   /// No-op while the tour is disabled.
   void _scheduleTourStart() {
-    if (!TourService.enabled) return;
+    if (!TourService.enabled) {
+      debugPrint('HomeTab: Tour disabled, skipping auto-start.');
+      return;
+    }
     if (_tourStartPending) return;
     if (!_displayNameResolved) return; // re-triggered when it resolves
     if (_rootWarningVisible) return; // re-triggered once the warning closes
-    if (!TourService.instance.shouldShowTour()) return;
+    if (!TourService.instance.shouldShowTour()) {
+      debugPrint('HomeTab: Tour already completed/skipped, not auto-starting.');
+      return;
+    }
     _tourStartPending = true;
+    debugPrint('HomeTab: Scheduling tour start...');
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Let any closing dialog/sheet animation settle before spotlighting.
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
+      debugPrint('HomeTab: Starting tour now.');
       TourOverlay.start(context);
     });
   }
@@ -1056,8 +1073,8 @@ class _HomeTabState extends State<_HomeTab> with WidgetsBindingObserver {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          KeyedSubtree(
-            key: TourService.instance.practiceButtonKey,
+          TourTarget(
+            targetKey: TourService.instance.practiceButtonKey,
             child: ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context)

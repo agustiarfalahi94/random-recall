@@ -4,9 +4,9 @@
 
 ## Quick facts
 
-- **Random Recall**: Flutter quiz/notification app (`com.inkpebble.randomrecall`), v0.13.18+49, Flutter 3.41.6, Firebase stack + RevenueCat + AdMob, sqflite, provider, l10n EN/ID.
+- **Random Recall**: Flutter quiz/notification app (`com.inkpebble.randomrecall`), v0.13.21+52, Flutter 3.41.6, Firebase stack + RevenueCat + AdMob (**ads disabled** — `kAdsEnabled = false` in `lib/core/ads/ad_service.dart`), sqflite, provider, l10n EN/ID.
 - **Default branch is `develop`**; release = merge to `main` + tag `vX.Y.Z` (CI runs on tags/PRs only).
-- **Validation before any commit:** `flutter analyze` (must be 0 issues — CI is strict), `dart format --set-exit-if-changed lib/ test/`, `flutter test` (77/77).
+- **Validation before any commit:** `flutter analyze` (must be 0 issues — CI is strict), `dart format --set-exit-if-changed lib/ test/`, `flutter test` (107/107).
 - **Don't touch**: Firestore rules security, App Check config, RevenueCat placeholder-guard, release keystore/key.properties.
 
 ## Commands

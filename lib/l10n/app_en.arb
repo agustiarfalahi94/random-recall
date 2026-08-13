@@ -765,6 +765,7 @@
   "tourScheduleBody": "Schedule when Random Recall sends you reminders.",
   "tourDoneBody": "You're all set! 🎉 Tap anywhere to finish.",
   "tourSkip": "Skip",
+  "tourFinish": "Finish",
   "tourReplayTile": "Take a tour",
   "tourReplaySubtitle": "Replay the interactive guide"
 }

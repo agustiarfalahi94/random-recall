@@ -36,7 +36,7 @@ class SyncService {
       debounceTimer = Timer(const Duration(seconds: 5), () {
         performBackup().catchError((e) {
           debugPrint('SyncService: Auto-backup skipped: $e');
-          return null;
+          return false;
         });
       });
     });
@@ -44,12 +44,12 @@ class SyncService {
 
   /// Performs a full backup of local data to Firestore.
   ///
-  /// This iterates through Categories, Questions, and Score Records,
-  /// pushing them to the user's private collection using a write batch.
-  Future<void> performBackup({bool force = false}) async {
+  /// Returns true when the cloud now mirrors the local DB, false otherwise
+  /// (callers must not wipe local data after a failed backup).
+  Future<bool> performBackup({bool force = false}) async {
     final user = AuthService.instance.currentUser;
     final isVerified = user != null && AuthService.isVerifiedUser(user);
-    if (!isVerified || (_isSyncing && !force)) return;
+    if (!isVerified || (_isSyncing && !force)) return false;
 
     _isSyncing = true;
     debugPrint('SyncService: Starting backup for user ${user.uid}...');
@@ -87,30 +87,15 @@ class SyncService {
         final ref = userDoc.collection('questions').doc(q.id.toString());
         ops.add((b) => b.set(ref, q.toMap(), SetOptions(merge: true)));
       }
-      // Scores: only within the sync window.
-      final cutoff = DateTime.now().subtract(
-        const Duration(days: _scoreSyncWindowDays),
-      );
+      // Scores: the FULL history. Analytics depends on it, score docs are
+      // tiny (well under the free Firestore quota), and pruning them made
+      // logout -> login look like data loss.
       final scores = await dbHelper.getAllScoreRecords();
-      final recentScores = scoresForSync(scores, cutoff);
-      for (final s in recentScores) {
+      for (final s in scores) {
         if (s.id == null) continue;
         final ref = userDoc.collection('score_records').doc(s.id.toString());
         ops.add((b) => b.set(ref, s.toMap(), SetOptions(merge: true)));
       }
-
-      // 3. Prune cloud scores older than the window.
-      final oldQuery = await userDoc
-          .collection('score_records')
-          .where('answered_at', isLessThan: cutoff.toIso8601String())
-          .get();
-      final pruneOps = <void Function(WriteBatch)>[];
-      for (final doc in oldQuery.docs) {
-        pruneOps.add(
-          (b) => b.delete(userDoc.collection('score_records').doc(doc.id)),
-        );
-      }
-      await _runBatched(pruneOps);
 
       await _runBatched(ops);
 
@@ -128,6 +113,9 @@ class SyncService {
 
       // Record which device performed this backup
       final deviceId = prefs.getString('device_id') ?? 'unknown';
+      // The local DB now mirrors this user's cloud data — the restore's
+      // pre-wipe backup uses this marker to never mix accounts.
+      await prefs.setString(localDataOwnerKey, user.uid);
 
       // 4. Commit metadata (unchanged from the original single-batch flow)
       final batch = _db.batch();
@@ -141,8 +129,10 @@ class SyncService {
 
       trace.putAttribute('question_count', questions.length.toString());
       debugPrint(
-        'SyncService: Backup success. ${categories.length} categories, ${questions.length} questions, ${recentScores.length} recent scores synced.',
+        'SyncService: Backup success. ${categories.length} categories, '
+        '${questions.length} questions, ${scores.length} scores synced.',
       );
+      return true;
     } catch (e, st) {
       debugPrint('SyncService: Backup failed: $e');
       FirebaseCrashlytics.instance.recordError(
@@ -150,14 +140,46 @@ class SyncService {
         st,
         reason: 'sync_backup_failed',
       );
+      return false;
     } finally {
       await trace.stop();
       _isSyncing = false;
     }
   }
 
-  static const int _scoreSyncWindowDays = 30;
   static const int _batchChunkSize = 450;
+
+  /// SharedPreferences key storing the uid of the account the local DB
+  /// currently mirrors. The initial-login restore's pre-wipe backup only
+  /// uploads local data when it belongs to (or may belong to) that user.
+  static const String localDataOwnerKey = 'local_data_owner_uid';
+
+  /// Uploads the current local DB before an initial-login wipe — the last
+  /// chance to preserve scores recorded since the last successful backup
+  /// (e.g. after a sign-out whose final backup timed out). Gated on
+  /// [localDataOwnerKey] so another account's leftover data is never pushed
+  /// into this user's cloud tree.
+  Future<void> _preWipeBackupIfLocalDataBelongsTo(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final owner = prefs.getString(localDataOwnerKey);
+      if (owner != null && owner != uid) {
+        debugPrint(
+          'SyncService: Skipping pre-wipe backup — local data owned by $owner',
+        );
+        return;
+      }
+      debugPrint('SyncService: Pre-wipe backup of local data...');
+      final ok = await performBackup(force: true);
+      debugPrint(
+        ok
+            ? 'SyncService: Pre-wipe backup completed'
+            : 'SyncService: Pre-wipe backup failed (proceeding with restore)',
+      );
+    } catch (e) {
+      debugPrint('SyncService: Pre-wipe backup error (proceeding): $e');
+    }
+  }
 
   /// Splits [total] items into (start, end) index ranges, each at most
   /// [chunkSize] wide. Used to keep every Firestore batch under the 500-op cap.
@@ -202,12 +224,6 @@ class SyncService {
     }
     return plan;
   }
-
-  /// Returns score records within the sync window (not older than [cutoff]).
-  static List<ScoreRecord> scoresForSync(
-    List<ScoreRecord> all,
-    DateTime cutoff,
-  ) => all.where((s) => !s.answeredAt.isBefore(cutoff)).toList();
 
   /// True when the cloud has real user data worth restoring. Categories are
   /// excluded because the default General/Work categories are always backed up
@@ -294,6 +310,13 @@ class SyncService {
     final user = AuthService.instance.currentUser;
     final isVerifiedRestore = user != null && AuthService.isVerifiedUser(user);
     if (!isVerifiedRestore) return;
+
+    // Protect against a failed/partial sign-out backup: upload the current
+    // local data BEFORE the initial-login wipe, so scores recorded since the
+    // last successful backup survive the wipe and come back in the restore.
+    if (isInitialLogin) {
+      await _preWipeBackupIfLocalDataBelongsTo(user.uid);
+    }
 
     // If a restore is already running, wait for it rather than silently
     // dropping this call. This prevents the race condition where _HomeGate
@@ -439,6 +462,10 @@ class SyncService {
         'SyncService: SQLite insert done — '
         '${keptCatDocs.length} cats, ${keptQDocs.length} qs, ${scoreRecords.length} scores',
       );
+
+      // The local DB now mirrors this user's data (pre-wipe backup gate).
+      final ownerPrefs = await SharedPreferences.getInstance();
+      await ownerPrefs.setString(localDataOwnerKey, user.uid);
 
       // 4. Restore SharedPreferences (Settings & Streak)
       if (userData != null) {

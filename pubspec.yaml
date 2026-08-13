@@ -1,6 +1,6 @@
 name: random_recall
 description: A random recall quiz notification app.
-version: 0.13.20+51
+version: 0.13.21+52
 publish_to: 'none'
 
 environment:

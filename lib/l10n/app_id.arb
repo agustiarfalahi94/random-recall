@@ -765,6 +765,7 @@
   "tourScheduleBody": "Atur kapan Random Recall mengirim pengingat.",
   "tourDoneBody": "Semua siap! 🎉 Ketuk di mana saja untuk selesai.",
   "tourSkip": "Lewati",
+  "tourFinish": "Selesai",
   "tourReplayTile": "Panduan interaktif",
   "tourReplaySubtitle": "Lihat kembali panduan interaktif"
 }

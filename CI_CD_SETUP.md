@@ -74,7 +74,7 @@ Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted
 - **Firestore rules: 100 KB/document write cap** — deploy via `firebase deploy --only firestore:rules`.
 
 ### Pre-release checklist
-- ⬜ Replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console (currently serving test ads).
+- ⬜ **Re-enable ads**: flip `kAdsEnabled` to `true` in `lib/core/ads/ad_service.dart` (disabled in v0.13.21 — it was causing typing lag), replace the placeholder unit IDs, and replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console. Re-test typing latency on the add/edit question screen afterwards.
 - ✅ Deploy the updated `firestore.rules` — done 2026-08-06.
 
 ### CI test-APK signature (2026-08-06)
@@ -89,7 +89,40 @@ Every GitHub Actions runner generates a **random debug keystore**, so APKs from 
 |---|---|
 | `D8:3D:DF:7A:0C:69:B8:AC:46:C6:B2:5B:43:F1:E6:6B:56:BF:5C:91` | CI test APKs (shared debug keystore) |
 | `A6:47:FF:68:C3:3F:36:3D:EC:6A:ED:76:C0:E9:94:89:DE:E0:64:E4` | Local debug builds (`flutter run`) |
-| `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` | Release keystore (Play Store production) |
+| `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` | Release keystore (GitHub distribution APK + Play Store production) |
+
+### GitHub distribution APK (release-signed) — 2026-08-07
+
+**Why a debug APK breaks Google Sign-In for downloaders:** Credential Manager only
+issues an ID token when the requesting app's signing-cert SHA-1 is registered in the
+Firebase project for that package. Debug APKs are signed with whichever keystore
+built them, so only builds from keystores you register can log in. Everyone else who
+publishes APKs on GitHub publishes **release APKs signed with their release keystore**
+(one stable fingerprint, registered once) — that's the workaround.
+
+The GitHub Release now attaches a **release APK** (`RandomRecall-vX.Y.Z.apk`) signed
+with the release keystore (fingerprint `D3:A4:...` above — already registered), so the
+downloaded app passes Google Sign-In exactly like a Play Store build. The debug APK is
+attached as `RandomRecall-vX.Y.Z-debug.apk` for internal testing only.
+
+**One-time secret setup** (the workflow fails the build if these are missing — a
+debug-signed "release" APK would silently break login for downloaders):
+
+```bash
+base64 -i android/app/release-keystore.jks | gh secret set KEYSTORE_BASE64
+gh secret set KEYSTORE_PROPERTIES < android/key.properties
+```
+
+Verify with `gh secret list`. The workflow decodes them to `android/key.properties` +
+`android/app/release-keystore.jks`, then runs
+`flutter build apk --release --dart-define=REVENUECAT_API_KEY=${{ secrets.REVENUECAT_API_KEY }}`
+(the app skips RevenueCat init when the key is empty/placeholder, so a missing secret
+is safe).
+
+**Caveats:**
+- The release APK cannot be installed over a debug install (different signature) — uninstall first.
+- Release builds use R8 minification — verify once on a device before sharing (the release build was verified locally on 2026-08-07).
+- When you later upload to Play Console, Play App Signing re-signs the app: register the **Play-generated** signing key's SHA-1 in Firebase Console for Google Sign-In on Play-installed builds.
 
 Also note: the v7 plugin requires `serverClientId` passed to `GoogleSignIn.initialize()` — it no longer reads it from google-services.json. Handled in `AuthService._ensureGoogleInitialized()` (v0.13.17). Accounts that collide with an existing email/password account are resolved by a password prompt that **links** the Google credential (`AccountExistsException` flow, v0.13.17).
 

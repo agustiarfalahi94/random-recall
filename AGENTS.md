@@ -4,7 +4,7 @@
 
 ## Project
 
-Random Recall — Flutter quiz/notification app. v0.13.18+49 · Flutter 3.41.6 · Firebase (Auth, Firestore, Storage, Analytics, Crashlytics, Performance, Remote Config, App Check) · RevenueCat · AdMob · sqflite · provider · l10n EN/ID · Android-first (`com.inkpebble.randomrecall`).
+Random Recall — Flutter quiz/notification app. v0.13.21+52 · Flutter 3.41.6 · Firebase (Auth, Firestore, Storage, Analytics, Crashlytics, Performance, Remote Config, App Check) · RevenueCat · AdMob (**disabled** — `kAdsEnabled = false`) · sqflite · provider · l10n EN/ID · Android-first (`com.inkpebble.randomrecall`).
 
 ## Git flow
 

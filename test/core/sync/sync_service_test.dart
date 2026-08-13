@@ -40,40 +40,6 @@ void main() {
     });
   });
 
-  group('SyncService.scoresForSync', () {
-    test('keeps records at or after cutoff', () {
-      final now = DateTime(2026, 8, 6);
-      final cutoff = now.subtract(const Duration(days: 30));
-      final tooOld = ScoreRecord(
-        questionId: 1,
-        categoryId: 1,
-        isCorrect: true,
-        answeredAt: cutoff.subtract(const Duration(days: 1)),
-        updatedAt: now,
-      );
-      final boundary = ScoreRecord(
-        questionId: 2,
-        categoryId: 1,
-        isCorrect: true,
-        answeredAt: cutoff,
-        updatedAt: now,
-      );
-      final recent = ScoreRecord(
-        questionId: 3,
-        categoryId: 1,
-        isCorrect: true,
-        answeredAt: now,
-        updatedAt: now,
-      );
-      final result = SyncService.scoresForSync([
-        tooOld,
-        boundary,
-        recent,
-      ], cutoff);
-      expect(result, [boundary, recent]);
-    });
-  });
-
   group('SyncService.hasCloudData', () {
     test('true if questions or scores exist', () {
       expect(

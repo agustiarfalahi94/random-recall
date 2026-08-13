@@ -9,7 +9,7 @@
 ## 1. Project at a glance
 
 - **App:** Random Recall — Flutter quiz/notification app (questions + categories + score tracking, challenge mode, streak, subscriptions, ads).
-- **Version:** `0.13.18+49` (pubspec.yaml).
+- **Version:** `0.13.20+51` (pubspec.yaml).
 - **Stack:** Flutter 3.41.6 / Dart 3.11.4 · Firebase (Auth, Firestore, Storage, Analytics, Crashlytics, Performance, Remote Config, App Check) · RevenueCat (`purchases_flutter`) · AdMob (`google_mobile_ads`) · sqflite local DB · `provider` state mgmt · l10n EN/ID.
 - **Android:** package `com.inkpebble.randomrecall`, minSdk 21, R8 enabled, release keystore `android/app/release-keystore.jks` (gitignored), `key.properties` (gitignored).
 - **Test device:** Xiaomi 15 · Android 16 · HyperOS 3.0.302.0 · timezone Asia/Kuala_Lumpur.
@@ -30,6 +30,7 @@
 | 0.13.16 | Dependency update pass: Firebase majors (core 4 / auth 6 / firestore 6 / analytics 12 / crashlytics 5 / app_check 0.4 / remote_config 6 / storage 13 / performance 0.11), `flutter_local_notifications` 22, `google_mobile_ads` 9, `purchases_flutter` 10, `workmanager` 0.10, `device_info_plus` 13, `app_settings` 7 (8.x is SPM-only — skipped), `google_sign_in` 7, `timezone` 0.11, `flutter_lints` 6, `desugar_jdk_libs` 2.1.4. Skips: `intl` 0.20.3 (SDK-locked), `app_settings` 8 (SPM) |
 | 0.13.17 | Google Sign-In fix (serverClientId + account linking), deferred AdMob init (cold start) |
 | 0.13.18 | Black launch screen fix (v31 theme variants), shared CI debug keystore (upgradeable test APKs) |
+| 0.13.21 | **Ads switched OFF** (`kAdsEnabled = false`) — fixes typing lag in the question/answer fields caused by the AdMob platform view sitting above every screen |
 
 **Current work (unreleased, on `develop`):** Sync & stability batch — tombstone-based deletes (`sync_deletions` table, schema v5), chunked ≤450-op backup (fixes the Firestore 500-op write cap) with tombstone-first writes + 30-day cloud score prune, paginated tombstone-aware restore (`_fetchAllDocs`, 500-doc pages, drops orphaned scores) + the `dataFound` fix (categories/scores-only users no longer pushed back to onboarding), `AuthService.isVerifiedUser` consolidation, random-OFFSET question query, root detection off the first frame. Tests: **105/105**. Version NOT bumped (still `0.13.18+49`) — changelog entry is under `[Unreleased]`.
 
@@ -67,7 +68,8 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 
 ## 8. Still open (from the user's side)
 
-- **AdMob**: manifest + `lib/core/ads/ad_service.dart` still use Google **test IDs** (`ca-app-pub-3940256099942544...`). Replace with the real app ID + banner/interstitial unit IDs from apps.admob.com before Play Store. (Ads currently: test ads, no revenue.)
+- **AdMob — ads are currently DISABLED** (v0.13.21). `kAdsEnabled = false` in `lib/core/ads/ad_service.dart` is the master kill switch: the SDK never initialises, no banner/interstitial loads, and `_AdBannerWrapper` is skipped in `main.dart`. This was a **performance** fix, not a product change — mounting an `AdWidget` (an Android platform view) above every screen forces hybrid composition on the whole app and made typing in the question/answer fields laggy; the banner also stayed mounted, occluded, behind the keyboard.
+  To re-enable before Play Store: (1) flip `kAdsEnabled` to `true`, (2) replace the placeholder unit IDs (`_realBannerAdUnitId` / `_realInterstitialAdUnitId`, currently `ca-app-pub-REPLACE/REPLACE`) and the manifest `APPLICATION_ID` (currently Google's test ID `ca-app-pub-3940256099942544~3347511713`), (3) **re-test typing latency on the add/edit question screen** — if the lag returns, gate the banner on `keyboardVisible` in `_AdBannerWrapper` (`main.dart`) and/or add `AdService.enterExcludedScreen()` to text-entry screens.
 - **RevenueCat**: key is a placeholder; init is skipped until `--dart-define=REVENUECAT_API_KEY=...` is provided. Subscriptions not live yet.
 - **iOS**: dependency upgrades changed iOS plugin versions — run `flutter build ios --no-codesign` to validate before any iOS release. **STATUS: explicitly deferred — iOS is not a near-term target ("maybe next year, maybe never"). Do NOT spend time on iOS validation unless the user says they're targeting iOS.** (Note: `app_settings` 8.x was skipped because it requires Swift Package Manager; revisit that choice only if iOS becomes real.)
 - **Play Store**: release signing exists locally; CI release signing + Play upload steps are commented out in the workflow ("FUTURE" section in `CI_CD_SETUP.md`). Data Safety form + privacy policy needed.
@@ -81,7 +83,7 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 - `lib/core/notifications/notification_scheduler.dart` — pure slot computation (heavily unit-tested).
 - `lib/core/database/database_helper.dart` — schema v5 + `sync_deletions` tombstone journal table (categories/questions deleted locally get a journal row; the next backup deletes those cloud docs).
 - `lib/core/sync/sync_service.dart` — Firestore backup/restore; chunked ≤450-op tombstone-aware backup (delete-first, 30-day score prune) + paginated tombstone-aware restore via `_fetchAllDocs` (500-doc pages, skips tombstoned docs, drops orphaned score records); device-claim write historically hit permission-denied when rules weren't deployed.
-- `lib/core/ads/ad_service.dart` — premium gating, banner/interstitial, daily caps.
+- `lib/core/ads/ad_service.dart` — `kAdsEnabled` kill switch (currently `false`), premium gating, banner/interstitial, daily caps.
 - `lib/core/utils/screen_security.dart` + `MainActivity.kt` — FLAG_SECURE channel.
 - `lib/core/services/root_detection_service.dart` — jailbreak/root detection (informational).
 - `android/build.gradle.kts` — plugin compat shims (namespace + JVM targets).
@@ -110,7 +112,7 @@ and verify everything on the code side and walk the user through the console ste
 
 ### B. User-side prerequisites (consoles — the user must do these)
 
-1. **AdMob** (apps.admob.com): create account → register app `com.inkpebble.randomrecall` → create **banner** + **interstitial** ad units → give the agent the real IDs to replace in `lib/core/ads/ad_service.dart` and the manifest `APPLICATION_ID` meta-data (currently Google test IDs → real ads need real IDs; also add the user's device as a test device in `RequestConfiguration.testDeviceIds` while developing).
+1. **AdMob** (apps.admob.com) — **note: ads are currently switched off via `kAdsEnabled = false`; flip it back to `true` as part of this step**: create account → register app `com.inkpebble.randomrecall` → create **banner** + **interstitial** ad units → give the agent the real IDs to replace in `lib/core/ads/ad_service.dart` and the manifest `APPLICATION_ID` meta-data (currently Google test IDs → real ads need real IDs; also add the user's device as a test device in `RequestConfiguration.testDeviceIds` while developing).
 2. **RevenueCat** (app.revenuecat.com): create app → get the Android API key (`goog_...`) → provide it for the `--dart-define` in release builds; add it as the `REVENUECAT_API_KEY` GitHub secret if CI builds releases. Configure the `premium` entitlement + offerings/packages in the dashboard.
 3. **Firebase console**: verify App Check **enforcement is ON** for Firestore (release uses Play Integrity — already coded); the release SHA-1 fingerprint `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` must be registered (for Google Sign-In on the release app).
 4. **Play Console** (play.google.com/console): create app → **Data Safety form** (collects: email/phone for auth, analytics, ads; no financial data unless subscriptions live) → **Privacy policy URL** (host anywhere) → store listing (icon 512×512, feature graphic, screenshots, short/full description EN + ID) → content rating questionnaire → set pricing (free; IAP available).
@@ -127,15 +129,25 @@ and verify everything on the code side and walk the user through the console ste
 
 ---
 
-## 11. CURRENT WORK — resume point (2026-08-06)
+## 11. CURRENT WORK — resume point (2026-08-07)
 
 > If you are a fresh agent session, this is where work stands. Read this before anything else.
 
-**Interactive spotlight tutorial — DISABLED (v0.13.20), needs redesign.**
+**Interactive spotlight tutorial — REDESIGNED, ENABLED, on-device-tested.**
 
 - Design spec: `docs/superpowers/specs/2026-08-06-interactive-tutorial-design.md`
 - Implementation plan: `docs/superpowers/plans/2026-08-06-interactive-tutorial.md`
-- **Status: implemented then DISABLED on device-testing.** The `TourOverlay` approach (Positioned overlay boxes + reusing the target GlobalKeys on `Showcase` widgets) corrupts the element tree: showcaseview 5.x attaches its `key` to an internal child (`key: widget.showcaseKey`), so the same GlobalKey ends up on two live elements → the real target's element gets stolen → "RenderBox was not laid out" crash on step transitions, and the tooltip doesn't advance after the practice route pops.
-- **How to re-enable:** gate behind `TourService.enabled` (currently `false`; also hides the Settings "Take a tour" tile). Redesign must wrap the REAL widgets with `Showcase(child: ...)` (the package's intended API) instead of faking overlay boxes — then the registry keys are unique per showcase and the target keeps its own element. Needs on-device iteration.
-- **Also fixed in v0.13.20:** notifications never fired on Android 14+ because scheduling always used `exactAllowWhileIdle` without the (denied by default) `SCHEDULE_EXACT_ALARM` permission → the call threw and errors were swallowed. Now checks `canScheduleExactNotifications()` once per run, falls back to `inexactAllowWhileIdle`, with a per-alarm retry.
-- **NOT RELEASED YET (v0.13.20):** sync & stability batch + tour code + these fixes are on local `develop` only; CI was down (GitHub Actions major outage on 2026-08-06). Next: push develop → merge to main → tag `v0.13.20` (the earlier `v0.13.19` tag was deleted — its CI never completed and the code had the notification bug).
+- **How it works now (stable):** real target widgets are wrapped in `Showcase(key: ..., child: ...)` via `TourTarget` (`lib/widgets/tour/tour_overlay.dart`); `TourOverlay` hosts the controller + step logic around the HomeScreen Scaffold; `TourService.enabled = true`. Every step locks the screen (`disableBarrierInteraction: true` everywhere — the default barrier tap calls `next()` and used to advance the tour without doing the step's real action). Steps 1–8: practice → Questions tab → + FAB (tap-to-advance — fires no real action) → Analytics tab → Home tab → settings gear (sheet opens via `onOpenSettings` callback, only advances when it actually opened) → text overlay over the sheet → done overlay (button says **Finish**; step 7 keeps Skip). Placeholder showcases for steps 7/8 are `Showcase.withWidget(container: SizedBox.shrink())` + the global Skip action is hidden for them, so no stray white tooltip bubble can render.
+- **CRITICAL Dart 3.11 gotcha (root of several "tour does nothing/double-advance" bugs): switch statement cases FALL THROUGH without `break`.** Every switch with non-empty cases must end each case with `break`/`return`. Verified empirically with a standalone snippet. All tour switches now have explicit breaks.
+- **Do NOT reuse a target's GlobalKey on a showcase** — showcaseview attaches its key to an internal child; shared keys corrupt the element tree ("RenderBox was not laid out"). One key per showcase, created once in `TourService` (never `GlobalKey()` inline in a getter).
+- Debug aids: `TourOverlay` logs every transition (`Target tapped —`, `tabSwitch … → index`, `runAction … fired=`, `onOpenSettings threw`). `TourService.resetCompleted()` re-enables auto-start.
+- **Notifications exact-alarm fix (v0.13.20)** — `canScheduleExactNotifications()` check with `inexactAllowWhileIdle` fallback + per-alarm retry. **User still needs to confirm an organic (scheduled) notification actually fires** — pending on-device verification.
+
+**Auth/session fixes (v0.13.20, all on local `develop`, NOT pushed):**
+- `main.dart` no longer signs out on transient `currentUser.reload()` failures — only definitive account errors (`user-not-found`, `user-disabled`, `invalid-user-token`, `user-token-expired`).
+- `_HomeGate._checkActiveDevice` no longer silently signs out on a cloud/local device-ID mismatch (fresh installs + failed claim writes caused a logout loop) — it re-claims the current device instead.
+- `SyncService`: full score history is backed up (30-day window + cloud prune REMOVED — analytics data must survive logout/login); `performBackup` returns success/failure; sign-out backup budget is 20 s and local data is kept when it fails; initial-login restore uploads local data BEFORE the wipe (pre-wipe backup, gated by `SyncService.localDataOwnerKey` marker so accounts never mix).
+
+**GitHub distribution (v0.13.20):** the workflow now builds a **release APK** signed with the release keystore and attaches `RandomRecall-vX.Y.Z.apk` to GitHub Releases (debug APK kept alongside for internal testing). This is what makes Google Sign-In work for downloaders (Credential Manager validates the signing-cert SHA-1; release fingerprint `D3:A4:…` is registered). **USER TODO (one-time):** add secrets — `base64 -i android/app/release-keystore.jks | gh secret set KEYSTORE_BASE64` and `gh secret set KEYSTORE_PROPERTIES < android/key.properties`. The build job fails loudly if they're missing. Release APK verified locally (R8 + signing) on 2026-08-07.
+
+**NOT RELEASED YET:** everything above is on local `develop` only (CI outage from 2026-08-06 is over — the earlier `v0.13.19` tag was deleted; `v0.13.20` tag was pushed but its CI never ran). Next: user confirms the organic notification fires → push develop → merge to main → tag `v0.13.20` → CI runs (now also producing the distribution APK).

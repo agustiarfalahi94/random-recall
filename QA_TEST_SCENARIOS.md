@@ -200,8 +200,8 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 | C013 | Home refreshes on return from sub-screen | [+] | Question count, streak, challenge state up to date |
 | C014 | Home — question count reflects actual DB count | [+] | Shown count = `getAllQuestions()` length |
 | C015 | Home — no questions yet (new user after onboarding) | [+][NEW] | Shows 1 question (from onboarding) |
-| C016 | Home — ad banner visible for free user | [+][F] | Banner shown below nav bar |
-| C017 | Home — no ad banner for premium user | [+][P] | Banner absent |
+| C016 | Home — ad banner visible for free user | [+][F] | ⚠️ N/A v0.13.21 — ads disabled (`kAdsEnabled=false`); no banner expected |
+| C017 | Home — no ad banner for premium user | [+][P] | Banner absent (trivially passes while ads are disabled) |
 | C018 | Home — navigate to Questions tab | [+] | Questions list shown |
 | C019 | Home — navigate to Analytics tab | [+] | Analytics shown |
 | C020 | Home — navigate to Profile tab | [+] | Profile shown |
@@ -548,6 +548,9 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 
 ### H4 — Ads on Question Screen
 
+> ⚠️ **N/A as of v0.13.21** — ads are disabled (`kAdsEnabled = false`). H034–H040
+> cannot be run until ads are re-enabled. See section N.
+
 | ID | Description | Type | Expected Result |
 |---|---|---|---|
 | H034 | Free user answers notification question — interstitial shown | [+][F] | Full-screen ad appears after grading |
@@ -597,7 +600,7 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 | I012 | Long category name — challenge active (many badges) | [+][CA] | Ellipsis, no RenderFlex overflow |
 | I013 | Timer active (locked 5s during challenge) | [+][CA] | 5s countdown shown |
 | I014 | Timer = 0 outside challenge | [+][CI] | No countdown |
-| I015 | Manual screen — free user — interstitial NOT shown (organic only) | [+][F] | No ad after manual answer |
+| I015 | Manual screen — free user — interstitial NOT shown (organic only) | [+][F] | No ad after manual answer (trivially passes while ads are disabled) |
 | I016 | Manual screen — challenge active, badge visible | [+][CA] | Day counter badge in AppBar |
 | I017 | Close manual screen | [+] | Returns to HomeScreen |
 | I018 | Landscape orientation — no overflow | [+] | Layout intact |
@@ -679,7 +682,7 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 | L006 | Purchase — user cancels Google Play sheet | [-] | No purchase, stays on subscription screen |
 | L007 | Purchase — payment card declined | [-] | Error from Google Play, stays on screen |
 | L008 | Purchase — no internet during purchase attempt | [-][OFF] | Error shown, no charge |
-| L009 | Purchase — success, immediate premium features available | [+] | Banner disappears, freq up to 6, limits raised |
+| L009 | Purchase — success, immediate premium features available | [+] | Freq up to 6, limits raised. ⚠️ v0.13.21: no banner to disappear — verify freq/limits only |
 | L010 | Purchase — success, Firestore `is_premium: true` written | [+] | Firestore updated |
 
 ### L2 — Restore Purchases
@@ -699,7 +702,7 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 |---|---|---|---|
 | L017 | Subscribe for 1 month — use app all month | [+][P] | All premium features available throughout |
 | L018 | Monthly subscription expires, not renewed | [+][P→F] | `is_premium` set false, free limits apply |
-| L019 | Subscription expires — banner reappears | [+] | Banner shown again after expiry |
+| L019 | Subscription expires — banner reappears | [+] | ⚠️ N/A v0.13.21 — ads disabled; verify limits revert to free tier instead |
 | L020 | Subscription expires — frequency slider capped at 3 | [+] | Free tier limit applies |
 | L021 | Subscription expires — question limit reverts to 20 + bonuses | [+] | Cannot add beyond free limit |
 | L022 | Subscription expires — existing questions over limit preserved | [+] | Data not deleted |
@@ -806,6 +809,19 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 ---
 
 ## N — ADS
+
+> ⚠️ **BLOCKED as of v0.13.21 — ads are switched off** (`kAdsEnabled = false` in
+> `lib/core/ads/ad_service.dart`). Every scenario in this section is currently
+> **N/A**: no banner or interstitial is ever loaded or mounted, so the expected
+> results below cannot be observed. Skip section N until ads are re-enabled for
+> the Play Store launch, then run it in full.
+>
+> Two scenarios must be **re-verified with extra care** when ads come back, because
+> the ad banner is what caused the v0.13.21 typing lag:
+> - **N010** (banner + keyboard open) — also check typing latency in the
+>   question/answer fields, not just layout.
+> - **New: N020** — Banner must not be composited while the keyboard covers it on
+>   the add/edit question screen. `[+][F]` → typing stays smooth, no dropped frames.
 
 | ID | Description | Type | Expected Result |
 |---|---|---|---|
