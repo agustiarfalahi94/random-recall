@@ -5,6 +5,21 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.13.21] — 2026-08-14
+
+### Fixed
+- **Typing in the question/answer fields was laggy** — the AdMob banner was mounted above every screen through `MaterialApp.builder`, and `AddEditQuestionScreen` was not on the banner's excluded-screens list. On Android an `AdWidget` is a platform view, which forces the entire app onto the hybrid-composition render path, so every frame (cursor blink, each character inserted) paid native-compositing cost. The banner stayed mounted while the keyboard was up — fully occluded by the IME, so the cost bought nothing.
+
+### Changed
+- **Ads are disabled until the Play Store launch** — new `kAdsEnabled` kill switch in `lib/core/ads/ad_service.dart` (currently `false`). While off, the AdMob SDK is never initialised, no banner or interstitial loads, and `_AdBannerWrapper` is skipped entirely so no ad `Stack`/`MediaQuery` override sits above the app. The ad code, the RevenueCat premium gating and the frequency caps are all left intact — re-enabling is a one-line flip plus the real ad unit IDs.
+
+### Notes
+- No user-facing strings changed, so no ARB/FAQ updates were needed (neither `app_en.arb` nor `app_id.arb` mentions ads; the premium benefit copy never claimed "ad-free").
+- The AdMob `APPLICATION_ID` meta-data stays in `AndroidManifest.xml` (still Google's test ID) so re-enabling needs no manifest work.
+- 107/107 tests, 0 analyzer issues.
+
+---
+
 ## [0.13.20] — 2026-08-07
 
 ### Added

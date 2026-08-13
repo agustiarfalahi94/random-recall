@@ -4,6 +4,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/date_utils.dart' as date_utils;
 
+/// Master kill switch for all ad serving.
+///
+/// Ads are OFF until the app ships on the Play Store. Mounting an [AdWidget]
+/// puts an Android platform view above every screen, which forces the whole app
+/// onto the hybrid-composition render path — that made typing in the
+/// question/answer fields visibly laggy while the (keyboard-occluded) banner
+/// kept being composited every frame.
+///
+/// While this is `false`, no ad SDK is initialised and no `AdWidget` is ever
+/// mounted, so the app renders on the pure Flutter path.
+///
+/// To re-enable before launch: flip this to `true` AND replace the placeholder
+/// ad unit IDs below (see `docs/SESSION_NOTES.md` → "Before Play Store").
+const bool kAdsEnabled = false;
+
 class AdService {
   static final AdService instance = AdService._();
   AdService._();
@@ -51,6 +66,7 @@ class AdService {
   // ── Initialisation ─────────────────────────────────────────────────────────
 
   Future<void> initialize({required bool isPremium}) async {
+    if (!kAdsEnabled) return; // ads disabled until Play Store launch
     if (_initialized) return;
     _initialized = true;
     _isPremium = isPremium;
@@ -162,6 +178,7 @@ class AdService {
   /// Shows the interstitial ad if frequency rules allow it.
   /// Safe to call on every organic answer — the rules are enforced internally.
   Future<void> showInterstitialAd() async {
+    if (!kAdsEnabled) return; // ads disabled until Play Store launch
     if (!_canShowInterstitial) {
       // Preload for next eligible window if we don't have one
       if (_interstitialAd == null) _preloadInterstitialAd();

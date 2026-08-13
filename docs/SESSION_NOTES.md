@@ -30,6 +30,7 @@
 | 0.13.16 | Dependency update pass: Firebase majors (core 4 / auth 6 / firestore 6 / analytics 12 / crashlytics 5 / app_check 0.4 / remote_config 6 / storage 13 / performance 0.11), `flutter_local_notifications` 22, `google_mobile_ads` 9, `purchases_flutter` 10, `workmanager` 0.10, `device_info_plus` 13, `app_settings` 7 (8.x is SPM-only — skipped), `google_sign_in` 7, `timezone` 0.11, `flutter_lints` 6, `desugar_jdk_libs` 2.1.4. Skips: `intl` 0.20.3 (SDK-locked), `app_settings` 8 (SPM) |
 | 0.13.17 | Google Sign-In fix (serverClientId + account linking), deferred AdMob init (cold start) |
 | 0.13.18 | Black launch screen fix (v31 theme variants), shared CI debug keystore (upgradeable test APKs) |
+| 0.13.21 | **Ads switched OFF** (`kAdsEnabled = false`) — fixes typing lag in the question/answer fields caused by the AdMob platform view sitting above every screen |
 
 **Current work (unreleased, on `develop`):** Sync & stability batch — tombstone-based deletes (`sync_deletions` table, schema v5), chunked ≤450-op backup (fixes the Firestore 500-op write cap) with tombstone-first writes + 30-day cloud score prune, paginated tombstone-aware restore (`_fetchAllDocs`, 500-doc pages, drops orphaned scores) + the `dataFound` fix (categories/scores-only users no longer pushed back to onboarding), `AuthService.isVerifiedUser` consolidation, random-OFFSET question query, root detection off the first frame. Tests: **105/105**. Version NOT bumped (still `0.13.18+49`) — changelog entry is under `[Unreleased]`.
 
@@ -67,7 +68,8 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 
 ## 8. Still open (from the user's side)
 
-- **AdMob**: manifest + `lib/core/ads/ad_service.dart` still use Google **test IDs** (`ca-app-pub-3940256099942544...`). Replace with the real app ID + banner/interstitial unit IDs from apps.admob.com before Play Store. (Ads currently: test ads, no revenue.)
+- **AdMob — ads are currently DISABLED** (v0.13.21). `kAdsEnabled = false` in `lib/core/ads/ad_service.dart` is the master kill switch: the SDK never initialises, no banner/interstitial loads, and `_AdBannerWrapper` is skipped in `main.dart`. This was a **performance** fix, not a product change — mounting an `AdWidget` (an Android platform view) above every screen forces hybrid composition on the whole app and made typing in the question/answer fields laggy; the banner also stayed mounted, occluded, behind the keyboard.
+  To re-enable before Play Store: (1) flip `kAdsEnabled` to `true`, (2) replace the placeholder unit IDs (`_realBannerAdUnitId` / `_realInterstitialAdUnitId`, currently `ca-app-pub-REPLACE/REPLACE`) and the manifest `APPLICATION_ID` (currently Google's test ID `ca-app-pub-3940256099942544~3347511713`), (3) **re-test typing latency on the add/edit question screen** — if the lag returns, gate the banner on `keyboardVisible` in `_AdBannerWrapper` (`main.dart`) and/or add `AdService.enterExcludedScreen()` to text-entry screens.
 - **RevenueCat**: key is a placeholder; init is skipped until `--dart-define=REVENUECAT_API_KEY=...` is provided. Subscriptions not live yet.
 - **iOS**: dependency upgrades changed iOS plugin versions — run `flutter build ios --no-codesign` to validate before any iOS release. **STATUS: explicitly deferred — iOS is not a near-term target ("maybe next year, maybe never"). Do NOT spend time on iOS validation unless the user says they're targeting iOS.** (Note: `app_settings` 8.x was skipped because it requires Swift Package Manager; revisit that choice only if iOS becomes real.)
 - **Play Store**: release signing exists locally; CI release signing + Play upload steps are commented out in the workflow ("FUTURE" section in `CI_CD_SETUP.md`). Data Safety form + privacy policy needed.
@@ -81,7 +83,7 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 - `lib/core/notifications/notification_scheduler.dart` — pure slot computation (heavily unit-tested).
 - `lib/core/database/database_helper.dart` — schema v5 + `sync_deletions` tombstone journal table (categories/questions deleted locally get a journal row; the next backup deletes those cloud docs).
 - `lib/core/sync/sync_service.dart` — Firestore backup/restore; chunked ≤450-op tombstone-aware backup (delete-first, 30-day score prune) + paginated tombstone-aware restore via `_fetchAllDocs` (500-doc pages, skips tombstoned docs, drops orphaned score records); device-claim write historically hit permission-denied when rules weren't deployed.
-- `lib/core/ads/ad_service.dart` — premium gating, banner/interstitial, daily caps.
+- `lib/core/ads/ad_service.dart` — `kAdsEnabled` kill switch (currently `false`), premium gating, banner/interstitial, daily caps.
 - `lib/core/utils/screen_security.dart` + `MainActivity.kt` — FLAG_SECURE channel.
 - `lib/core/services/root_detection_service.dart` — jailbreak/root detection (informational).
 - `android/build.gradle.kts` — plugin compat shims (namespace + JVM targets).
@@ -110,7 +112,7 @@ and verify everything on the code side and walk the user through the console ste
 
 ### B. User-side prerequisites (consoles — the user must do these)
 
-1. **AdMob** (apps.admob.com): create account → register app `com.inkpebble.randomrecall` → create **banner** + **interstitial** ad units → give the agent the real IDs to replace in `lib/core/ads/ad_service.dart` and the manifest `APPLICATION_ID` meta-data (currently Google test IDs → real ads need real IDs; also add the user's device as a test device in `RequestConfiguration.testDeviceIds` while developing).
+1. **AdMob** (apps.admob.com) — **note: ads are currently switched off via `kAdsEnabled = false`; flip it back to `true` as part of this step**: create account → register app `com.inkpebble.randomrecall` → create **banner** + **interstitial** ad units → give the agent the real IDs to replace in `lib/core/ads/ad_service.dart` and the manifest `APPLICATION_ID` meta-data (currently Google test IDs → real ads need real IDs; also add the user's device as a test device in `RequestConfiguration.testDeviceIds` while developing).
 2. **RevenueCat** (app.revenuecat.com): create app → get the Android API key (`goog_...`) → provide it for the `--dart-define` in release builds; add it as the `REVENUECAT_API_KEY` GitHub secret if CI builds releases. Configure the `premium` entitlement + offerings/packages in the dashboard.
 3. **Firebase console**: verify App Check **enforcement is ON** for Firestore (release uses Play Integrity — already coded); the release SHA-1 fingerprint `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` must be registered (for Google Sign-In on the release app).
 4. **Play Console** (play.google.com/console): create app → **Data Safety form** (collects: email/phone for auth, analytics, ads; no financial data unless subscriptions live) → **Privacy policy URL** (host anywhere) → store listing (icon 512×512, feature graphic, screenshots, short/full description EN + ID) → content rating questionnaire → set pricing (free; IAP available).

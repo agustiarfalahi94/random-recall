@@ -243,8 +243,8 @@ class TourOverlayState extends State<TourOverlay> {
         }
         _handleRunActionAdvance(step, fired: fired);
         break; // NB: Dart 3.11 switch cases FALL THROUGH without break — the
-        // missing breaks here caused every runAction step to also run
-        // `_performTabSwitch` (double-advance + stray tab switches).
+      // missing breaks here caused every runAction step to also run
+      // `_performTabSwitch` (double-advance + stray tab switches).
       case TourStepBehavior.tabSwitch:
         _performTabSwitch(step);
         break;

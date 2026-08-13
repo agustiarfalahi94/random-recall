@@ -74,7 +74,7 @@ Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted
 - **Firestore rules: 100 KB/document write cap** — deploy via `firebase deploy --only firestore:rules`.
 
 ### Pre-release checklist
-- ⬜ Replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console (currently serving test ads).
+- ⬜ **Re-enable ads**: flip `kAdsEnabled` to `true` in `lib/core/ads/ad_service.dart` (disabled in v0.13.21 — it was causing typing lag), replace the placeholder unit IDs, and replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console. Re-test typing latency on the add/edit question screen afterwards.
 - ✅ Deploy the updated `firestore.rules` — done 2026-08-06.
 
 ### CI test-APK signature (2026-08-06)

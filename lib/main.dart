@@ -182,7 +182,9 @@ Future<void> main() async {
               e.code == 'user-disabled' ||
               e.code == 'invalid-user-token' ||
               e.code == 'user-token-expired') {
-            debugPrint('main.dart: User reload failed (${e.code}). Signing out...');
+            debugPrint(
+              'main.dart: User reload failed (${e.code}). Signing out...',
+            );
             await AuthService.instance.signOut();
           } else {
             debugPrint(
@@ -288,7 +290,10 @@ class _RandomRecallAppState extends State<RandomRecallApp>
             theme: _buildTheme(Brightness.light),
             darkTheme: _buildTheme(Brightness.dark),
             themeMode: ThemeMode.system,
-            builder: (context, child) => _AdBannerWrapper(child: child!),
+            // When ads are off (kAdsEnabled == false) the wrapper is skipped
+            // entirely, so no ad Stack/MediaQuery override sits above the app.
+            builder: (context, child) =>
+                kAdsEnabled ? _AdBannerWrapper(child: child!) : child!,
             home: _isChecking
                 ? const Scaffold(
                     body: Center(child: CircularProgressIndicator()),
@@ -544,14 +549,11 @@ class _HomeGateState extends State<_HomeGate> {
         // active, so silently signing out here logs the user out on every
         // cold start after any reinstall — instead, re-claim this device
         // (this device is in use right now).
-        debugPrint(
-          'HomeGate: Mismatch — re-claiming device $localDeviceId',
-        );
+        debugPrint('HomeGate: Mismatch — re-claiming device $localDeviceId');
         try {
-          await userDocRef.set(
-            {'last_active_device_id': localDeviceId},
-            SetOptions(merge: true),
-          );
+          await userDocRef.set({
+            'last_active_device_id': localDeviceId,
+          }, SetOptions(merge: true));
         } catch (e) {
           // Never sign out because a claim write failed.
           debugPrint('HomeGate: Re-claim failed (staying logged in): $e');
