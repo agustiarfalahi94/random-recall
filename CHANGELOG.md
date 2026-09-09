@@ -8,6 +8,8 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 ## [Unreleased]
 
 ### Changed
+- Replaced the starter README with product, setup, architecture, Firebase
+  security, secrets-management and CI/CD documentation.
 - **GitHub no longer publishes debug APKs** — only the release-signed APK is attached to a release. CI's debug build is kept purely as a compile check (it catches Android/Gradle breakage that `analyze` and `test` can't) and is never uploaded. Debug builds for device testing are made locally.
 
 ### Fixed
