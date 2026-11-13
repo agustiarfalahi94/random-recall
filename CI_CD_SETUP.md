@@ -47,6 +47,7 @@ A full release-readiness audit was performed. Before this pass the analyzer repo
 ### What changed
 
 1. **Analyzer is now strict in CI** — the workflow runs plain `flutter analyze` (warnings AND infos are fatal). A lint regression now blocks the merge instead of being silently ignored. This prevents the 69 issues from coming back.
+   CI pins **Flutter 3.41.6** in all three jobs — the version this project is built and released with. It used to be `3.x`, which floats to the newest stable; Flutter 3.47 deprecated `package:flutter/material.dart` (replacement: `package:material_ui/material_ui.dart`), so the floating pin turned a green build red without a single line of project change. Bump the pin deliberately, together with a local upgrade.
 2. **All deprecated API usage migrated** (Flutter 3.41.x): `withOpacity` → `withValues(alpha:)`, `RadioListTile.groupValue/onChanged` → `RadioGroup`, `TextFormField.value` → `initialValue`, RevenueCat `purchasePackage` → `purchase(PurchaseParams.package(...))`.
 3. **Async context safety** — every `use_build_context_synchronously` finding fixed with `mounted` guards or capture-before-await (prevents crashes from using a disposed BuildContext after `await`).
 4. **Dead code removed** — unused `_keyLastDate` constant and an unused import.
