@@ -14,6 +14,30 @@ if (keyPropertiesFile.exists()) {
     keyProperties.load(keyPropertiesFile.inputStream())
 }
 
+// ── AdMob App ID ──────────────────────────────────────────────────────────────
+// lib/core/ads/ad_config.dart is the single source of truth for all three AdMob
+// values. The App ID is read from it here so the manifest meta-data can never
+// drift from the Dart constants (an App ID that does not match the ad units
+// makes every ad request fail).
+val adMobConfigFile = file("../../lib/core/ads/ad_config.dart")
+val adMobReleaseAppId: String = run {
+    // Anchored to the start of a line so a comment that quotes the pattern
+    // cannot match first.
+    val match = Regex("""(?m)^\s*static const String appId = '([^']+)';""")
+        .find(adMobConfigFile.readText())
+    val value = match?.groupValues?.get(1)
+    if (value == null || !value.startsWith("ca-app-pub-")) {
+        throw GradleException(
+            "Could not read AdMobConfig.appId (got '${value}') from " +
+                "${adMobConfigFile.path}"
+        )
+    }
+    value
+}
+// Google's public sample App ID — every debug build uses this one so local ad
+// and UMP testing works without a real AdMob account.
+val adMobTestAppId = "ca-app-pub-3940256099942544~3347511713"
+
 android {
     namespace = "com.inkpebble.randomrecall"
     compileSdk = flutter.compileSdkVersion
@@ -35,6 +59,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Overridden per build type below; the default keeps any other variant
+        // (e.g. profile) building with the release value.
+        manifestPlaceholders["admobAppId"] = adMobReleaseAppId
     }
 
     signingConfigs {
@@ -49,6 +77,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Test App ID + AdMobConfig's sample ad units: real ads, no account.
+            manifestPlaceholders["admobAppId"] = adMobTestAppId
+        }
+
         release {
             signingConfig = if (keyPropertiesFile.exists())
                 signingConfigs.getByName("release")

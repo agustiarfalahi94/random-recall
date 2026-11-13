@@ -13,18 +13,10 @@ class RemoteConfigService {
 
   // Notification settings
   int get notifFrequencyFree => _rc.getInt('notif_frequency_free');
-  int get notifFrequencyPremium => _rc.getInt('notif_frequency_premium');
   int get notifStartHour => _rc.getInt('notif_start_hour');
   int get notifEndHour => _rc.getInt('notif_end_hour');
 
-  // Free-tier plan limits
-  int get freeQuestionBase => _rc.getInt('free_question_base');
-  int get freeMaxCustomCategories => _rc.getInt('free_max_custom_categories');
-
-  // Premium-tier plan limits
-  int get premiumMaxCustomCategories =>
-      _rc.getInt('premium_max_custom_categories');
-  int get premiumQuestionLimit => _rc.getInt('premium_question_limit');
-  int get categoryWarningThreshold => _rc.getInt('category_warning_threshold');
-  int get questionWarningThreshold => _rc.getInt('question_warning_threshold');
+  // NOTE: the plan-limit getters (free/premium question + category caps and
+  // their warning thresholds) were removed with the premium tier. This app is a
+  // single full version with no caps, so there is nothing to tune remotely.
 }

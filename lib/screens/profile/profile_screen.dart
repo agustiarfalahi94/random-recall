@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:random_recall/core/services/profile_service.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:random_recall/services/display_name_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_service.dart';
 import '../auth/optional_email_prompt_screen.dart';
@@ -26,7 +25,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isEmailUser = false;
   bool _isPhoneUser = false;
-  bool _isPremium = false;
   bool _isLoading = true; // true until _loadProfileData() completes
   String? _linkedPhoneNumber;
   int _phoneOnlyPrompted = 0;
@@ -47,8 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user == null) return;
 
       final profile = await _profileService.getUserProfile();
-      final prefs = await SharedPreferences.getInstance();
-      final isPremium = prefs.getBool('is_premium') ?? false;
 
       if (mounted) {
         setState(() {
@@ -59,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isPhoneUser = user.providerData.any((p) => p.providerId == 'phone');
           _linkedPhoneNumber = user.phoneNumber;
           _phoneOnlyPrompted = (profile?['phone_only_prompted'] as int?) ?? 0;
-          _isPremium = isPremium;
           _isLoading = false;
         });
       }
@@ -573,32 +568,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Subscription status
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(l10n.subscriptionStatusLabel),
-                        Chip(
-                          label: Text(
-                            _isPremium
-                                ? l10n.subscriptionStatusPremium
-                                : l10n.subscriptionStatusFree,
-                          ),
-                          backgroundColor: _isPremium
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
 
                   // Update button
                   SizedBox(

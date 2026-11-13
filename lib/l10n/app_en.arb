@@ -1,8 +1,6 @@
 {
   "@@locale": "en",
-
   "appTitle": "Random Recall",
-
   "back": "Back",
   "cancel": "Cancel",
   "save": "Save",
@@ -17,7 +15,6 @@
   "languageSubtitle": "English / Bahasa Indonesia",
   "languageEnglish": "English",
   "languageIndonesian": "Bahasa Indonesia",
-
   "dayMon": "Mon",
   "dayTue": "Tue",
   "dayWed": "Wed",
@@ -25,7 +22,6 @@
   "dayFri": "Fri",
   "daySat": "Sat",
   "daySun": "Sun",
-
   "presetDaily": "Daily",
   "presetWeekdays": "Weekdays",
   "presetWeekends": "Weekends",
@@ -37,31 +33,35 @@
   "endTime": "End time",
   "selectStartTime": "Select start time",
   "selectEndTime": "Select end time",
-
   "fieldQuestion": "Question",
   "fieldAnswer": "Answer",
   "fieldCategory": "Category",
   "selectCategory": "Select a category",
-
   "loginWelcomeTitle": "Welcome to Random Recall",
-  "loginSubtitle": "Sign in to sync your progress and unlock premium features.",
+  "loginSubtitle": "Sign in to sync your progress across devices.",
   "continueWithGoogle": "Continue with Google",
   "continueWithEmail": "Continue with Email",
   "providerGoogle": "Google",
   "providerEmail": "Email",
   "loginFailedSnack": "Login failed: {error}",
   "@loginFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
-
   "accountExistsTitle": "Account already exists",
   "accountExistsBody": "An account with {email} already exists. Enter your password to link your Google account.",
   "@accountExistsBody": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
   "accountExistsLinkButton": "Link & Sign In",
   "accountExistsSuccess": "Google account linked! You're signed in.",
-
   "emailAuthTitle": "Login",
   "welcomeBack": "Welcome back!",
   "emailAddress": "Email Address",
@@ -81,7 +81,6 @@
   "errorTooManyRequests": "Too many attempts. Please try again later.",
   "errorAuthFailed": "Authentication failed. Please try again.",
   "errorUnexpected": "An unexpected error occurred. Please try again.",
-
   "signupTitle": "Create Account",
   "joinTitle": "Join Random Recall",
   "signUpButton": "Sign Up",
@@ -91,7 +90,6 @@
   "errorEmailInUse": "This email address is already in use. Please log in or use a different email.",
   "errorWeakPassword": "The password is too weak. Please use at least 6 characters.",
   "errorSignUpFailed": "Sign up failed. Please try again.",
-
   "resetPasswordTitle": "Reset Password",
   "forgotPasswordTitle": "Forgot Password?",
   "forgotPasswordSubtitle": "Enter your email and we will send you a reset link if the account exists.",
@@ -99,11 +97,14 @@
   "resetSuccess": "If an account exists for this email, a reset link has been sent.",
   "enterYourEmail": "Enter your email",
   "resetError": "An error occurred. Please try again.",
-
   "verifyEmailTitle": "Verify your email",
   "verifyEmailSent": "We sent a verification link to {email}.\nPlease check your inbox and click the link to continue.",
   "@verifyEmailSent": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
   "iHaveClickedLink": "I have clicked the link",
   "resendEmail": "Resend Email",
@@ -111,14 +112,12 @@
   "waitingVerification": "Waiting for verification...",
   "verificationResent": "Verification email resent!",
   "signingOut": "Signing out...",
-
   "onboardingTagline": "Quiz yourself on anything.\nRandomly.",
   "onboardingDescription": "Add your own questions, pick when you want to be reminded, and let Random Recall keep your knowledge sharp — one random quiz at a time.",
   "featureRandom": "Random",
   "featureNotifications": "Notifications",
   "featureAnalytics": "Analytics",
   "getStarted": "Get Started →",
-
   "firstQuestionTitle": "Your first question",
   "firstQuestionSubtitle": "Add something you want to remember. You can add more later.",
   "questionHintOnboarding": "e.g. What is the capital of France?",
@@ -127,7 +126,6 @@
   "validationQuestionTooShort": "Question is too short",
   "validationEnterAnswer": "Please enter an answer",
   "validationSelectCategory": "Please select a category",
-
   "notifSetupTitle": "When should we\nremind you?",
   "notifSetupSubtitle": "You can change these settings later in the app.",
   "timingSection": "Timing",
@@ -149,13 +147,11 @@
   "startRecalling": "Start Recalling! 🚀",
   "skipForNow": "Skip for now — enable notifications later",
   "endTimeMustBeAfter": "End time must be at least 1 hour after start time.",
-
   "notifRequired": "Notifications Required",
   "notifRequiredDesc": "Random Recall works by sending you random quiz notifications throughout the day. Without this permission, the app cannot function.",
   "enableNotifications": "Enable Notifications",
   "exitApp": "Exit App",
   "enableInSettings": "Please enable notifications in system settings to continue.",
-
   "settingsTitle": "Settings",
   "settingsTooltip": "Settings",
   "syncDataNow": "Sync Data Now",
@@ -175,16 +171,28 @@
   "syncCompleteSnack": "Sync complete! Data is up to date. 🔄",
   "syncFailedSnack": "Sync failed: {error}",
   "@syncFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "testNotifSentSnack": "Test notification sent! Check your notification bar 🔔",
   "testNotifFailedSnack": "Failed to send: {error}",
   "@testNotifFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "signOutFailedSnack": "Sign out failed: {error}",
   "@signOutFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "signingOutSafely": "Signing out safely...",
   "backingUpData": "Backing up your data",
@@ -192,7 +200,6 @@
   "feedbackHint": "What could be better?",
   "feedbackSentSnack": "Feedback sent — thank you!",
   "feedbackFailedSnack": "Could not send feedback. Try again later.",
-
   "navHome": "Home",
   "navQuestions": "Questions",
   "navAnalytics": "Analytics",
@@ -202,44 +209,73 @@
   "timerChallengeTitle": "Timer Challenge",
   "bonusCountLabel": "+{count} bonus",
   "@bonusCountLabel": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "timerChallengeActiveDesc": "Timer set to {seconds}s — challenge active! Answer daily for 7 days to earn +1 question slot.",
   "@timerChallengeActiveDesc": {
-    "placeholders": { "seconds": { "type": "int" } }
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
   },
   "timerChallengeRelaxedDesc": "Timer is {seconds}s — too relaxed for challenge. Set to {threshold}s or less to earn streaks.",
   "@timerChallengeRelaxedDesc": {
     "placeholders": {
-      "seconds": { "type": "int" },
-      "threshold": { "type": "int" }
+      "seconds": {
+        "type": "int"
+      },
+      "threshold": {
+        "type": "int"
+      }
     }
   },
   "timerChallengeOffDesc": "Set a timer ({threshold}s or less) to unlock the challenge. Answer daily for 7 days → earn +1 question slot!",
   "@timerChallengeOffDesc": {
-    "placeholders": { "threshold": { "type": "int" } }
+    "placeholders": {
+      "threshold": {
+        "type": "int"
+      }
+    }
   },
   "setATimer": "Set a Timer",
   "streakStart": "Start today! Answer with the timer on.",
   "streakProgress": "{streak} day{plural} streak — {days} more to earn a bonus!",
   "@streakProgress": {
     "placeholders": {
-      "streak": { "type": "int" },
-      "plural": { "type": "String" },
-      "days": { "type": "int" }
+      "streak": {
+        "type": "int"
+      },
+      "plural": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
     }
   },
-
   "notifScheduleTitle": "Notification Schedule",
   "challengeModeName": "Challenge\nMode",
   "challengeModeOff": "Set timer to {threshold}s or less → answer daily → hit a 7-day streak → earn +1 free question slot!",
   "@challengeModeOff": {
-    "placeholders": { "threshold": { "type": "int" } }
+    "placeholders": {
+      "threshold": {
+        "type": "int"
+      }
+    }
   },
   "challengeModeActive": "🔥 Challenge active! Keep going daily for 7 days to earn +1 free question slot!",
   "challengeModeRelaxed": "Timer is too relaxed. Lower it to {threshold}s or less to activate the challenge.",
   "@challengeModeRelaxed": {
-    "placeholders": { "threshold": { "type": "int" } }
+    "placeholders": {
+      "threshold": {
+        "type": "int"
+      }
+    }
   },
   "responseTimer": "Response timer",
   "noTimeLimit": "No time limit — relaxed mode",
@@ -258,7 +294,11 @@
   "noSettingsChanged": "No settings were changed.",
   "saveFailedSnack": "Failed to save: {error}",
   "@saveFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "batteryOptOn": "Battery optimisation is ON",
   "batteryOptSubtitle": "Tap to allow Random Recall to always run (standard Android setting) — fixes missed notifications",
@@ -267,18 +307,29 @@
   "freqOnce": "Once a day — nice and easy",
   "freqRecommended": "{count} times a day — recommended",
   "@freqRecommended": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "freqActive": "{count} times a day — pretty active",
   "@freqActive": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "freqIntense": "{count} times a day — intense!",
   "@freqIntense": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "freqMax": "10 times a day — maximum",
-
   "editQuestionTitle": "Edit Question",
   "newQuestionTitle": "New Question",
   "questionHintAdd": "e.g. When cooking fried rice, what to add last?",
@@ -289,20 +340,7 @@
   "validationQuestionTooShort2": "Question is too short",
   "validationEnterAnswer2": "Please enter an answer",
   "validationSelectCategory2": "Please select a category",
-
-  "questionCount": "{current, plural, =0{No questions} =1{1 / {max} question} other{{current} / {max} questions}}",
-  "@questionCount": {
-    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
-  },
-  "questionWarning": "Approaching question limit — {current} / {max}",
-  "@questionWarning": {
-    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
-  },
-  "questionLimitReached": "Question limit reached — {current} / {max}",
-  "@questionLimitReached": {
-    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
-  },
-  "upgradeButton": "Upgrade ›",
+  "questionCountTotal": "{count, plural, =0{No questions} =1{1 question} other{{count} questions}}",
   "noQuestionsInCategory": "No questions in this category",
   "noQuestionsYet": "No questions yet",
   "tapToAddFirst": "Tap the button below to add your first question.",
@@ -311,10 +349,7 @@
   "newQuestionMenuSubtitle": "Add something you want to remember",
   "newCategoryMenuTitle": "New Category",
   "newCategoryMenuSubtitle": "Organise questions into a new group",
-
   "categoriesTitle": "Categories",
-  "freePlanLimitReachedBanner": "Free plan: you've used your 1 custom category slot. Upgrade to Premium for up to 20 custom categories.",
-  "freePlanInfoBanner": "Free plan: you can add 1 custom category. Default categories (General, Work) don't count against this.",
   "noCategoriesYet": "No custom categories yet",
   "noCategoriesSubtitle": "General and Work are built-in. Tap the button below to create your own.",
   "newCategorySheetTitle": "New Category",
@@ -323,11 +358,6 @@
   "categoryNameHint": "e.g. Cooking, Travel, Finance…",
   "validationCategoryNameEmpty": "Please enter a category name",
   "validationCategoryNameShort": "Name is too short",
-  "premiumUnlimitedCategories": "Premium — create up to 20 custom categories!",
-  "freePlanCategoryNote": "Free plan: {count} custom category allowed (General & Work are built-in). Upgrade to Premium for up to 20.",
-  "@freePlanCategoryNote": {
-    "placeholders": { "count": { "type": "int" } }
-  },
   "hasQuestions": "Has questions",
   "emptySafeToDelete": "Empty — safe to delete",
   "cannotDeleteTooltip": "Cannot delete — has questions",
@@ -336,33 +366,32 @@
   "deleteCategoryContent": "Delete \"{icon} {name}\"? This cannot be undone.",
   "@deleteCategoryContent": {
     "placeholders": {
-      "icon": { "type": "String" },
-      "name": { "type": "String" }
+      "icon": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
     }
   },
   "categoryHasQuestionsError": "\"{name}\" has questions. Delete or move them first.",
   "@categoryHasQuestionsError": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-  "limitReachedFab": "Limit Reached",
   "newCategoryFab": "New Category",
-  "categoryCount": "{current, plural, =0{No categories} =1{1 / {max} category} other{{current} / {max} categories}}",
-  "@categoryCount": {
-    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
-  },
-  "categoryWarning": "Approaching category limit — {current} / {max}",
-  "@categoryWarning": {
-    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
-  },
-  "categoryLimitReached": "Category limit reached — {current} / {max}",
-  "@categoryLimitReached": {
-    "placeholders": { "current": { "type": "int" }, "max": { "type": "int" } }
-  },
+  "categoryCountTotal": "{count, plural, =0{No categories} =1{1 category} other{{count} categories}}",
   "saveCategoryFailedSnack": "Failed to save: {error}",
   "@saveCategoryFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
-
   "questionLabel": "QUESTION",
   "answerLabel": "ANSWER",
   "revealAnswer": "Reveal Answer",
@@ -375,35 +404,47 @@
   "keepPracticing": "Keep practicing!",
   "failedToSaveScore": "Failed to save score: {error}",
   "@failedToSaveScore": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "undoSuccess": "Result undone. You can try again! ↩️",
   "undoFailed": "Undo failed: {error}",
   "@undoFailed": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "undoButton": "Undo",
-  "undoOncePerDay": "Undo (only 1 use per day)",
   "noQuestionsEmptyTitle": "No questions yet",
   "noQuestionsEmptySubtitle": "Add some questions first from the Questions tab.",
   "goBack": "Go back",
   "skipToNext": "Skip to next question",
-
   "scoreRecordedClosing": "Score recorded! Closing in a moment...",
   "closingInMoment": "Closing in a moment...",
   "scoreRecordedKeepPracticing": "Score recorded! Keep practicing",
   "closeButton": "Close",
-
   "streakDayTitle": "{streak}-Day Streak!",
   "@streakDayTitle": {
-    "placeholders": { "streak": { "type": "int" } }
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
   },
   "streakDescription": "You've answered with the timer on for {streak} days straight. You earned +1 bonus question slot! 🎉",
   "@streakDescription": {
-    "placeholders": { "streak": { "type": "int" } }
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
   },
   "awesome": "Awesome!",
-
   "analyticsNoData": "No data yet",
   "analyticsNoDataSubtitle": "Answer some questions first and your stats will appear here.",
   "analyticsByCategory": "By Category",
@@ -418,49 +459,7 @@
   "analyticsTotal": "Total",
   "analyticsCorrectLabel": "✅ Correct",
   "analyticsWrongLabel": "❌ Wrong",
-  "analyticsUnlockTitle": "Unlock Category Analytics",
-  "analyticsUnlockSubtitle": "See exactly which categories you struggle with.\nSubscribe to unlock full analytics.",
-  "analyticsSubscribeButton": "Subscribe to Unlock",
   "createCategoryButton": "Create Category",
-
-  "upgradeToPremium": "Upgrade to Premium",
-  "premiumUnlockTitle": "Unlock Full Potential",
-  "premiumUnlockSubtitle": "The full Random Recall experience — every feature, fully unlocked.",
-  "featureUnlimitedQuestions": "Up to 200 Questions",
-  "featureUnlimitedQuestionsSubtitle": "Store up to 200 questions — more than enough to master any topic.",
-  "featureUnlimitedCategories": "Up to 20 Categories",
-  "featureUnlimitedCategoriesSubtitle": "Organize your learning into up to 20 custom topics.",
-  "featureUndoMistakes": "Undo Mistakes",
-  "featureUndoMistakesSubtitle": "Correct a wrong answer to keep your streak alive.",
-  "featureAdvancedAnalytics": "Advanced Analytics",
-  "featureAdvancedAnalyticsSubtitle": "Identify your weak spots with per-category scoring.",
-  "featureRealTimeSync": "Real-time Sync",
-  "featureRealTimeSyncSubtitle": "Seamless access across all your Android devices.",
-  "getPremiumButton": "Get Premium — {price}",
-  "@getPremiumButton": {
-    "placeholders": { "price": { "type": "String" } }
-  },
-  "loadingPlans": "Loading available plans...",
-  "restorePurchase": "Restore Purchase",
-  "cancelAnytime": "Cancel anytime in Google Play Store. Settings > Subscriptions.",
-  "purchaseFailedSnack": "Purchase failed: {error}",
-  "@purchaseFailedSnack": {
-    "placeholders": { "error": { "type": "String" } }
-  },
-  "premiumActiveMember": "You are a Premium Member!",
-  "premiumActiveDesc": "Thank you for supporting Random Recall. Enjoy all features unlocked.",
-  "premiumGreat": "Great!",
-  "premiumIncludes": "Premium includes:",
-  "premiumPerkUnlimitedQuestions": "✅ Up to 200 questions",
-  "premiumPerkAllCategories": "✅ Up to 20 categories",
-  "premiumPerkFullAnalytics": "✅ Full analytics breakdown",
-  "premiumPerkUndo": "✅ Undo wrong answer (rewarded)",
-  "questionLimitReachedTitle": "Question Limit Reached",
-  "categoryLimitReachedTitle": "Category Limit Reached",
-  "questionLimitReachedDesc": "Free accounts can store up to 20 questions (+ bonus slots from challenges). Upgrade to Premium for up to 200 questions.",
-  "categoryLimitReachedDesc": "Free accounts can add questions to 1 custom category (+ bonus slots from challenges). Upgrade to Premium for up to 20 categories.",
-  "maybeLater": "Maybe later",
-
   "miuiDialogTitle": "Fix notifications on MIUI / HyperOS",
   "miuiDialogSubtitle": "Xiaomi phones restrict background apps by default. Two quick changes will ensure your quiz notifications arrive reliably.",
   "miuiStep1Title": "Enable Background Start",
@@ -470,19 +469,16 @@
   "openBackgroundStartBtn": "Open Background Start Settings",
   "openAppSettingsBtn": "Open App Settings — Set Power",
   "doneDismissBtn": "I've done this — close",
-
   "notificationTitle": "Time for a quick recall! 🧠",
   "notificationBody": "Tap to answer the question",
   "testNotificationTitle": "Test Notification 🧪",
   "testNotificationBody": "Tap to answer the question",
-
   "faqTitle": "FAQ",
   "faqSectionNotifications": "Notifications",
   "faqSectionQuestionBank": "Question Bank & Limits",
   "faqSectionChallengeMode": "Challenge Mode",
   "faqSectionAccountSync": "Account & Sync",
   "faqSectionPermissions": "Permissions",
-
   "faqQ1": "Why do all my notifications arrive at once when I unlock my phone?",
   "faqA1": "On Xiaomi / MIUI / HyperOS devices, the OS holds scheduled alarms while the screen is off and releases them all together when you unlock. This is Android power management — the app can't override it directly. Whitelisting the app in battery settings (Settings → Battery → No restrictions) reduces the delay significantly.",
   "faqQ2": "Why does the badge number show fewer than the notifications in my tray?",
@@ -496,13 +492,13 @@
   "faqQ6": "Why aren't my notifications arriving on time?",
   "faqA6": "Two common causes: (1) Battery optimisation is ON for the app — whitelist it using the prompt in Notification Schedule settings. (2) MIUI / HyperOS holds alarms while the screen is off and fires them all on unlock — see the first question above.",
   "faqQ7": "How many questions can I add for free?",
-  "faqA7": "The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium allows up to 200 questions.",
+  "faqA7": "There is no question limit — add as many as you like. Challenge Mode is still there to build the habit: finishing the 7-day or 14-day challenge unlocks a badge and a title. There is nothing to buy.",
   "faqQ8": "How many custom categories can I create for free?",
-  "faqA8": "Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium allows up to 20 custom categories.",
+  "faqA8": "You can create as many custom categories as you like. The built-in \"General\" and \"Work\" categories are always available and do not count against anything.",
   "faqQ9": "What is the daily Undo?",
-  "faqA9": "You can undo your last answer once per calendar day. The limit resets at midnight. This is available on both free and premium accounts.",
+  "faqA9": "You can undo your last answer whenever you need to — there is no daily limit.",
   "faqQ10": "What is Challenge Mode and how does it work?",
-  "faqA10": "Start Challenge Mode from Notification Schedule. Choose between a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and require correct answers on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing the 7-day challenge earns +1 question slot (free users) or a badge + title (premium). Completing the 14-day challenge earns +1 question slot and +1 category slot (free users) or a badge + title (premium).",
+  "faqA10": "Start Challenge Mode from Notification Schedule. Choose a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and expect a correct answer on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing a challenge unlocks a badge and a title.",
   "faqQ11": "Does the timer affect my score if it runs out?",
   "faqA11": "Yes — if the countdown reaches zero before you answer, the question is automatically marked as incorrect. You can set the timer to 0 in Notification Schedule settings to disable it and answer at your own pace. Note: during an active Challenge Mode, the timer is locked between 5–10 seconds and cannot be disabled.",
   "faqQ12": "Do my questions sync across devices?",
@@ -513,24 +509,27 @@
   "faqA14": "Android's battery optimisation can kill scheduled alarms for apps running in the background. Whitelisting the app (a standard Android setting) tells the OS to keep its alarms active — this is the single most effective fix for missed or delayed notifications on any Android device.",
   "faqQ15": "What do I lose if I deny notification permission?",
   "faqA15": "The app's entire purpose — timed recall prompts — stops working. You won't receive any questions. The permission screen will appear on every app open until permission is granted in your device settings.",
-
   "onboardingSomethingWentWrong": "Something went wrong: {error}",
   "@onboardingSomethingWentWrong": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
-
   "welcomeMessage": "Welcome, {name}",
   "@welcomeMessage": {
     "description": "Welcome message on home screen with user's name",
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "profilePageTitle": "Profile",
   "nameLabel": "Name",
   "phoneLabel": "Phone Number",
   "emailLabel": "Email",
-  "subscriptionStatusLabel": "Subscription Status",
-  "subscriptionStatusPremium": "Premium",
-  "subscriptionStatusFree": "Free",
   "changePasswordButton": "Change Password",
   "deleteAccountButton": "Delete Account",
   "deleteAccountWarning": "Are you sure? Account deletion is permanent. All your data will be deleted.",
@@ -544,7 +543,6 @@
   "accountDeleteFailed": "Failed to delete account",
   "googleAccountLabel": "Google Account",
   "emailAccountLabel": "Email",
-
   "displayNameInputHint": "Enter your name",
   "displayNameLabel": "Display Name",
   "displayNameMaxLength": "50 characters maximum",
@@ -554,19 +552,22 @@
   "displayNameError": "Error saving name. Please try again.",
   "displayNameSubmit": "Continue",
   "displayNameCancel": "Cancel",
-
   "challengeModeFrequencyTitle": "Challenge Mode: Select Daily Frequency",
   "challengeModeFrequencyHint": "How many questions per day during this {duration}-day challenge?",
   "@challengeModeFrequencyHint": {
     "placeholders": {
-      "duration": { "type": "int" }
+      "duration": {
+        "type": "int"
+      }
     }
   },
   "challengeModeFrequencyRange": "1-50 questions per day",
   "challengeWarningTitle": "⚠️ Challenge Mode — {duration}-Day Streak",
   "@challengeWarningTitle": {
     "placeholders": {
-      "duration": { "type": "int" }
+      "duration": {
+        "type": "int"
+      }
     }
   },
   "challengeWarningRule1": "• Must answer ALL questions correctly (no mistakes allowed)",
@@ -575,13 +576,17 @@
   "challengeWarningRule4": "• Must complete every day for {duration} consecutive days",
   "@challengeWarningRule4": {
     "placeholders": {
-      "duration": { "type": "int" }
+      "duration": {
+        "type": "int"
+      }
     }
   },
   "challengeWarningRule5": "Complete all {duration} days to earn rewards",
   "@challengeWarningRule5": {
     "placeholders": {
-      "duration": { "type": "int" }
+      "duration": {
+        "type": "int"
+      }
     }
   },
   "challengeWarningCancel": "Cancel",
@@ -589,13 +594,17 @@
   "challengeRewardFreeQuestions": "+{count} question slot",
   "@challengeRewardFreeQuestions": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "challengeRewardFreeCategories": "+{count} category slot",
   "@challengeRewardFreeCategories": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "challengeRewardBadge": "🏆 Badge",
@@ -606,47 +615,72 @@
   "challengeDayCounter": "Challenge Day {day}/{total}",
   "@challengeDayCounter": {
     "placeholders": {
-      "day": { "type": "int" },
-      "total": { "type": "int" }
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "lockedDuringChallenge": "Locked during challenge",
   "challengeTimerRequirementSnack": "Challenge Mode requires timer to be 5 or 10 seconds only.",
   "challengeActivatedSnack": "🔥 Challenge Mode activated! You have {days} days.",
   "@challengeActivatedSnack": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "challengeConfirmTitle": "🔥 Start {days}-Day Challenge Mode?",
   "@challengeConfirmTitle": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "challengeConfirmBody": "This will reset your current Regular Streak and start a new challenge.",
   "challengeConfirmRequirementsTitle": "Challenge Mode Requirements:",
   "challengeConfirmRequirementAnswers": "✓ Answer ALL questions correctly",
   "challengeConfirmRequirementTimer": "✓ Timer locked to {seconds}s",
   "@challengeConfirmRequirementTimer": {
-    "placeholders": { "seconds": { "type": "int" } }
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
   },
   "challengeConfirmRequirementFrequency": "✓ Notification frequency locked to {count}/day",
   "@challengeConfirmRequirementFrequency": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "challengeConfirmRequirementDays": "✓ Complete the challenge in {days} consecutive days",
   "@challengeConfirmRequirementDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "challengeConfirmFooter": "All of your settings will be locked before the challenge ends, beware of what you choose! For the specific timing settings, start and end time would be customizable throughout the challenge period if Send at any time is switched off.",
   "existingStreakTitle": "You Have an Active Regular Streak",
   "existingStreakMessage": "You currently have a {streak}-day regular streak! Keep improving or try the new Challenge Mode.",
   "@existingStreakMessage": {
     "placeholders": {
-      "streak": { "type": "int" }
+      "streak": {
+        "type": "int"
+      }
     }
   },
   "existingStreakWarning": "⚠️  Choose Your Path:\n\n📊 REGULAR STREAK (Keep):\n• Answer daily with any timer\n• Slower pace, forgiving\n• Build consistency\n\n🔥 CHALLENGE MODE (New):\n• 7-day intensive mode\n• MUST answer ALL correctly\n• MUST use 5–10s timer only\n• Active days locked during challenge\n• Timing settings locked for the whole challenge\n• Missing one = restart\n• Win = Reward badge + free questions",
   "existingStreakKeep": "Keep Regular Streak",
   "existingStreakStart": "Start Challenge Mode",
-
   "nextButton": "Next →",
   "updateProfileButton": "Update Profile",
   "confirmPasswordTitle": "Confirm Password",
@@ -657,49 +691,47 @@
   "confirmPasswordHint": "Confirm Password",
   "addTooltip": "Add",
   "challengeStartError": "Error starting challenge: {error}",
-
   "challengeCompleteTitle": "Challenge Complete!",
   "challengeCompletedDaysLabel": "You completed the {duration}-day challenge!",
   "@challengeCompletedDaysLabel": {
-    "placeholders": { "duration": { "type": "int" } }
+    "placeholders": {
+      "duration": {
+        "type": "int"
+      }
+    }
   },
   "challengeRewardsEarnedLabel": "Rewards Earned:",
-  "challengeRewardQuestionSlotsLabel": "+{count} Question Slot{plural}",
-  "@challengeRewardQuestionSlotsLabel": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "plural": { "type": "String" }
-    }
-  },
-  "challengeRewardQuestionsDesc": "Permanently unlock more questions",
-  "challengeRewardCategorySlotsLabel": "+{count} Category Slot{plural}",
-  "@challengeRewardCategorySlotsLabel": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "plural": { "type": "String" }
-    }
-  },
-  "challengeRewardCategoriesDesc": "Create more custom categories",
   "challengeRewardBadgeUnlockedLabel": "Challenge Badge Unlocked",
   "challengeRewardBadgeDesc": "Show off your achievement",
   "challengeRewardTitleLabel": "Title: {title}",
   "@challengeRewardTitleLabel": {
-    "placeholders": { "title": { "type": "String" } }
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
-  "challengeRewardTitleDesc": "Premium exclusive achievement",
+  "challengeRewardTitleDesc": "Earned by completing challenges",
   "challengeTitleChallenger": "Challenger",
   "challengeTitleChampion": "Champion",
   "challengeTitleLegend": "Legend",
   "@challengeStartError": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
-
   "challengeModeCardTitle": "Challenge Mode",
   "challengeDayProgress": "Day {day} / {total}",
   "@challengeDayProgress": {
     "placeholders": {
-      "day": { "type": "int" },
-      "total": { "type": "int" }
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "challengeActiveDesc": "Answer one question correctly every day to keep your streak alive.",
@@ -710,7 +742,6 @@
   "challengeStopTitle": "Stop Challenge?",
   "challengeStopBody": "This will reset your current challenge progress. Are you sure?",
   "challengeStopAction": "Stop",
-
   "continueWithPhone": "Continue with Phone Number",
   "phoneAuthTitle": "Phone Number",
   "phoneAuthEnterNumber": "Enter your phone number",
@@ -718,13 +749,21 @@
   "phoneAuthEnterCode": "Enter the 6-digit code",
   "phoneAuthCodeSentTo": "Code sent to {phone}",
   "@phoneAuthCodeSentTo": {
-    "placeholders": { "phone": { "type": "String" } }
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
   },
   "phoneAuthVerify": "Verify",
   "phoneAuthResend": "Resend",
   "phoneAuthResendIn": "Resend in {seconds}s",
   "@phoneAuthResendIn": {
-    "placeholders": { "seconds": { "type": "int" } }
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
   },
   "phoneAuthInvalidCode": "Invalid verification code. Please try again.",
   "phoneAuthTooManyRequests": "Too many attempts. Please try again later.",
@@ -749,13 +788,15 @@
   "phoneDeleteReauthTitle": "Confirm with SMS Code",
   "phoneDeleteReauthSubtitle": "We'll send a verification code to {phone} to confirm.",
   "@phoneDeleteReauthSubtitle": {
-    "placeholders": { "phone": { "type": "String" } }
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
   },
-
   "rootWarningTitle": "Rooted device detected",
   "rootWarningBody": "This device appears to be rooted or jailbroken. Your data is stored locally on this device and backed up to your private cloud account, but rooted devices can be more exposed to malicious apps. We recommend keeping your device secure.",
   "rootWarningGotIt": "Got it",
-
   "tourPracticeBody": "Tap **Practice Now** to answer questions from your saved categories.",
   "tourQuestionsBody": "Your **Questions** library lives here — add, edit, and organize.",
   "tourAddBody": "Tap **+** to add a new question.",
@@ -767,5 +808,8 @@
   "tourSkip": "Skip",
   "tourFinish": "Finish",
   "tourReplayTile": "Take a tour",
-  "tourReplaySubtitle": "Replay the interactive guide"
+  "tourReplaySubtitle": "Replay the interactive guide",
+  "adPrivacyTitle": "Ad privacy settings",
+  "adPrivacySubtitle": "Review or change how your data is used for ads",
+  "adPrivacyUnavailable": "Ad privacy settings are not available right now."
 }

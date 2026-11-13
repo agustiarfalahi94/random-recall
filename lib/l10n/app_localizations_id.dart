@@ -124,7 +124,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get loginSubtitle =>
-      'Masuk untuk sinkronisasi progres dan membuka fitur premium.';
+      'Masuk untuk menyinkronkan progres di semua perangkat.';
 
   @override
   String get continueWithGoogle => 'Lanjutkan dengan Google';
@@ -708,29 +708,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get validationSelectCategory2 => 'Pilih kategori';
 
   @override
-  String questionCount(int current, int max) {
+  String questionCountTotal(num count) {
     String _temp0 = intl.Intl.pluralLogic(
-      current,
+      count,
       locale: localeName,
-      other: '$current / $max pertanyaan',
-      one: '1 / $max pertanyaan',
-      zero: 'Tidak ada pertanyaan',
+      other: '$count pertanyaan',
+      one: '1 pertanyaan',
+      zero: 'Belum ada pertanyaan',
     );
     return '$_temp0';
   }
-
-  @override
-  String questionWarning(int current, int max) {
-    return 'Mendekati batas pertanyaan — $current / $max';
-  }
-
-  @override
-  String questionLimitReached(int current, int max) {
-    return 'Batas pertanyaan tercapai — $current / $max';
-  }
-
-  @override
-  String get upgradeButton => 'Upgrade ›';
 
   @override
   String get noQuestionsInCategory => 'Tidak ada pertanyaan di kategori ini';
@@ -763,14 +750,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get categoriesTitle => 'Kategori';
 
   @override
-  String get freePlanLimitReachedBanner =>
-      'Paket gratis: kamu sudah menggunakan 1 slot kategori kustom. Upgrade ke Premium untuk hingga 20 kategori kustom.';
-
-  @override
-  String get freePlanInfoBanner =>
-      'Paket gratis: kamu bisa menambahkan 1 kategori kustom. Kategori bawaan (General, Work) tidak dihitung.';
-
-  @override
   String get noCategoriesYet => 'Belum ada kategori kustom';
 
   @override
@@ -794,15 +773,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get validationCategoryNameShort => 'Nama terlalu pendek';
-
-  @override
-  String get premiumUnlimitedCategories =>
-      'Premium — buat hingga 20 kategori kustom!';
-
-  @override
-  String freePlanCategoryNote(int count) {
-    return 'Paket gratis: $count kategori kustom diizinkan (General & Work sudah tersedia). Upgrade ke Premium untuk hingga 20.';
-  }
 
   @override
   String get hasQuestions => 'Ada pertanyaan';
@@ -830,31 +800,18 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get limitReachedFab => 'Batas Tercapai';
-
-  @override
   String get newCategoryFab => 'Kategori Baru';
 
   @override
-  String categoryCount(int current, int max) {
+  String categoryCountTotal(num count) {
     String _temp0 = intl.Intl.pluralLogic(
-      current,
+      count,
       locale: localeName,
-      other: '$current / $max kategori',
-      one: '1 / $max kategori',
-      zero: 'Tidak ada kategori',
+      other: '$count kategori',
+      one: '1 kategori',
+      zero: 'Belum ada kategori',
     );
     return '$_temp0';
-  }
-
-  @override
-  String categoryWarning(int current, int max) {
-    return 'Mendekati batas kategori — $current / $max';
-  }
-
-  @override
-  String categoryLimitReached(int current, int max) {
-    return 'Batas kategori tercapai — $current / $max';
   }
 
   @override
@@ -907,9 +864,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get undoButton => 'Batal';
-
-  @override
-  String get undoOncePerDay => 'Batal (hanya 1 kali per hari)';
 
   @override
   String get noQuestionsEmptyTitle => 'Belum ada pertanyaan';
@@ -993,124 +947,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get analyticsWrongLabel => '❌ Salah';
 
   @override
-  String get analyticsUnlockTitle => 'Buka Analitik Kategori';
-
-  @override
-  String get analyticsUnlockSubtitle =>
-      'Lihat persis kategori mana yang masih perlu dipelajari.\nBerlangganan untuk membuka analitik lengkap.';
-
-  @override
-  String get analyticsSubscribeButton => 'Berlangganan untuk Membuka';
-
-  @override
   String get createCategoryButton => 'Buat Kategori';
-
-  @override
-  String get upgradeToPremium => 'Upgrade ke Premium';
-
-  @override
-  String get premiumUnlockTitle => 'Buka Potensi Penuh';
-
-  @override
-  String get premiumUnlockSubtitle =>
-      'Pengalaman Random Recall penuh — setiap fitur, sepenuhnya terbuka.';
-
-  @override
-  String get featureUnlimitedQuestions => 'Hingga 200 Pertanyaan';
-
-  @override
-  String get featureUnlimitedQuestionsSubtitle =>
-      'Simpan hingga 200 pertanyaan — lebih dari cukup untuk menguasai topik apa pun.';
-
-  @override
-  String get featureUnlimitedCategories => 'Hingga 20 Kategori';
-
-  @override
-  String get featureUnlimitedCategoriesSubtitle =>
-      'Organisir belajarmu ke dalam hingga 20 topik kustom.';
-
-  @override
-  String get featureUndoMistakes => 'Batalkan Kesalahan';
-
-  @override
-  String get featureUndoMistakesSubtitle =>
-      'Koreksi jawaban salah untuk menjaga streak tetap hidup.';
-
-  @override
-  String get featureAdvancedAnalytics => 'Analitik Lanjutan';
-
-  @override
-  String get featureAdvancedAnalyticsSubtitle =>
-      'Temukan titik lemahmu dengan skor per kategori.';
-
-  @override
-  String get featureRealTimeSync => 'Sinkronisasi Real-time';
-
-  @override
-  String get featureRealTimeSyncSubtitle =>
-      'Akses mulus di semua perangkat Android kamu.';
-
-  @override
-  String getPremiumButton(String price) {
-    return 'Dapatkan Premium — $price';
-  }
-
-  @override
-  String get loadingPlans => 'Memuat paket yang tersedia...';
-
-  @override
-  String get restorePurchase => 'Pulihkan Pembelian';
-
-  @override
-  String get cancelAnytime =>
-      'Batalkan kapan saja di Google Play Store. Pengaturan > Langganan.';
-
-  @override
-  String purchaseFailedSnack(String error) {
-    return 'Pembelian gagal: $error';
-  }
-
-  @override
-  String get premiumActiveMember => 'Kamu adalah Anggota Premium!';
-
-  @override
-  String get premiumActiveDesc =>
-      'Terima kasih telah mendukung Random Recall. Nikmati semua fitur yang telah dibuka.';
-
-  @override
-  String get premiumGreat => 'Bagus!';
-
-  @override
-  String get premiumIncludes => 'Premium mencakup:';
-
-  @override
-  String get premiumPerkUnlimitedQuestions => '✅ Hingga 200 pertanyaan';
-
-  @override
-  String get premiumPerkAllCategories => '✅ Hingga 20 kategori';
-
-  @override
-  String get premiumPerkFullAnalytics => '✅ Analitik lengkap';
-
-  @override
-  String get premiumPerkUndo => '✅ Batalkan jawaban salah (hadiah)';
-
-  @override
-  String get questionLimitReachedTitle => 'Batas Pertanyaan Tercapai';
-
-  @override
-  String get categoryLimitReachedTitle => 'Batas Kategori Tercapai';
-
-  @override
-  String get questionLimitReachedDesc =>
-      'Akun gratis dapat menyimpan hingga 20 pertanyaan (+ slot bonus dari tantangan). Upgrade ke Premium untuk hingga 200 pertanyaan.';
-
-  @override
-  String get categoryLimitReachedDesc =>
-      'Akun gratis dapat membuat 1 kategori kustom (+ slot bonus dari tantangan). Upgrade ke Premium untuk hingga 20 kategori.';
-
-  @override
-  String get maybeLater => 'Nanti saja';
 
   @override
   String get miuiDialogTitle => 'Perbaiki notifikasi di MIUI / HyperOS';
@@ -1224,7 +1061,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA7 =>
-      'Paket gratis mulai dengan 20 slot pertanyaan. Kamu bisa mendapatkan slot tambahan melalui Mode Tantangan: menyelesaikan tantangan 7 hari mendapatkan +1 slot pertanyaan, dan menyelesaikan tantangan 14 hari mendapatkan +1 slot pertanyaan dan +1 slot kategori. Premium memungkinkan hingga 200 pertanyaan.';
+      'Tidak ada batas pertanyaan — tambahkan sebanyak yang kamu mau. Mode Tantangan tetap ada untuk membangun kebiasaan: menyelesaikan tantangan 7 hari atau 14 hari akan membuka lencana dan gelar. Tidak ada yang perlu dibeli.';
 
   @override
   String get faqQ8 =>
@@ -1232,21 +1069,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get faqA8 =>
-      'Akun gratis dapat membuat 1 kategori kustom. Kategori bawaan \"General\" dan \"Work\" tidak dihitung terhadap batas ini. Kamu bisa mendapatkan slot kategori tambahan dengan menyelesaikan Mode Tantangan 14 hari. Premium memungkinkan hingga 20 kategori kustom.';
+      'Kamu bisa membuat kategori kustom sebanyak yang kamu mau. Kategori bawaan \"General\" dan \"Work\" selalu tersedia.';
 
   @override
   String get faqQ9 => 'Apa itu Batal harian?';
 
   @override
   String get faqA9 =>
-      'Kamu bisa membatalkan jawaban terakhirmu sekali per hari kalender. Batas ini direset tengah malam. Ini tersedia untuk akun gratis dan premium.';
+      'Kamu bisa membatalkan jawaban terakhir kapan pun — tidak ada batas harian.';
 
   @override
   String get faqQ10 => 'Apa itu Mode Tantangan dan bagaimana cara kerjanya?';
 
   @override
   String get faqA10 =>
-      'Mulai Mode Tantangan dari Jadwal Notifikasi. Pilih antara tantangan 7 hari atau 14 hari — keduanya mengunci timer ke 5–10 detik dan mewajibkan jawaban benar pada setiap pertanyaan. Jawab minimal satu notifikasi per hari selama durasi penuh. Melewatkan satu hari atau menjawab salah akan menggagalkan tantangan. Menyelesaikan tantangan 7 hari mendapatkan +1 slot pertanyaan (pengguna gratis) atau lencana + gelar (premium). Menyelesaikan tantangan 14 hari mendapatkan +1 slot pertanyaan dan +1 slot kategori (pengguna gratis) atau lencana + gelar (premium).';
+      'Mulai Mode Tantangan dari Jadwal Notifikasi. Pilih tantangan 7 hari atau 14 hari — keduanya mengunci timer ke 5–10 detik dan mewajibkan jawaban benar di setiap pertanyaan. Jawab minimal satu notifikasi per hari selama durasi penuh. Melewatkan satu hari atau menjawab salah membuat tantangan gagal. Menyelesaikan tantangan akan membuka lencana dan gelar.';
 
   @override
   String get faqQ11 => 'Apakah timer mempengaruhi skor saya jika habis?';
@@ -1307,15 +1144,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get emailLabel => 'Email';
-
-  @override
-  String get subscriptionStatusLabel => 'Status Langganan';
-
-  @override
-  String get subscriptionStatusPremium => 'Premium';
-
-  @override
-  String get subscriptionStatusFree => 'Gratis';
 
   @override
   String get changePasswordButton => 'Ubah Kata Sandi';
@@ -1572,24 +1400,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get challengeRewardsEarnedLabel => 'Hadiah yang Diperoleh:';
 
   @override
-  String challengeRewardQuestionSlotsLabel(int count, String plural) {
-    return '+$count Slot Pertanyaan$plural';
-  }
-
-  @override
-  String get challengeRewardQuestionsDesc =>
-      'Buka lebih banyak pertanyaan secara permanen';
-
-  @override
-  String challengeRewardCategorySlotsLabel(int count, String plural) {
-    return '+$count Slot Kategori$plural';
-  }
-
-  @override
-  String get challengeRewardCategoriesDesc =>
-      'Buat lebih banyak kategori kustom';
-
-  @override
   String get challengeRewardBadgeUnlockedLabel => 'Lencana Tantangan Terbuka';
 
   @override
@@ -1601,7 +1411,8 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get challengeRewardTitleDesc => 'Pencapaian eksklusif premium';
+  String get challengeRewardTitleDesc =>
+      'Didapat dengan menyelesaikan tantangan';
 
   @override
   String get challengeTitleChallenger => 'Penantang';
@@ -1800,4 +1611,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tourReplaySubtitle => 'Lihat kembali panduan interaktif';
+
+  @override
+  String get adPrivacyTitle => 'Pengaturan privasi iklan';
+
+  @override
+  String get adPrivacySubtitle =>
+      'Tinjau atau ubah bagaimana datamu digunakan untuk iklan';
+
+  @override
+  String get adPrivacyUnavailable =>
+      'Pengaturan privasi iklan belum tersedia saat ini.';
 }

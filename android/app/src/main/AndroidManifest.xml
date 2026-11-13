@@ -14,10 +14,14 @@
         android:allowBackup="false"
         android:fullBackupContent="false">
 
-        <!-- Google Mobile Ads App ID (test ID — replace with real one when account is ready) -->
+        <!-- Google Mobile Ads App ID.
+             Injected by android/app/build.gradle.kts from
+             lib/core/ads/ad_config.dart (single source of truth): debug builds
+             get Google's sample App ID, release builds get AdMobConfig.appId.
+             Do not hard-code the value here. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="${admobAppId}"/>
         
         <activity
             android:name=".MainActivity"

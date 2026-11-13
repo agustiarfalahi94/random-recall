@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -23,7 +21,6 @@ class StreakService {
   static const int challengeThreshold = 10; // seconds
 
   static const _keyStreak = 'timer_streak_days';
-  static const _keyBonusQuestions = 'timer_streak_bonus_questions';
 
   // Challenge mode state constants
   static const _keyChallengeModeActive = 'challenge_mode_active';
@@ -43,13 +40,9 @@ class StreakService {
   static const _keyChallengeBadgeUnlocked = 'challenge_badge_unlocked';
   static const _keyHighestTitle =
       'highest_title'; // Challenger, Champion, Legend
-  static const _keyBonusCategories = 'bonus_categories'; // free-tier only
 
-  // Reward constants
-  static const int questionsMax = 200;
-  static const int categoriesMax = 20;
-  static const int questionBase = 20;
-  static const int categoryBase = 4;
+  // Challenge rewards are cosmetic only (badge + titles). The app has no
+  // feature limits, so there is nothing left to "earn a slot" for.
 
   // ── Singleton instance ──────────────────────────────────────────────────────
   static final StreakService _instance = StreakService._internal();
@@ -97,8 +90,6 @@ class StreakService {
   bool get challengeBadgeUnlocked =>
       _prefs.getBool(_keyChallengeBadgeUnlocked) ?? false;
   String get highestTitle => _prefs.getString(_keyHighestTitle) ?? '';
-  int get bonusCategories => _prefs.getInt(_keyBonusCategories) ?? 0;
-  int get bonusQuestions => _prefs.getInt(_keyBonusQuestions) ?? 0;
   int get currentStreak => _prefs.getInt(_keyStreak) ?? 0;
 
   // ── Challenge mode setter methods ───────────────────────────────────────────
@@ -162,64 +153,32 @@ class StreakService {
     await _saveToFirestore();
   }
 
-  Future<ChallengeCompletion> completeChallengeMode(
-    int duration, {
-    required bool isPremiumUser,
-  }) async {
-    // Challenge completed successfully
-    int questionsEarned = 0;
-    int categoriesEarned = 0;
-    bool badgeUnlocked = false;
-    String title = '';
+  Future<ChallengeCompletion> completeChallengeMode(int duration) async {
+    // Challenge completed successfully — every completer earns the badge and a
+    // title. These are the only rewards left; the app has no limits to raise.
+    bool badgeUnlocked = true;
+    String title;
 
     if (duration == 7) {
       await _prefs.setInt(_keyTotal7DayCompleted, total7DayCompleted + 1);
-      if (!isPremiumUser) {
-        // Award bonus question (free-tier)
-        questionsEarned = 1;
-        final newQuestions = bonusQuestions + 1;
-        await _prefs.setInt(
-          _keyBonusQuestions,
-          min(newQuestions, questionsMax - questionBase),
-        );
-      }
     } else if (duration == 14) {
       await _prefs.setInt(_keyTotal14DayCompleted, total14DayCompleted + 1);
-      if (!isPremiumUser) {
-        // Award bonus question + category (free-tier)
-        questionsEarned = 1;
-        categoriesEarned = 1;
-        final newQuestions = bonusQuestions + 1;
-        final newCategories = bonusCategories + 1;
-        await _prefs.setInt(
-          _keyBonusQuestions,
-          min(newQuestions, questionsMax - questionBase),
-        );
-        await _prefs.setInt(
-          _keyBonusCategories,
-          min(newCategories, categoriesMax - categoryBase),
-        );
-      }
     }
 
-    if (isPremiumUser) {
-      // Cosmetic rewards (premium)
-      badgeUnlocked = true;
-      await _prefs.setBool(_keyChallengeBadgeUnlocked, true);
+    await _prefs.setBool(_keyChallengeBadgeUnlocked, true);
 
-      // total7/14DayCompleted getters already read the post-increment value from
-      // _prefs — do NOT add + 1 here or the thresholds are all shifted by one.
-      final totalCompleted = total7DayCompleted + total14DayCompleted;
-      // Simple progression: 1+ = Challenger, 3+ = Champion, 7+ = Legend
-      if (totalCompleted >= 7) {
-        title = 'Legend';
-      } else if (totalCompleted >= 3) {
-        title = 'Champion';
-      } else {
-        title = 'Challenger';
-      }
-      await _prefs.setString(_keyHighestTitle, title);
+    // total7/14DayCompleted getters already read the post-increment value from
+    // _prefs — do NOT add + 1 here or the thresholds are all shifted by one.
+    final totalCompleted = total7DayCompleted + total14DayCompleted;
+    // Simple progression: 1+ = Challenger, 3+ = Champion, 7+ = Legend
+    if (totalCompleted >= 7) {
+      title = 'Legend';
+    } else if (totalCompleted >= 3) {
+      title = 'Champion';
+    } else {
+      title = 'Challenger';
     }
+    await _prefs.setString(_keyHighestTitle, title);
 
     await resetChallenge(); // resetChallenge() calls _saveToFirestore()
     AnalyticsService.instance
@@ -228,8 +187,6 @@ class StreakService {
 
     return ChallengeCompletion(
       duration: duration,
-      questionsEarned: questionsEarned,
-      categoriesEarned: categoriesEarned,
       badgeUnlocked: badgeUnlocked,
       title: title,
     );
@@ -285,7 +242,6 @@ class StreakService {
   /// - Completion => returns a [ChallengeCompletion] snapshot.
   Future<ChallengeAnswerResult> recordChallengeAnswer({
     required bool isCorrect,
-    required bool isPremiumUser,
   }) async {
     if (!isChallengeActive) {
       return const ChallengeAnswerResult(
@@ -328,10 +284,7 @@ class StreakService {
 
     // If we reached the final day and get a new-day correct answer, complete.
     if (challengeDay >= challengeDuration) {
-      final completion = await completeChallengeMode(
-        challengeDuration,
-        isPremiumUser: isPremiumUser,
-      );
+      final completion = await completeChallengeMode(challengeDuration);
       return ChallengeAnswerResult(
         outcome: ChallengeAnswerOutcome.completed,
         completion: completion,
@@ -373,8 +326,6 @@ class StreakService {
               'total_14day_completed': total14DayCompleted,
             },
             'rewards': {
-              'bonus_questions': bonusQuestions,
-              'bonus_categories': bonusCategories,
               'challenge_badge_unlocked': challengeBadgeUnlocked,
               'highest_title': highestTitle,
             },
@@ -453,15 +404,6 @@ class StreakService {
         // Restore rewards data
         if (data['rewards'] != null) {
           final rewards = data['rewards'];
-          // Restore both question and category bonuses
-          await _prefs.setInt(
-            _keyBonusQuestions,
-            rewards['bonus_questions'] ?? 0,
-          );
-          await _prefs.setInt(
-            _keyBonusCategories,
-            rewards['bonus_categories'] ?? 0,
-          );
           await _prefs.setBool(
             _keyChallengeBadgeUnlocked,
             rewards['challenge_badge_unlocked'] ?? false,
@@ -500,15 +442,11 @@ class ChallengeAnswerResult {
 
 class ChallengeCompletion {
   final int duration;
-  final int questionsEarned;
-  final int categoriesEarned;
   final bool badgeUnlocked;
   final String title;
 
   const ChallengeCompletion({
     required this.duration,
-    required this.questionsEarned,
-    required this.categoriesEarned,
     required this.badgeUnlocked,
     required this.title,
   });

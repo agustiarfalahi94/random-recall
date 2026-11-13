@@ -3,16 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
-import '../../core/config/remote_config_service.dart';
 import '../../core/database/database_helper.dart';
-import '../../core/plan/plan_service.dart';
 import '../../core/tutorial/tour_service.dart';
 import '../../widgets/tour/tour_overlay.dart';
 import '../../models/category.dart';
 import '../../models/question.dart';
-import '../../widgets/upgrade_bottom_sheet.dart';
 import '../categories/manage_categories_screen.dart';
-import '../settings/subscription_screen.dart';
 import 'add_edit_question_screen.dart';
 
 class QuestionsListScreen extends StatefulWidget {
@@ -28,10 +24,8 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   bool _isLoading = true;
   int? _selectedCategoryId; // null = show all
 
-  // Plan limits
+  // Question count — the app is a single full version, so there is no cap
   int _totalQuestionCount = 0;
-  int _questionLimit = PlanService.freeQuestionBase;
-  bool _isPremium = false;
 
   StreamSubscription? _dbSubscription;
   Timer? _refreshDebounce;
@@ -62,14 +56,10 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
     final questions = await db.getAllQuestions(categoryId: _selectedCategoryId);
     final categories = await db.getAllCategories();
     final totalCount = await db.getQuestionCount();
-    final limit = await PlanService.getQuestionLimit();
-    final premium = await PlanService.isPremium();
     setState(() {
       _questions = questions;
       _categories = categories;
       _totalQuestionCount = totalCount;
-      _questionLimit = limit;
-      _isPremium = premium;
       _isLoading = false;
     });
   }
@@ -108,19 +98,6 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
   }
 
   Future<void> _openAddEdit({Question? question}) async {
-    // When adding (not editing), enforce the question limit
-    if (question == null) {
-      final canAdd = await PlanService.canAddQuestion(_totalQuestionCount);
-      if (!canAdd) {
-        if (!mounted) return;
-        await UpgradeBottomSheet.show(
-          context,
-          trigger: UpgradeTrigger.questionLimit,
-        );
-        return;
-      }
-    }
-
     if (!mounted) return;
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -214,15 +191,6 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Determine pill color: red at limit, amber at warning for premium
-    final isAtLimit = _totalQuestionCount >= _questionLimit;
-    final isAtWarning =
-        _isPremium &&
-        _totalQuestionCount >=
-            RemoteConfigService.instance.questionWarningThreshold;
-    final pillIsError = isAtLimit;
-    final pillIsWarning = isAtWarning && !isAtLimit;
-
     return Scaffold(
       body: Column(
         children: [
@@ -238,72 +206,28 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: pillIsError
-                          ? colorScheme.errorContainer
-                          : pillIsWarning
-                          ? colorScheme.tertiaryContainer
-                          : colorScheme.surfaceContainerHigh,
+                      color: colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          pillIsError
-                              ? Icons.lock_rounded
-                              : Icons.library_books_outlined,
+                          Icons.library_books_outlined,
                           size: 13,
-                          color: pillIsError
-                              ? colorScheme.onErrorContainer
-                              : pillIsWarning
-                              ? colorScheme.onTertiaryContainer
-                              : colorScheme.onSurfaceVariant,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          pillIsError
-                              ? l10n.questionLimitReached(
-                                  _totalQuestionCount,
-                                  _questionLimit,
-                                )
-                              : pillIsWarning
-                              ? l10n.questionWarning(
-                                  _totalQuestionCount,
-                                  _questionLimit,
-                                )
-                              : l10n.questionCount(
-                                  _totalQuestionCount,
-                                  _questionLimit,
-                                ),
+                          l10n.questionCountTotal(_totalQuestionCount),
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: pillIsError
-                                ? colorScheme.onErrorContainer
-                                : pillIsWarning
-                                ? colorScheme.onTertiaryContainer
-                                : colorScheme.onSurfaceVariant,
+                            color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (pillIsError && !_isPremium) ...[
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SubscriptionScreen(),
-                        ),
-                      ),
-                      child: Text(
-                        l10n.upgradeButton,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -404,7 +328,7 @@ class _QuestionsListScreenState extends State<QuestionsListScreen> {
       floatingActionButton: TourTarget(
         targetKey: TourService.instance.addFabKey,
         child: FloatingActionButton(
-          onPressed: pillIsError ? null : _showAddMenu,
+          onPressed: _showAddMenu,
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           tooltip: l10n.addTooltip,

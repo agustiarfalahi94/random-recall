@@ -1,13 +1,10 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
 import '../../core/database/database_helper.dart';
-import '../../core/plan/plan_service.dart';
 import '../../models/category.dart';
-import '../settings/subscription_screen.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -21,7 +18,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   int _totalAnswered = 0;
   int _totalCorrect = 0;
   bool _isLoading = true;
-  bool _isPremium = false;
 
   StreamSubscription? _dbSubscription;
   Timer? _refreshDebounce;
@@ -49,7 +45,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
     final stats = await DatabaseHelper.instance.getCategoryScoreStats();
-    final premium = await PlanService.isPremium();
     int totalAnswered = 0;
     int totalCorrect = 0;
     for (final s in stats) {
@@ -60,7 +55,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       _stats = stats;
       _totalAnswered = totalAnswered;
       _totalCorrect = totalCorrect;
-      _isPremium = premium;
       _isLoading = false;
     });
   }
@@ -110,28 +104,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       color: colorScheme.onSurface,
                     ),
                   ),
-                  const Spacer(),
-                  if (!_isPremium) _LockBadge(colorScheme: colorScheme),
                 ],
               ),
               const SizedBox(height: 12),
-              if (!_isPremium)
-                _LockedCategorySection(
-                  stats: _stats,
-                  colorScheme: colorScheme,
-                  theme: theme,
-                )
-              else
-                ..._stats.map(
-                  (s) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _CategoryScoreCard(
-                      stat: s,
-                      colorScheme: colorScheme,
-                      theme: theme,
-                    ),
+              ..._stats.map(
+                (s) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _CategoryScoreCard(
+                    stat: s,
+                    colorScheme: colorScheme,
+                    theme: theme,
                   ),
                 ),
+              ),
             ],
           ),
         ],
@@ -493,149 +478,6 @@ class _MiniStat extends StatelessWidget {
         Text(
           label,
           style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 11),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Locked section for free users ─────────────────────────────────────────────
-
-class _LockBadge extends StatelessWidget {
-  const _LockBadge({required this.colorScheme});
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.lock_rounded,
-            size: 12,
-            color: colorScheme.onTertiaryContainer,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            AppLocalizations.of(context)!.upgradeToPremium,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onTertiaryContainer,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LockedCategorySection extends StatelessWidget {
-  const _LockedCategorySection({
-    required this.stats,
-    required this.colorScheme,
-    required this.theme,
-  });
-
-  final List<Map<String, dynamic>> stats;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Lock CTA — Pinned at the top of the section
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-            ),
-          ),
-          child: Column(
-            children: [
-              const Text('🔒', style: TextStyle(fontSize: 32)),
-              const SizedBox(height: 12),
-              Text(
-                AppLocalizations.of(context)!.analyticsUnlockTitle,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                AppLocalizations.of(context)!.analyticsUnlockSubtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SubscriptionScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.analyticsSubscribeButton,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Blurred preview cards below the CTA
-        ClipRect(
-          child: Stack(
-            children: [
-              // Cards underneath
-              Column(
-                children: stats
-                    .take(2)
-                    .map(
-                      (s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _CategoryScoreCard(
-                          stat: s,
-                          colorScheme: colorScheme,
-                          theme: theme,
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-              // Blur + tint overlay
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                  child: Container(
-                    color: colorScheme.surface.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ],
     );

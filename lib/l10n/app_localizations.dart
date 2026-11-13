@@ -329,7 +329,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to sync your progress and unlock premium features.'**
+  /// **'Sign in to sync your progress across devices.'**
   String get loginSubtitle;
 
   /// No description provided for @continueWithGoogle.
@@ -1370,29 +1370,11 @@ abstract class AppLocalizations {
   /// **'Please select a category'**
   String get validationSelectCategory2;
 
-  /// No description provided for @questionCount.
+  /// No description provided for @questionCountTotal.
   ///
   /// In en, this message translates to:
-  /// **'{current, plural, =0{No questions} =1{1 / {max} question} other{{current} / {max} questions}}'**
-  String questionCount(int current, int max);
-
-  /// No description provided for @questionWarning.
-  ///
-  /// In en, this message translates to:
-  /// **'Approaching question limit — {current} / {max}'**
-  String questionWarning(int current, int max);
-
-  /// No description provided for @questionLimitReached.
-  ///
-  /// In en, this message translates to:
-  /// **'Question limit reached — {current} / {max}'**
-  String questionLimitReached(int current, int max);
-
-  /// No description provided for @upgradeButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Upgrade ›'**
-  String get upgradeButton;
+  /// **'{count, plural, =0{No questions} =1{1 question} other{{count} questions}}'**
+  String questionCountTotal(num count);
 
   /// No description provided for @noQuestionsInCategory.
   ///
@@ -1448,18 +1430,6 @@ abstract class AppLocalizations {
   /// **'Categories'**
   String get categoriesTitle;
 
-  /// No description provided for @freePlanLimitReachedBanner.
-  ///
-  /// In en, this message translates to:
-  /// **'Free plan: you\'ve used your 1 custom category slot. Upgrade to Premium for up to 20 custom categories.'**
-  String get freePlanLimitReachedBanner;
-
-  /// No description provided for @freePlanInfoBanner.
-  ///
-  /// In en, this message translates to:
-  /// **'Free plan: you can add 1 custom category. Default categories (General, Work) don\'t count against this.'**
-  String get freePlanInfoBanner;
-
   /// No description provided for @noCategoriesYet.
   ///
   /// In en, this message translates to:
@@ -1508,18 +1478,6 @@ abstract class AppLocalizations {
   /// **'Name is too short'**
   String get validationCategoryNameShort;
 
-  /// No description provided for @premiumUnlimitedCategories.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium — create up to 20 custom categories!'**
-  String get premiumUnlimitedCategories;
-
-  /// No description provided for @freePlanCategoryNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Free plan: {count} custom category allowed (General & Work are built-in). Upgrade to Premium for up to 20.'**
-  String freePlanCategoryNote(int count);
-
   /// No description provided for @hasQuestions.
   ///
   /// In en, this message translates to:
@@ -1562,35 +1520,17 @@ abstract class AppLocalizations {
   /// **'\"{name}\" has questions. Delete or move them first.'**
   String categoryHasQuestionsError(String name);
 
-  /// No description provided for @limitReachedFab.
-  ///
-  /// In en, this message translates to:
-  /// **'Limit Reached'**
-  String get limitReachedFab;
-
   /// No description provided for @newCategoryFab.
   ///
   /// In en, this message translates to:
   /// **'New Category'**
   String get newCategoryFab;
 
-  /// No description provided for @categoryCount.
+  /// No description provided for @categoryCountTotal.
   ///
   /// In en, this message translates to:
-  /// **'{current, plural, =0{No categories} =1{1 / {max} category} other{{current} / {max} categories}}'**
-  String categoryCount(int current, int max);
-
-  /// No description provided for @categoryWarning.
-  ///
-  /// In en, this message translates to:
-  /// **'Approaching category limit — {current} / {max}'**
-  String categoryWarning(int current, int max);
-
-  /// No description provided for @categoryLimitReached.
-  ///
-  /// In en, this message translates to:
-  /// **'Category limit reached — {current} / {max}'**
-  String categoryLimitReached(int current, int max);
+  /// **'{count, plural, =0{No categories} =1{1 category} other{{count} categories}}'**
+  String categoryCountTotal(num count);
 
   /// No description provided for @saveCategoryFailedSnack.
   ///
@@ -1681,12 +1621,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undo'**
   String get undoButton;
-
-  /// No description provided for @undoOncePerDay.
-  ///
-  /// In en, this message translates to:
-  /// **'Undo (only 1 use per day)'**
-  String get undoOncePerDay;
 
   /// No description provided for @noQuestionsEmptyTitle.
   ///
@@ -1838,215 +1772,11 @@ abstract class AppLocalizations {
   /// **'❌ Wrong'**
   String get analyticsWrongLabel;
 
-  /// No description provided for @analyticsUnlockTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock Category Analytics'**
-  String get analyticsUnlockTitle;
-
-  /// No description provided for @analyticsUnlockSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'See exactly which categories you struggle with.\nSubscribe to unlock full analytics.'**
-  String get analyticsUnlockSubtitle;
-
-  /// No description provided for @analyticsSubscribeButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Subscribe to Unlock'**
-  String get analyticsSubscribeButton;
-
   /// No description provided for @createCategoryButton.
   ///
   /// In en, this message translates to:
   /// **'Create Category'**
   String get createCategoryButton;
-
-  /// No description provided for @upgradeToPremium.
-  ///
-  /// In en, this message translates to:
-  /// **'Upgrade to Premium'**
-  String get upgradeToPremium;
-
-  /// No description provided for @premiumUnlockTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlock Full Potential'**
-  String get premiumUnlockTitle;
-
-  /// No description provided for @premiumUnlockSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The full Random Recall experience — every feature, fully unlocked.'**
-  String get premiumUnlockSubtitle;
-
-  /// No description provided for @featureUnlimitedQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'Up to 200 Questions'**
-  String get featureUnlimitedQuestions;
-
-  /// No description provided for @featureUnlimitedQuestionsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Store up to 200 questions — more than enough to master any topic.'**
-  String get featureUnlimitedQuestionsSubtitle;
-
-  /// No description provided for @featureUnlimitedCategories.
-  ///
-  /// In en, this message translates to:
-  /// **'Up to 20 Categories'**
-  String get featureUnlimitedCategories;
-
-  /// No description provided for @featureUnlimitedCategoriesSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Organize your learning into up to 20 custom topics.'**
-  String get featureUnlimitedCategoriesSubtitle;
-
-  /// No description provided for @featureUndoMistakes.
-  ///
-  /// In en, this message translates to:
-  /// **'Undo Mistakes'**
-  String get featureUndoMistakes;
-
-  /// No description provided for @featureUndoMistakesSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Correct a wrong answer to keep your streak alive.'**
-  String get featureUndoMistakesSubtitle;
-
-  /// No description provided for @featureAdvancedAnalytics.
-  ///
-  /// In en, this message translates to:
-  /// **'Advanced Analytics'**
-  String get featureAdvancedAnalytics;
-
-  /// No description provided for @featureAdvancedAnalyticsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Identify your weak spots with per-category scoring.'**
-  String get featureAdvancedAnalyticsSubtitle;
-
-  /// No description provided for @featureRealTimeSync.
-  ///
-  /// In en, this message translates to:
-  /// **'Real-time Sync'**
-  String get featureRealTimeSync;
-
-  /// No description provided for @featureRealTimeSyncSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Seamless access across all your Android devices.'**
-  String get featureRealTimeSyncSubtitle;
-
-  /// No description provided for @getPremiumButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Get Premium — {price}'**
-  String getPremiumButton(String price);
-
-  /// No description provided for @loadingPlans.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading available plans...'**
-  String get loadingPlans;
-
-  /// No description provided for @restorePurchase.
-  ///
-  /// In en, this message translates to:
-  /// **'Restore Purchase'**
-  String get restorePurchase;
-
-  /// No description provided for @cancelAnytime.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel anytime in Google Play Store. Settings > Subscriptions.'**
-  String get cancelAnytime;
-
-  /// No description provided for @purchaseFailedSnack.
-  ///
-  /// In en, this message translates to:
-  /// **'Purchase failed: {error}'**
-  String purchaseFailedSnack(String error);
-
-  /// No description provided for @premiumActiveMember.
-  ///
-  /// In en, this message translates to:
-  /// **'You are a Premium Member!'**
-  String get premiumActiveMember;
-
-  /// No description provided for @premiumActiveDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Thank you for supporting Random Recall. Enjoy all features unlocked.'**
-  String get premiumActiveDesc;
-
-  /// No description provided for @premiumGreat.
-  ///
-  /// In en, this message translates to:
-  /// **'Great!'**
-  String get premiumGreat;
-
-  /// No description provided for @premiumIncludes.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium includes:'**
-  String get premiumIncludes;
-
-  /// No description provided for @premiumPerkUnlimitedQuestions.
-  ///
-  /// In en, this message translates to:
-  /// **'✅ Up to 200 questions'**
-  String get premiumPerkUnlimitedQuestions;
-
-  /// No description provided for @premiumPerkAllCategories.
-  ///
-  /// In en, this message translates to:
-  /// **'✅ Up to 20 categories'**
-  String get premiumPerkAllCategories;
-
-  /// No description provided for @premiumPerkFullAnalytics.
-  ///
-  /// In en, this message translates to:
-  /// **'✅ Full analytics breakdown'**
-  String get premiumPerkFullAnalytics;
-
-  /// No description provided for @premiumPerkUndo.
-  ///
-  /// In en, this message translates to:
-  /// **'✅ Undo wrong answer (rewarded)'**
-  String get premiumPerkUndo;
-
-  /// No description provided for @questionLimitReachedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Question Limit Reached'**
-  String get questionLimitReachedTitle;
-
-  /// No description provided for @categoryLimitReachedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Category Limit Reached'**
-  String get categoryLimitReachedTitle;
-
-  /// No description provided for @questionLimitReachedDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Free accounts can store up to 20 questions (+ bonus slots from challenges). Upgrade to Premium for up to 200 questions.'**
-  String get questionLimitReachedDesc;
-
-  /// No description provided for @categoryLimitReachedDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Free accounts can add questions to 1 custom category (+ bonus slots from challenges). Upgrade to Premium for up to 20 categories.'**
-  String get categoryLimitReachedDesc;
-
-  /// No description provided for @maybeLater.
-  ///
-  /// In en, this message translates to:
-  /// **'Maybe later'**
-  String get maybeLater;
 
   /// No description provided for @miuiDialogTitle.
   ///
@@ -2243,7 +1973,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA7.
   ///
   /// In en, this message translates to:
-  /// **'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium allows up to 200 questions.'**
+  /// **'There is no question limit — add as many as you like. Challenge Mode is still there to build the habit: finishing the 7-day or 14-day challenge unlocks a badge and a title. There is nothing to buy.'**
   String get faqA7;
 
   /// No description provided for @faqQ8.
@@ -2255,7 +1985,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA8.
   ///
   /// In en, this message translates to:
-  /// **'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium allows up to 20 custom categories.'**
+  /// **'You can create as many custom categories as you like. The built-in \"General\" and \"Work\" categories are always available and do not count against anything.'**
   String get faqA8;
 
   /// No description provided for @faqQ9.
@@ -2267,7 +1997,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA9.
   ///
   /// In en, this message translates to:
-  /// **'You can undo your last answer once per calendar day. The limit resets at midnight. This is available on both free and premium accounts.'**
+  /// **'You can undo your last answer whenever you need to — there is no daily limit.'**
   String get faqA9;
 
   /// No description provided for @faqQ10.
@@ -2279,7 +2009,7 @@ abstract class AppLocalizations {
   /// No description provided for @faqA10.
   ///
   /// In en, this message translates to:
-  /// **'Start Challenge Mode from Notification Schedule. Choose between a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and require correct answers on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing the 7-day challenge earns +1 question slot (free users) or a badge + title (premium). Completing the 14-day challenge earns +1 question slot and +1 category slot (free users) or a badge + title (premium).'**
+  /// **'Start Challenge Mode from Notification Schedule. Choose a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and expect a correct answer on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing a challenge unlocks a badge and a title.'**
   String get faqA10;
 
   /// No description provided for @faqQ11.
@@ -2377,24 +2107,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Email'**
   String get emailLabel;
-
-  /// No description provided for @subscriptionStatusLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Subscription Status'**
-  String get subscriptionStatusLabel;
-
-  /// No description provided for @subscriptionStatusPremium.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium'**
-  String get subscriptionStatusPremium;
-
-  /// No description provided for @subscriptionStatusFree.
-  ///
-  /// In en, this message translates to:
-  /// **'Free'**
-  String get subscriptionStatusFree;
 
   /// No description provided for @changePasswordButton.
   ///
@@ -2816,30 +2528,6 @@ abstract class AppLocalizations {
   /// **'Rewards Earned:'**
   String get challengeRewardsEarnedLabel;
 
-  /// No description provided for @challengeRewardQuestionSlotsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'+{count} Question Slot{plural}'**
-  String challengeRewardQuestionSlotsLabel(int count, String plural);
-
-  /// No description provided for @challengeRewardQuestionsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Permanently unlock more questions'**
-  String get challengeRewardQuestionsDesc;
-
-  /// No description provided for @challengeRewardCategorySlotsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'+{count} Category Slot{plural}'**
-  String challengeRewardCategorySlotsLabel(int count, String plural);
-
-  /// No description provided for @challengeRewardCategoriesDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Create more custom categories'**
-  String get challengeRewardCategoriesDesc;
-
   /// No description provided for @challengeRewardBadgeUnlockedLabel.
   ///
   /// In en, this message translates to:
@@ -2861,7 +2549,7 @@ abstract class AppLocalizations {
   /// No description provided for @challengeRewardTitleDesc.
   ///
   /// In en, this message translates to:
-  /// **'Premium exclusive achievement'**
+  /// **'Earned by completing challenges'**
   String get challengeRewardTitleDesc;
 
   /// No description provided for @challengeTitleChallenger.
@@ -3217,6 +2905,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replay the interactive guide'**
   String get tourReplaySubtitle;
+
+  /// No description provided for @adPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad privacy settings'**
+  String get adPrivacyTitle;
+
+  /// No description provided for @adPrivacySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review or change how your data is used for ads'**
+  String get adPrivacySubtitle;
+
+  /// No description provided for @adPrivacyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad privacy settings are not available right now.'**
+  String get adPrivacyUnavailable;
 }
 
 class _AppLocalizationsDelegate
