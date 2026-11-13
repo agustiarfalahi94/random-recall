@@ -22,15 +22,15 @@ This GitHub Actions workflow automates testing and building for Random Recall. *
    - Status: ✓ ACTIVE
 
 3. **Build APK & AAB**
-   - Builds debug APK (for testing)
-   - Builds release APK (production-ready)
-   - Builds App Bundle (Play Store format)
-   - Status: ✓ ACTIVE
+   - Builds debug APK (compile check, never published)
+   - Builds release APK (GitHub distribution)
+   - Builds App Bundle — the Play Store format — on `v*` tags
+   - Status: ✓ ACTIVE (release artifacts are tag-only)
 
 4. **Store Artifacts**
-   - Saves built APKs in GitHub
+   - Saves the release APK and AAB in GitHub
    - You can download & test manually
-   - 30-day retention
+   - 90-day retention
    - Status: ✓ ACTIVE
 
 5. **Play Store Deployment**
@@ -51,15 +51,15 @@ A full release-readiness audit was performed. Before this pass the analyzer repo
 3. **Async context safety** — every `use_build_context_synchronously` finding fixed with `mounted` guards or capture-before-await (prevents crashes from using a disposed BuildContext after `await`).
 4. **Dead code removed** — unused `_keyLastDate` constant and an unused import.
 5. **Stray files deleted** — `android/app/auth_service.dart` and `android/app/login_screen.dart` (0-byte files accidentally placed outside `lib/`; they would be packaged into release builds).
-6. **Release build guidance** — the commented Play Store deploy step now recommends `flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info` (R8 minification + `proguard-rules.pro` are already active in `android/app/build.gradle.kts`).
+6. **Release build guidance** — CI now builds the Play upload format on every `v*` tag (`flutter build appbundle --release`). It is deliberately **not** obfuscated: R8 minification + `proguard-rules.pro` are already active in `android/app/build.gradle.kts`, and `--obfuscate` without the Crashlytics symbol-upload step would make stack traces unreadable. If you add `--obfuscate --split-debug-info=build/debug-info` later, upload the symbols to Crashlytics in the same job.
 
 ### Test suite fixed (was: known test gap)
 
 `test/core/streak/streak_service_test.dart` had 11 failing tests because the test environment never called `Firebase.initializeApp()` — `StreakService.startChallenge` touches the `AnalyticsService` singleton which requires a Firebase app. **Resolved 2026-08-06**: the test now installs minimal in-memory fakes for `FirebasePlatform` and `FirebaseAuthPlatform` (via `firebase_core_platform_interface` + `firebase_auth_platform_interface`, added as dev-only dependencies) so Firebase singletons resolve without native channels. Test suite is now **77/77 passing**.
 
-### RevenueCat API key
+### No in-app purchase layer
 
-The Android RevenueCat key is no longer hardcoded in `subscription_service.dart`. It is read from `--dart-define=REVENUECAT_API_KEY=...` at build time; without it (or with a placeholder), RevenueCat init is skipped exactly as before. When deploying, add the key as a GitHub secret and pass it in the release build step (see `.github/workflows/flutter-build.yml`).
+The subscription tier was removed: Random Recall is a single full version, every feature is unlocked for everyone, and ads are the only revenue stream. `purchases_flutter`, `SubscriptionService`, `SubscriptionScreen`, `UpgradeBottomSheet` and `PlanService` are gone, and no `--dart-define` is needed for release builds. Delete the old `REVENUECAT_API_KEY` GitHub secret when convenient — nothing reads it.
 
 ### Root/jailbreak detection (informational)
 
@@ -74,7 +74,8 @@ Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted
 - **Firestore rules: 100 KB/document write cap** — deploy via `firebase deploy --only firestore:rules`.
 
 ### Pre-release checklist
-- ⬜ **Re-enable ads**: flip `kAdsEnabled` to `true` in `lib/core/ads/ad_service.dart` (disabled in v0.13.21 — it was causing typing lag), replace the placeholder unit IDs, and replace the AdMob **test app ID** in `AndroidManifest.xml` with the real one from the AdMob console. Re-test typing latency on the add/edit question screen afterwards.
+- ✅ **Ads are enabled** (`kAdsEnabled = true`, v0.13.21+52).
+- ⬜ **Real AdMob IDs**: fill in `appId`, `bannerAdUnitId` and `interstitialAdUnitId` in `lib/core/ads/ad_config.dart` — that is the only edit. The manifest `APPLICATION_ID` meta-data is now a `${admobAppId}` placeholder injected by `android/app/build.gradle.kts` from that file (debug builds always get Google's sample App ID), so do not hard-code it in `AndroidManifest.xml`. Publish a consent message in AdMob → Privacy & messaging at the same time, otherwise the UMP form (and the Settings → Ad privacy row) never appears.
 - ✅ Deploy the updated `firestore.rules` — done 2026-08-06.
 
 ### CI test-APK signature (2026-08-06)
@@ -115,9 +116,8 @@ gh secret set KEYSTORE_PROPERTIES < android/key.properties
 
 Verify with `gh secret list`. The workflow decodes them to `android/key.properties` +
 `android/app/release-keystore.jks`, then runs
-`flutter build apk --release --dart-define=REVENUECAT_API_KEY=${{ secrets.REVENUECAT_API_KEY }}`
-(the app skips RevenueCat init when the key is empty/placeholder, so a missing secret
-is safe).
+`flutter build apk --release`
+(no build-time secrets are required).
 
 **Caveats:**
 - The release APK cannot be installed over a debug install (different signature) — uninstall first.

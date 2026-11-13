@@ -7,6 +7,7 @@ import 'package:random_recall/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/app_provider.dart';
+import '../../core/ads/ad_service.dart';
 import '../../core/auth/auth_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
@@ -479,6 +480,57 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             ),
 
             const Divider(),
+
+            // Ad privacy entry point. Google requires a persistent way back to
+            // the UMP privacy options when the user's region/message needs it,
+            // so the row only appears when the SDK reports it as required.
+            FutureBuilder<bool>(
+              future: AdService.instance.isPrivacyOptionsRequired(),
+              builder: (context, snapshot) {
+                if (snapshot.data != true) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.privacy_tip_outlined,
+                            color: colorScheme.onSecondaryContainer,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        l10n.adPrivacyTitle,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(l10n.adPrivacySubtitle),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final nav = Navigator.of(context);
+                        final shown = await AdService.instance
+                            .showPrivacyOptionsForm();
+                        if (!shown) {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text(l10n.adPrivacyUnavailable)),
+                          );
+                        } else if (nav.canPop()) {
+                          nav.pop();
+                        }
+                      },
+                    ),
+                    const Divider(),
+                  ],
+                );
+              },
+            ),
 
             // Language switcher
             ListTile(

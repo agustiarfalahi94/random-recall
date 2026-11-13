@@ -25,10 +25,8 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'core/sync/sync_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'core/auth/auth_service.dart';
-import 'core/plan/subscription_service.dart';
 import 'core/streak/streak_service.dart';
 import 'core/ads/ad_service.dart';
-import 'core/plan/plan_service.dart';
 import 'core/tutorial/tour_service.dart';
 import 'widgets/ad_banner_widget.dart';
 import 'screens/question/notification_question_screen.dart';
@@ -104,20 +102,10 @@ Future<void> main() async {
   );
   await rc.setDefaults(const {
     'notif_frequency_free': 3,
-    'notif_frequency_premium': 6,
     'notif_start_hour': 8,
     'notif_end_hour': 20,
-    'free_question_base': 20,
-    'free_max_custom_categories': 1,
-    'premium_max_custom_categories': 20,
-    'premium_question_limit': 200,
-    'category_warning_threshold': 18,
-    'question_warning_threshold': 195,
   });
   rc.fetchAndActivate().ignore(); // non-blocking; defaults used this session
-
-  // Start In-App Purchase listener
-  SubscriptionService.instance.init();
 
   // Initialize StreakService local cache (SharedPreferences only — no Firestore).
   // Firestore sync happens in initializeUserSession() after auth is confirmed.
@@ -129,11 +117,10 @@ Future<void> main() async {
   // Wire up navigator key so notification taps can navigate
   NotificationService.instance.navigatorKey = navigatorKey;
 
-  // Initialize AdService in the background — the premium check still runs
-  // first (fast prefs read) so premium users never see ads, but the AdMob SDK
-  // init (a network call) must NOT block the first frame on cold start.
-  final isPremium = await PlanService.isPremium();
-  AdService.instance.initialize(isPremium: isPremium).ignore();
+  // Initialize the AdMob SDK in the background — it performs a network call and
+  // must NOT block the first frame on cold start. Every user sees ads: the app
+  // is a single full version with no subscription tier.
+  AdService.instance.initialize().ignore();
 
   runApp(const RandomRecallApp());
 
@@ -578,7 +565,8 @@ class _HomeGateState extends State<_HomeGate> {
 
 /// Wraps the entire app to place a persistent ad banner at the bottom of every
 /// screen. The banner:
-///   • is hidden for premium users
+///   • is hidden while the keyboard is up (an `AdWidget` is a platform view and
+///     mounting one during text entry introduced typing lag)
 ///   • is hidden while the user is on a question-answering screen
 ///   • sits ABOVE the system gesture zone / navigation bar
 ///   • stays behind the keyboard (keyboard overlays it — same behaviour as
@@ -614,9 +602,11 @@ class _AdBannerWrapper extends StatelessWidget {
               child: child,
             ),
 
-            // Banner: positioned above the system gesture/nav zone.
-            // Keyboard (system layer) overlays this automatically.
-            if (bannerVisible)
+            // Banner: positioned above the system gesture/nav zone. Hidden
+            // entirely while the keyboard is up — keeping an `AdWidget`
+            // (platform view) mounted during text entry is what made typing
+            // laggy in v0.13.20.
+            if (bannerVisible && !keyboardVisible)
               Positioned(
                 left: 0,
                 right: 0,

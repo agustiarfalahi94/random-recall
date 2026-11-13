@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/ads/ad_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
-import '../../core/plan/plan_service.dart';
 import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../core/utils/screen_security.dart';
@@ -41,13 +40,11 @@ class _QuestionScreenState extends State<QuestionScreen>
   bool _graded = false;
   bool _isCorrect = false;
   int? _lastQuestionId; // prevents same question back-to-back
-  int? _lastScoreId; // stored to allow "Undo" for premium users
+  int? _lastScoreId; // stored so "Undo" can delete the recorded score
 
   // Timer
   int _timerSeconds = 0; // 0 = off, loaded from prefs
   int _remaining = 0;
-  bool _isPremium = false;
-  bool _undoUsedToday = false;
   Timer? _countdownTimer;
 
   late final AnimationController _revealController;
@@ -82,12 +79,8 @@ class _QuestionScreenState extends State<QuestionScreen>
 
   Future<void> _loadInitialSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final isPremium = await PlanService.isPremium();
-    final undoUsed = await PlanService.hasUsedUndoToday();
     if (mounted) {
       setState(() {
-        _isPremium = isPremium;
-        _undoUsedToday = undoUsed;
         _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
       });
     }
@@ -165,9 +158,6 @@ class _QuestionScreenState extends State<QuestionScreen>
 
       // Practice sessions don't affect score history or streak.
       if (!widget.isPractice) {
-        // Fetch premium status fresh here — _isPremium may still be false if
-        // grading happens before _loadInitialSettings() resolves.
-        final isPremiumNow = await PlanService.isPremium();
         final now = DateTime.now();
         _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
           ScoreRecord(
@@ -199,7 +189,6 @@ class _QuestionScreenState extends State<QuestionScreen>
         if (streakService.isChallengeActive) {
           final result = await streakService.recordChallengeAnswer(
             isCorrect: isCorrect,
-            isPremiumUser: isPremiumNow,
           );
 
           if (!mounted) return;
@@ -232,8 +221,6 @@ class _QuestionScreenState extends State<QuestionScreen>
               MaterialPageRoute(
                 builder: (_) => ChallengeCompleteScreen(
                   duration: c.duration,
-                  questionsEarned: c.questionsEarned,
-                  categoriesEarned: c.categoriesEarned,
                   isBadgeUnlocked: c.badgeUnlocked,
                   title: c.title.isEmpty ? null : c.title,
                 ),
@@ -259,11 +246,8 @@ class _QuestionScreenState extends State<QuestionScreen>
   }
 
   Future<void> _undoGrade() async {
-    // Manual practice allows unlimited undo.
-    if (!_graded || (!widget.isPractice && _undoUsedToday)) return;
-
-    // Only Premium users can undo
-    if (!_isPremium) return;
+    // Undo is a core feature for everyone — no premium gate, no daily cap.
+    if (!_graded) return;
 
     try {
       // If it was a recorded score (not practice), delete it from local DB
@@ -271,17 +255,10 @@ class _QuestionScreenState extends State<QuestionScreen>
         await DatabaseHelper.instance.deleteScoreRecord(_lastScoreId!);
       }
 
-      if (!widget.isPractice) {
-        await PlanService.consumeUndo();
-      }
-
       setState(() {
         _graded = false;
         _isCorrect = false;
         _lastScoreId = null;
-        if (!widget.isPractice) {
-          _undoUsedToday = true;
-        }
       });
 
       if (mounted) {
@@ -528,18 +505,12 @@ class _QuestionScreenState extends State<QuestionScreen>
 
               Row(
                 children: [
-                  if (!_isCorrect &&
-                      _isPremium &&
-                      (widget.isPractice || !_undoUsedToday)) ...[
+                  if (!_isCorrect) ...[
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _undoGrade,
                         icon: const Icon(Icons.undo_rounded, size: 18),
-                        label: Text(
-                          widget.isPractice
-                              ? l10n.undoButton
-                              : l10n.undoOncePerDay,
-                        ),
+                        label: Text(l10n.undoButton),
                       ),
                     ),
                     const SizedBox(width: 12),

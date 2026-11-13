@@ -12,8 +12,12 @@ with English and Bahasa Indonesia localization.
 - Answer questions from a focused notification flow.
 - Track streaks, challenges and progress.
 - Add an optional profile and sync data across devices.
-- Use premium limits and purchases without making the core local experience
+- Use the full feature set — no question or category caps, unlimited undo, the
+  complete analytics breakdown — without making the core local experience
   dependent on a network connection.
+
+Every feature is unlocked for every user. Random Recall has no subscription and
+no in-app purchases; it is funded by ads alone.
 
 The app is designed so a temporary Firebase outage does not erase local data
 or prevent the user from continuing to study.
@@ -48,13 +52,13 @@ The app uses a local-first Flutter architecture:
 ```text
 Flutter UI → providers/services → SQLite + SharedPreferences
                               ↘ Firebase Auth / Firestore sync
-                              ↘ notifications / RevenueCat / telemetry
+                              ↘ notifications / ads / telemetry
 ```
 
 SQLite is the working source for question data and study state. Firestore is
 an authenticated backup/synchronization layer. Authentication, sync,
-notifications, subscriptions, Remote Config, Crashlytics, Performance and
-App Check are isolated behind services so the UI does not own backend policy.
+notifications, ads, Remote Config, Crashlytics, Performance and App Check are
+isolated behind services so the UI does not own backend policy.
 
 ### Firebase rules and access control
 
@@ -66,10 +70,11 @@ enabled in production to reduce unauthorized use of Firebase resources.
 
 ### Environment variables and secrets
 
-Firebase configuration, release signing material and subscription credentials
-are supplied locally or through GitHub Actions secrets. The release workflow
-injects `GOOGLE_SERVICES_JSON`, keystore files and `REVENUECAT_API_KEY` only at
-build time. These values must never be committed. Public build configuration
+Firebase configuration and release signing material are supplied locally or
+through GitHub Actions secrets. The release workflow injects
+`GOOGLE_SERVICES_JSON` and the keystore files only at build time (no build-time
+API keys are needed — the ad unit IDs live in source, as Google intends).
+These values must never be committed. Public build configuration
 may be passed with `--dart-define`; it is not a safe place for secrets because
 compiled values can be extracted from an APK.
 
@@ -95,7 +100,8 @@ published as release artifacts.
 - `lib/core/auth/` — authentication and account lifecycle.
 - `lib/core/sync/` — local/Firestore synchronization.
 - `lib/core/notifications/` — scheduled and interactive reminders.
-- `lib/core/plan/` — limits, premium state and purchases.
+- `lib/core/ads/` — AdMob banner/interstitial serving, frequency caps and the
+  keyboard/excluded-screen rules.
 - `firestore.rules` — backend authorization boundary.
 - `.github/workflows/flutter-build.yml` — CI and release pipeline.
 

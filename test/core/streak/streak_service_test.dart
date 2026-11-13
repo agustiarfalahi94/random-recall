@@ -113,21 +113,21 @@ void main() {
       expect(streakService.challengeDay, 0);
     });
 
-    test('completeChallengeMode 7-day awards bonus question', () async {
-      final before = streakService.bonusQuestions;
+    test('completeChallengeMode 7-day unlocks badge and title', () async {
       await streakService.startChallenge(7, 10);
-      await streakService.completeChallengeMode(7, isPremiumUser: false);
-      expect(streakService.bonusQuestions, before + 1);
+      final completion = await streakService.completeChallengeMode(7);
+      expect(completion.badgeUnlocked, true);
+      expect(completion.title, 'Challenger');
+      expect(streakService.challengeBadgeUnlocked, true);
+      expect(streakService.highestTitle, 'Challenger');
       expect(streakService.isChallengeActive, false);
     });
 
-    test('completeChallengeMode 14-day awards question and category', () async {
-      final beforeQ = streakService.bonusQuestions;
-      final beforeC = streakService.bonusCategories;
+    test('completeChallengeMode 14-day unlocks badge and title', () async {
       await streakService.startChallenge(14, 10);
-      await streakService.completeChallengeMode(14, isPremiumUser: false);
-      expect(streakService.bonusQuestions, beforeQ + 1);
-      expect(streakService.bonusCategories, beforeC + 1);
+      final completion = await streakService.completeChallengeMode(14);
+      expect(completion.badgeUnlocked, true);
+      expect(completion.title, 'Challenger');
     });
 
     test('failChallenge resets streak and clears challenge', () async {
@@ -147,44 +147,17 @@ void main() {
       expect(streakService.highestTitle, 'Champion');
     });
 
-    test('bonus questions respect max limit', () async {
-      // Set bonus questions to near max
-      await streakService.startChallenge(7, 10);
-      // Manually set to near max for testing
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('timer_streak_bonus_questions', 170);
-
-      // Complete challenge to award bonus
-      await streakService.completeChallengeMode(7, isPremiumUser: false);
-
-      // Should not exceed max
-      expect(streakService.bonusQuestions, lessThanOrEqualTo(200 - 20));
-    });
-
-    test('bonus categories respect max limit', () async {
-      // Set bonus categories to near max
-      await streakService.startChallenge(14, 10);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('bonus_categories', 14);
-
-      // Complete challenge to award bonus
-      await streakService.completeChallengeMode(14, isPremiumUser: false);
-
-      // Should not exceed max
-      expect(streakService.bonusCategories, lessThanOrEqualTo(20 - 4));
-    });
-
     test('total 7-day completed counter increments', () async {
       final before = streakService.total7DayCompleted;
       await streakService.startChallenge(7, 10);
-      await streakService.completeChallengeMode(7, isPremiumUser: false);
+      await streakService.completeChallengeMode(7);
       expect(streakService.total7DayCompleted, before + 1);
     });
 
     test('total 14-day completed counter increments', () async {
       final before = streakService.total14DayCompleted;
       await streakService.startChallenge(14, 10);
-      await streakService.completeChallengeMode(14, isPremiumUser: false);
+      await streakService.completeChallengeMode(14);
       expect(streakService.total14DayCompleted, before + 1);
     });
 

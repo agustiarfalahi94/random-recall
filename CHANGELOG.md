@@ -5,15 +5,34 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
-## [Unreleased]
+## [0.14.0] — 2026-11-13
+
+The subscription tier is gone. Random Recall now ships as **one full version**: every feature is unlocked for every user, there is no paywall and no IAP SDK, and ads (now on, with Google's UMP consent flow) are the only revenue stream. The challenge rewards also stopped handing out slot increases that had nothing left to unlock.
+
+### Added
+- **One file for every AdMob value.** `lib/core/ads/ad_config.dart` now holds the App ID, the banner and interstitial unit IDs, Google's sample IDs, the test-device list and the debug consent geography. `android/app/build.gradle.kts` reads the App ID from it and injects it as the `${admobAppId}` manifest placeholder, so a launch is three lines in one file and the manifest can no longer drift from the ad units. Debug builds always resolve to Google's sample IDs; a release build with placeholders left in logs a warning at startup instead of silently serving nothing.
+- **Debug-only UMP geography override.** Debug builds pretend the device is in the EEA (`--dart-define=UMP_DEBUG_GEOGRAPHY=eea|us|disabled`), so the consent form and the Settings → Ad privacy row can be tested from anywhere; release builds always pass no debug settings, so the override cannot leak into production.
+- **Google UMP consent flow for ads.** `AdService.initialize()` now refreshes consent and shows the consent form where the user's region requires it (`requestConsentInfoUpdate` → `loadAndShowConsentFormIfRequired` → `canRequestAds()`) before the Mobile Ads SDK is initialised; without consent no ad is requested and the app runs normally. A new **Ad privacy settings** row in Settings re-opens the privacy options form so consent can be changed or withdrawn at any time — the row appears only when the UMP SDK reports it as required. Withdrawing consent disposes the loaded ads and hides the banner immediately.
 
 ### Changed
-- Replaced the starter README with product, setup, architecture, Firebase
-  security, secrets-management and CI/CD documentation.
-- **GitHub no longer publishes debug APKs** — only the release-signed APK is attached to a release. CI's debug build is kept purely as a compile check (it catches Android/Gradle breakage that `analyze` and `test` can't) and is never uploaded. Debug builds for device testing are made locally.
+- **Single full version — the subscription tier is gone.** Everything that used to be locked is now available to every user: no question or category cap, Undo without the once-per-day limit, the full per-category analytics breakdown, and the challenge badge/title rewards. The paywall screen, the upgrade bottom sheet, the premium flags (`is_premium` in SharedPreferences and in the Firestore user doc) and the entire RevenueCat client were removed. Ads therefore run for every user — they are the only revenue stream.
+- **Ads are switched back on** (`kAdsEnabled = true`). The v0.13.20 typing lag cannot return: the banner is unmounted whenever the keyboard is up and the add/edit-question screen opts out entirely via `AdService.enterExcludedScreen()`.
+- **Banner reloads back off exponentially** (1 → 10 min) instead of retrying every 60 s forever — a device where ad domains are filtered at the DNS level no longer storms requests — and the test-device IDs are debug-only.
+- **Challenge rewards are now just the badge and a title.** `completeChallengeMode()` / `recordChallengeAnswer()` no longer take `isPremiumUser`, and the bonus question/category machinery (`bonusQuestions`, `bonusCategories`, the max/base constants, the `min()` clamping and the `rewards.bonus_*` Firestore fields) is gone. `ChallengeCompleteScreen` shows the badge and title only.
+- Question/category count pills show just the count ("12 questions") instead of "12 / 20".
+- **CI now produces the Play upload format** — every `v*` tag also builds and uploads `app-release.aab` (`flutter build appbundle --release`) alongside the release APK, so a release always has something the Play Console accepts. It is intentionally not obfuscated: without a Crashlytics symbol-upload step, `--obfuscate` would make crash traces unreadable.
 
 ### Fixed
-- **Google Sign-In failed on every APK downloaded from GitHub.** Credential Manager validates the signing-cert SHA-1, and the `DEBUG_KEYSTORE_BASE64` step never actually applied the shared key — each CI run signed with a *different random* debug key (verified: v0.13.18 = `70:79:F3:E4:…`, 2026-08-13 = `08:47:8A:81:…`, neither matching the `D8:3D:DF:7A:…` registered in Firebase). The step had no validation, unlike the google-services.json and release-keystore steps, so it failed silently. This also meant no CI APK could ever be installed over a previous one — the exact problem the shared key was meant to prevent. Fixed by not distributing debug APKs; the release APK's fingerprint (`D3:A4:…`) is registered and works.
+- **Premium could be self-granted.** `is_premium` was restored from the user's own Firestore document, which `firestore.rules` lets that same user write — any account could set it to `true` and keep premium forever. The field is no longer read, written, or restored.
+- **Account identifiers no longer reach release logs.** `debugPrint` is not stripped from release builds, so the Google `account-exists-with-different-credential` path was writing the user's email address to logcat on their own device, and `SyncService` printed the Firebase uid on every backup/restore. The email is gone from the log line; the uids are wrapped in `kDebugMode`.
+- **Stale RevenueCat keep rules removed** from `android/app/proguard-rules.pro` — the IAP SDK has not existed since the single-version pivot, so the `-keep class com.revenuecat.purchases.**` entry was dead configuration in the release build.
+- **GitHub no longer publishes debug APKs** — only the release-signed APK is attached to a release. CI's debug build is kept purely as a compile check (it catches Android/Gradle breakage that `analyze` and `test` can't) and is never uploaded. Debug builds for device testing are made locally.
+- **Google Sign-In failed on every APK downloaded from GitHub.** Credential Manager validates the signing-cert SHA-1, and the `DEBUG_KEYSTORE_BASE64` step never actually applied the shared key — each CI run signed with a *different random* debug key (verified: v0.13.18 = `70:79:F3:E4:…`, 2026-08-13 APK = `08:47:8A:81:…`, neither matching the `D8:3D:DF:7A:…` registered in Firebase). The step had no validation, unlike the google-services.json and release-keystore steps, so it failed silently. This also meant no CI APK could ever be installed over a previous one — the exact problem the shared key was meant to prevent. Fixed by not distributing debug APKs; the release APK's fingerprint (`D3:A4:…`) is registered and works.
+
+### Removed
+- `purchases_flutter`, `SubscriptionService`, `SubscriptionScreen`, `UpgradeBottomSheet`, `PlanService`, and the `REVENUECAT_API_KEY` build define (CI included).
+- The challenge reward-slot strings (`challengeRewardQuestionSlotsLabel`, `challengeRewardQuestionsDesc`, `challengeRewardCategorySlotsLabel`, `challengeRewardCategoriesDesc`) — 4 more per language — since those rewards no longer exist.
+- Dead premium copy: 50 orphaned ARB strings per language (paywall, premium perks, plan-limit pills, subscription chip, analytics upsell) plus the unused plan-limit getters in `remote_config_service.dart`. The FAQ (A7–A10), the challenge title description and the login subtitle no longer mention premium — they now describe the single full version — and the "rewarded" undo claim is gone.
 
 ---
 
