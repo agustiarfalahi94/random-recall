@@ -6,9 +6,6 @@
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 
-# RevenueCat
--keep class com.revenuecat.purchases.** { *; }
-
 # Keep crash stack traces readable (de-obfuscate using build/debug-info/)
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

@@ -11,7 +11,6 @@ import '../notifications/notification_service.dart';
 import '../services/analytics_service.dart';
 import '../streak/streak_service.dart';
 import '../sync/sync_service.dart';
-import '../plan/subscription_service.dart';
 
 /// Thrown when Google Sign-In hits an email that is already registered to an
 /// email/password account. Carries the Google credential so the UI can link
@@ -123,7 +122,9 @@ class AuthService {
         // The email is already registered to an email/password account.
         // Surface a friendly exception carrying the Google credential so the
         // UI can verify the password and link the two providers.
-        debugPrint('AuthService: Google email already registered: ${e.email}');
+        // No email in the log: release builds print this too, and the address
+        // would end up in logcat on the user's own device.
+        debugPrint('AuthService: Google email already registered');
         throw AccountExistsException(
           email: e.email ?? '',
           googleCredential: e.credential ?? credential!,
@@ -277,7 +278,7 @@ class AuthService {
     });
   }
 
-  /// Performs RevenueCat login and Cloud Restore only for verified users.
+  /// Performs Cloud Restore (and streak sync) only for verified users.
   /// Ensures user document exists (defensive — normally created at signup).
   Future<void> initializeUserSession() async {
     final user = currentUser;
@@ -285,7 +286,6 @@ class AuthService {
     if (user == null || !isVerifiedUser(user)) return;
 
     await _ensureUserDocument(user);
-    await SubscriptionService.instance.logIn(user.uid);
     await SyncService.instance.performRestore(
       force: true,
       isInitialLogin: true,
@@ -349,10 +349,8 @@ class AuthService {
             });
       }
 
-      // 2. Subscription and Google logout
-      SubscriptionService.instance.logOut().catchError(
-        (e) => debugPrint('RevenueCat logout failed: $e'),
-      );
+      // 2. Google logout (there is no IAP layer — the app is a single full
+      //    version, so there is nothing to unsubscribe or log out of)
       await _googleSignIn.signOut().catchError((_) => null);
 
       // 3. Clear local data so the next user starts fresh — but ONLY when the
@@ -385,7 +383,6 @@ class AuthService {
         'total_14day_completed',
         'challenge_badge_unlocked',
         'highest_title',
-        'is_premium',
         'bonus_categories',
         'notif_schedule_mirror',
       ]) {
@@ -431,7 +428,6 @@ class AuthService {
       await userDoc.set({
         if (user.email != null) 'email': user.email,
         if (user.phoneNumber != null) 'phone_number': user.phoneNumber,
-        'is_premium': false,
         'created_at': FieldValue.serverTimestamp(),
       });
     }

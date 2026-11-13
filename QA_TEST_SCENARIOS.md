@@ -1,11 +1,30 @@
 # Random Recall — Comprehensive QA Test Scenarios
 
-**Legend**
+> ⚠️ **Updated 2026-11-13 — the premium tier was removed.** Random Recall is a
+> single full version: every feature is unlocked for every user and ads are the
+> only revenue (see `docs/SESSION_NOTES.md` §12). Consequences for this
+> document:
+>
+> - **Every `[P]` (premium) and `[F]` (free) precondition is obsolete.** There is
+>   only one tier, so run each scenario once, as "a user".
+> - **All limit scenarios are obsolete:** D009–D014 and D036–D042 (question
+>   limits), E005–E008 and E020–E021 (category limits), and any "upgrade",
+>   "paywall", "restore purchase" or "subscription status" step. There is no
+>   cap and no upgrade path.
+> - **Undo is unlimited for everyone**: H041–H045 and the once-per-day
+>   behaviour no longer apply — Undo is always offered after a wrong answer.
+> - **The notification question screen no longer auto-closes on a wrong answer**
+>   (it waits so Undo is reachable); it still closes itself after a correct one.
+> - **Ads are ON** (`kAdsEnabled = true`) and are shown to every user, so the
+>   "N/A — ads disabled" notes in C016–C017 and H034–H040 are obsolete. The
+>   banner must stay hidden while the keyboard is open and on question screens.
+>
+> **Legend**
 - `[+]` Positive / happy path
 - `[-]` Negative / error / edge case
 - `[S]` Security test
 - `[F]` Free user precondition
-- `[P]` Premium user precondition
+- ~~`[P]` Premium user precondition~~ (obsolete — single tier)
 - `[CA]` Challenge active precondition
 - `[CI]` Challenge inactive precondition
 - `[NEW]` New / first-time user
@@ -16,7 +35,7 @@
 - `[OFF]` Offline (no network)
 
 Run every scenario in **both EN and ID** unless tagged otherwise.
-Run every scenario as **both Free and Premium** unless tagged otherwise.
+~~Run every scenario as both Free and Premium.~~ **Single tier now — run each scenario once, as "a user".** Free/Premium pairs in the tables below are retained only as a historical record of what was tested before the tiers were merged.
 
 ---
 
@@ -810,48 +829,52 @@ Run every scenario as **both Free and Premium** unless tagged otherwise.
 
 ## N — ADS
 
-> ⚠️ **BLOCKED as of v0.13.21 — ads are switched off** (`kAdsEnabled = false` in
-> `lib/core/ads/ad_service.dart`). Every scenario in this section is currently
-> **N/A**: no banner or interstitial is ever loaded or mounted, so the expected
-> results below cannot be observed. Skip section N until ads are re-enabled for
-> the Play Store launch, then run it in full.
+> ✅ **Ads are ON for every user** (`kAdsEnabled = true`; the app ships as a single
+> full version — there is no premium tier, so the old "no banner for premium"
+> scenarios are gone). Two things shape the expected results here:
 >
-> Two scenarios must be **re-verified with extra care** when ads come back, because
-> the ad banner is what caused the v0.13.21 typing lag:
-> - **N010** (banner + keyboard open) — also check typing latency in the
+> - **Consent gates everything.** `AdService.initialize()` runs Google's UMP flow
+>   first and only initialises the Mobile Ads SDK when `canRequestAds()` is true
+>   (see N028–N032). In a consent-required region (EEA/UK) the form appears before
+>   the first ad; publishing a message in AdMob → Privacy & messaging is a
+>   prerequisite for the form to appear at all.
+> - **The banner must never be composited where it previously caused the
+>   v0.13.21 typing lag:** it is unmounted while the keyboard is up and on
+>   `AddEditQuestionScreen`. For N010/N020/N027 check typing latency in the
 >   question/answer fields, not just layout.
-> - **New: N020** — Banner must not be composited while the keyboard covers it on
->   the add/edit question screen. `[+][F]` → typing stays smooth, no dropped frames.
 
 | ID | Description | Type | Expected Result |
 |---|---|---|---|
-| N001 | Banner loads on HomeScreen — free user | [+][F] | Ad shown below nav bar |
-| N002 | No banner — premium user | [+][P] | Banner absent |
-| N003 | Banner hidden on NotificationQuestionScreen | [+][F] | No banner on question screen |
-| N004 | Banner hidden on QuestionScreen (manual) | [+][F] | No banner |
-| N005 | Banner returns after leaving QuestionScreen | [+][F] | Banner reappears |
+| N001 | Banner loads on HomeScreen — any signed-in user | [+] | Ad shown below nav bar |
+| N003 | Banner hidden on NotificationQuestionScreen | [+] | No banner on question screen |
+| N004 | Banner hidden on QuestionScreen (manual) | [+] | No banner |
+| N005 | Banner returns after leaving QuestionScreen | [+] | Banner reappears |
 | N006 | Banner returns after leaving NotificationQuestionScreen | [+][F] | Reappears |
 | N007 | 2nd notification question back-to-back — no banner flash | [+][F] | No brief banner appearance between screens |
 | N008 | Banner on Xiaomi 12T — test device registered | [+] | Test ad loads |
 | N009 | Banner on Xiaomi 15 — test device registered | [+] | Test ad loads |
 | N010 | Banner — keyboard open — no double bottom padding | [+] | Layout correct |
 | N011 | Banner ad fails to load | [-][F] | Silent fail, layout not broken |
-| N012 | Interstitial after organic notification answer — free user | [+][F] | Full-screen ad shown |
-| N013 | Interstitial — premium user — not shown | [+][P] | No ad |
-| N014 | Interstitial — practice mode — not shown | [+][F] | No ad |
+| N012 | Interstitial after organic notification answer | [+] | Full-screen ad shown (≤5/day, ≥10 min apart) |
+| N014 | Interstitial — practice mode — not shown | [+] | No ad |
 | N015 | Interstitial — manual question screen — not shown | [+][F] | No ad |
 | N016 | Interstitial fails to load | [-][F] | Silent fail, answer still recorded |
 | N017 | Banner visible in dark mode | [+] | Ad renders, layout unchanged |
 | N018 | Banner visible in light mode | [+] | Ad renders |
-| N019 | User subscribes mid-session — banner disappears immediately | [+][F→P] | Banner hidden without restart |
-| N020 | User subscription expires mid-session — banner reappears | [+][P→F] | Banner shown after listener fires |
+| N020 | Keyboard open on a banner screen — typing stays smooth | [+] | Banner unmounted, no dropped frames |
 | N021 | App Check failure — ads still attempt to load | [-] | Ads may fail; no crash |
 | N022 | Interstitial shown — close ad — returns to correct screen | [+] | No navigation broken |
 | N023 | Banner on Analytics screen | [+][F] | Banner visible |
 | N024 | Banner on Profile screen | [+][F] | Banner visible |
 | N025 | Banner on Settings screen | [+][F] | Banner visible |
 | N026 | Banner on Notification Schedule screen | [+][F] | Banner visible |
-| N027 | Banner on Add/Edit Question screen | [+][F] | Banner visible, not blocked by keyboard |
+| N027 | Add/Edit Question screen — no banner at all | [+] | Banner absent (`enterExcludedScreen`), typing smooth |
+| N028 | First launch in a consent-required region — UMP form shown | [+] | Form appears before any ad; ads load only after consent |
+| N029 | Consent declined — no ads, app fully usable | [-] | No ad requests; every feature keeps working |
+| N030 | Settings → Ad privacy settings re-opens the form | [+] | Row visible where required; form opens |
+| N031 | Consent withdrawn from the privacy options form | [+] | Banner disappears immediately; no further ad requests |
+| N032 | Revoke consent — signed-in session unchanged | [-] | No sign-out, no data loss |
+| N033 | No consent message published in AdMob (debug) | [-] | Flow completes silently, error logged, no crash |
 
 ---
 

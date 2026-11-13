@@ -123,8 +123,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginWelcomeTitle => 'Welcome to Random Recall';
 
   @override
-  String get loginSubtitle =>
-      'Sign in to sync your progress and unlock premium features.';
+  String get loginSubtitle => 'Sign in to sync your progress across devices.';
 
   @override
   String get continueWithGoogle => 'Continue with Google';
@@ -705,29 +704,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validationSelectCategory2 => 'Please select a category';
 
   @override
-  String questionCount(int current, int max) {
+  String questionCountTotal(num count) {
     String _temp0 = intl.Intl.pluralLogic(
-      current,
+      count,
       locale: localeName,
-      other: '$current / $max questions',
-      one: '1 / $max question',
+      other: '$count questions',
+      one: '1 question',
       zero: 'No questions',
     );
     return '$_temp0';
   }
-
-  @override
-  String questionWarning(int current, int max) {
-    return 'Approaching question limit — $current / $max';
-  }
-
-  @override
-  String questionLimitReached(int current, int max) {
-    return 'Question limit reached — $current / $max';
-  }
-
-  @override
-  String get upgradeButton => 'Upgrade ›';
 
   @override
   String get noQuestionsInCategory => 'No questions in this category';
@@ -758,14 +744,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoriesTitle => 'Categories';
 
   @override
-  String get freePlanLimitReachedBanner =>
-      'Free plan: you\'ve used your 1 custom category slot. Upgrade to Premium for up to 20 custom categories.';
-
-  @override
-  String get freePlanInfoBanner =>
-      'Free plan: you can add 1 custom category. Default categories (General, Work) don\'t count against this.';
-
-  @override
   String get noCategoriesYet => 'No custom categories yet';
 
   @override
@@ -789,15 +767,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationCategoryNameShort => 'Name is too short';
-
-  @override
-  String get premiumUnlimitedCategories =>
-      'Premium — create up to 20 custom categories!';
-
-  @override
-  String freePlanCategoryNote(int count) {
-    return 'Free plan: $count custom category allowed (General & Work are built-in). Upgrade to Premium for up to 20.';
-  }
 
   @override
   String get hasQuestions => 'Has questions';
@@ -825,31 +794,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get limitReachedFab => 'Limit Reached';
-
-  @override
   String get newCategoryFab => 'New Category';
 
   @override
-  String categoryCount(int current, int max) {
+  String categoryCountTotal(num count) {
     String _temp0 = intl.Intl.pluralLogic(
-      current,
+      count,
       locale: localeName,
-      other: '$current / $max categories',
-      one: '1 / $max category',
+      other: '$count categories',
+      one: '1 category',
       zero: 'No categories',
     );
     return '$_temp0';
-  }
-
-  @override
-  String categoryWarning(int current, int max) {
-    return 'Approaching category limit — $current / $max';
-  }
-
-  @override
-  String categoryLimitReached(int current, int max) {
-    return 'Category limit reached — $current / $max';
   }
 
   @override
@@ -902,9 +858,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get undoButton => 'Undo';
-
-  @override
-  String get undoOncePerDay => 'Undo (only 1 use per day)';
 
   @override
   String get noQuestionsEmptyTitle => 'No questions yet';
@@ -988,124 +941,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyticsWrongLabel => '❌ Wrong';
 
   @override
-  String get analyticsUnlockTitle => 'Unlock Category Analytics';
-
-  @override
-  String get analyticsUnlockSubtitle =>
-      'See exactly which categories you struggle with.\nSubscribe to unlock full analytics.';
-
-  @override
-  String get analyticsSubscribeButton => 'Subscribe to Unlock';
-
-  @override
   String get createCategoryButton => 'Create Category';
-
-  @override
-  String get upgradeToPremium => 'Upgrade to Premium';
-
-  @override
-  String get premiumUnlockTitle => 'Unlock Full Potential';
-
-  @override
-  String get premiumUnlockSubtitle =>
-      'The full Random Recall experience — every feature, fully unlocked.';
-
-  @override
-  String get featureUnlimitedQuestions => 'Up to 200 Questions';
-
-  @override
-  String get featureUnlimitedQuestionsSubtitle =>
-      'Store up to 200 questions — more than enough to master any topic.';
-
-  @override
-  String get featureUnlimitedCategories => 'Up to 20 Categories';
-
-  @override
-  String get featureUnlimitedCategoriesSubtitle =>
-      'Organize your learning into up to 20 custom topics.';
-
-  @override
-  String get featureUndoMistakes => 'Undo Mistakes';
-
-  @override
-  String get featureUndoMistakesSubtitle =>
-      'Correct a wrong answer to keep your streak alive.';
-
-  @override
-  String get featureAdvancedAnalytics => 'Advanced Analytics';
-
-  @override
-  String get featureAdvancedAnalyticsSubtitle =>
-      'Identify your weak spots with per-category scoring.';
-
-  @override
-  String get featureRealTimeSync => 'Real-time Sync';
-
-  @override
-  String get featureRealTimeSyncSubtitle =>
-      'Seamless access across all your Android devices.';
-
-  @override
-  String getPremiumButton(String price) {
-    return 'Get Premium — $price';
-  }
-
-  @override
-  String get loadingPlans => 'Loading available plans...';
-
-  @override
-  String get restorePurchase => 'Restore Purchase';
-
-  @override
-  String get cancelAnytime =>
-      'Cancel anytime in Google Play Store. Settings > Subscriptions.';
-
-  @override
-  String purchaseFailedSnack(String error) {
-    return 'Purchase failed: $error';
-  }
-
-  @override
-  String get premiumActiveMember => 'You are a Premium Member!';
-
-  @override
-  String get premiumActiveDesc =>
-      'Thank you for supporting Random Recall. Enjoy all features unlocked.';
-
-  @override
-  String get premiumGreat => 'Great!';
-
-  @override
-  String get premiumIncludes => 'Premium includes:';
-
-  @override
-  String get premiumPerkUnlimitedQuestions => '✅ Up to 200 questions';
-
-  @override
-  String get premiumPerkAllCategories => '✅ Up to 20 categories';
-
-  @override
-  String get premiumPerkFullAnalytics => '✅ Full analytics breakdown';
-
-  @override
-  String get premiumPerkUndo => '✅ Undo wrong answer (rewarded)';
-
-  @override
-  String get questionLimitReachedTitle => 'Question Limit Reached';
-
-  @override
-  String get categoryLimitReachedTitle => 'Category Limit Reached';
-
-  @override
-  String get questionLimitReachedDesc =>
-      'Free accounts can store up to 20 questions (+ bonus slots from challenges). Upgrade to Premium for up to 200 questions.';
-
-  @override
-  String get categoryLimitReachedDesc =>
-      'Free accounts can add questions to 1 custom category (+ bonus slots from challenges). Upgrade to Premium for up to 20 categories.';
-
-  @override
-  String get maybeLater => 'Maybe later';
 
   @override
   String get miuiDialogTitle => 'Fix notifications on MIUI / HyperOS';
@@ -1218,28 +1054,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faqA7 =>
-      'The free tier starts with 20 question slots. You can earn additional slots through Challenge Mode: completing the 7-day challenge earns +1 question slot, and completing the 14-day challenge earns +1 question slot and +1 category slot. Premium allows up to 200 questions.';
+      'There is no question limit — add as many as you like. Challenge Mode is still there to build the habit: finishing the 7-day or 14-day challenge unlocks a badge and a title. There is nothing to buy.';
 
   @override
   String get faqQ8 => 'How many custom categories can I create for free?';
 
   @override
   String get faqA8 =>
-      'Free accounts can create 1 custom category. The built-in \"General\" and \"Work\" categories do not count against this limit. You can earn an extra category slot by completing the 14-day Challenge Mode. Premium allows up to 20 custom categories.';
+      'You can create as many custom categories as you like. The built-in \"General\" and \"Work\" categories are always available and do not count against anything.';
 
   @override
   String get faqQ9 => 'What is the daily Undo?';
 
   @override
   String get faqA9 =>
-      'You can undo your last answer once per calendar day. The limit resets at midnight. This is available on both free and premium accounts.';
+      'You can undo your last answer whenever you need to — there is no daily limit.';
 
   @override
   String get faqQ10 => 'What is Challenge Mode and how does it work?';
 
   @override
   String get faqA10 =>
-      'Start Challenge Mode from Notification Schedule. Choose between a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and require correct answers on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing the 7-day challenge earns +1 question slot (free users) or a badge + title (premium). Completing the 14-day challenge earns +1 question slot and +1 category slot (free users) or a badge + title (premium).';
+      'Start Challenge Mode from Notification Schedule. Choose a 7-day or 14-day challenge — both lock the timer to 5–10 seconds and expect a correct answer on every question. Answer at least one notification per day for the full duration. Missing a day or answering incorrectly fails the challenge. Completing a challenge unlocks a badge and a title.';
 
   @override
   String get faqQ11 => 'Does the timer affect my score if it runs out?';
@@ -1297,15 +1133,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailLabel => 'Email';
-
-  @override
-  String get subscriptionStatusLabel => 'Subscription Status';
-
-  @override
-  String get subscriptionStatusPremium => 'Premium';
-
-  @override
-  String get subscriptionStatusFree => 'Free';
 
   @override
   String get changePasswordButton => 'Change Password';
@@ -1563,23 +1390,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get challengeRewardsEarnedLabel => 'Rewards Earned:';
 
   @override
-  String challengeRewardQuestionSlotsLabel(int count, String plural) {
-    return '+$count Question Slot$plural';
-  }
-
-  @override
-  String get challengeRewardQuestionsDesc =>
-      'Permanently unlock more questions';
-
-  @override
-  String challengeRewardCategorySlotsLabel(int count, String plural) {
-    return '+$count Category Slot$plural';
-  }
-
-  @override
-  String get challengeRewardCategoriesDesc => 'Create more custom categories';
-
-  @override
   String get challengeRewardBadgeUnlockedLabel => 'Challenge Badge Unlocked';
 
   @override
@@ -1591,7 +1401,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get challengeRewardTitleDesc => 'Premium exclusive achievement';
+  String get challengeRewardTitleDesc => 'Earned by completing challenges';
 
   @override
   String get challengeTitleChallenger => 'Challenger';
@@ -1794,4 +1604,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tourReplaySubtitle => 'Replay the interactive guide';
+
+  @override
+  String get adPrivacyTitle => 'Ad privacy settings';
+
+  @override
+  String get adPrivacySubtitle =>
+      'Review or change how your data is used for ads';
+
+  @override
+  String get adPrivacyUnavailable =>
+      'Ad privacy settings are not available right now.';
 }

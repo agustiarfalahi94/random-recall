@@ -3,16 +3,12 @@ import 'package:random_recall/l10n/app_localizations.dart';
 
 class ChallengeCompleteScreen extends StatelessWidget {
   final int duration;
-  final int questionsEarned;
-  final int categoriesEarned;
   final bool isBadgeUnlocked;
   final String? title;
 
   const ChallengeCompleteScreen({
     super.key,
     required this.duration,
-    required this.questionsEarned,
-    required this.categoriesEarned,
     required this.isBadgeUnlocked,
     this.title,
   });
@@ -100,32 +96,6 @@ class ChallengeCompleteScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-
-                          if (questionsEarned > 0) ...[
-                            _RewardRow(
-                              emoji: '✨',
-                              label: l10n.challengeRewardQuestionSlotsLabel(
-                                questionsEarned,
-                                questionsEarned > 1 ? 's' : '',
-                              ),
-                              description: l10n.challengeRewardQuestionsDesc,
-                              colorScheme: colorScheme,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
-                          if (categoriesEarned > 0) ...[
-                            _RewardRow(
-                              emoji: '🎯',
-                              label: l10n.challengeRewardCategorySlotsLabel(
-                                categoriesEarned,
-                                categoriesEarned > 1 ? 's' : '',
-                              ),
-                              description: l10n.challengeRewardCategoriesDesc,
-                              colorScheme: colorScheme,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
 
                           if (isBadgeUnlocked) ...[
                             _RewardRow(

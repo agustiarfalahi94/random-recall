@@ -52,7 +52,11 @@ class SyncService {
     if (!isVerified || (_isSyncing && !force)) return false;
 
     _isSyncing = true;
-    debugPrint('SyncService: Starting backup for user ${user.uid}...');
+    // The uid is only logged in debug builds; release logcat stays free of
+    // account identifiers.
+    if (kDebugMode) {
+      debugPrint('SyncService: Starting backup for user ${user.uid}...');
+    }
 
     final trace = FirebasePerformance.instance.newTrace('sync_backup');
     await trace.start();
@@ -331,7 +335,9 @@ class SyncService {
 
     _restoreCompleter = Completer<void>();
     _isSyncing = true;
-    debugPrint('SyncService: Starting restore for user ${user.uid}...');
+    if (kDebugMode) {
+      debugPrint('SyncService: Starting restore for user ${user.uid}...');
+    }
 
     final trace = FirebasePerformance.instance.newTrace('sync_restore');
     await trace.start();
@@ -471,11 +477,11 @@ class SyncService {
       if (userData != null) {
         final prefs = await SharedPreferences.getInstance();
 
-        // Pull Premium status directly from Firestore document root
-        if (userData.containsKey('is_premium')) {
-          await prefs.setBool('is_premium', userData['is_premium'] as bool);
-        }
-
+        // NOTE: response fields that gate features are never restored from
+        // here. `is_premium` used to be, but that document is writable by the
+        // client itself (the same uid), so any user could grant themselves the
+        // paid tier with one write. The app is now a single full version with
+        // no entitlement to restore at all.
         if (userData.containsKey('settings')) {
           final s = userData['settings'] as Map<String, dynamic>;
           if (s.containsKey('notif_random_anytime')) {

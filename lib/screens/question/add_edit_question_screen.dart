@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
+import '../../core/ads/ad_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/services/analytics_service.dart';
 import '../../models/category.dart';
@@ -38,11 +39,16 @@ class _AddEditQuestionScreenState extends State<AddEditQuestionScreen> {
       text: widget.question?.answer ?? '',
     );
     _selectedCategoryId = widget.question?.categoryId;
+    // This is the app's main text-entry screen. An `AdWidget` under the
+    // keyboard (a platform view) made typing laggy, so the banner is excluded
+    // here entirely while the form is open.
+    AdService.instance.enterExcludedScreen();
     _loadCategories();
   }
 
   @override
   void dispose() {
+    AdService.instance.exitExcludedScreen();
     _questionController.dispose();
     _answerController.dispose();
     super.dispose();

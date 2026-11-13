@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:random_recall/l10n/app_localizations.dart';
 
-import '../../core/config/remote_config_service.dart';
 import '../../core/database/database_helper.dart';
-import '../../core/plan/plan_service.dart';
 import '../../core/services/analytics_service.dart';
 import '../../models/category.dart';
-import '../settings/subscription_screen.dart';
 
 // ── Available icons for category picker ──────────────────────────────────────
 // Curated list covering the most common personal knowledge areas.
@@ -75,16 +72,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   }
 
   Future<void> _openAddSheet() async {
-    // Check creation limit — only custom (non-default) categories count
-    final canAdd = await PlanService.canAddCategory(_customCategories.length);
-    if (!mounted) return;
-    if (!canAdd) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
-      return;
-    }
-
     final added = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -152,78 +139,37 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Category count pill for both free and premium users
-                FutureBuilder<(bool, int)>(
-                  future: Future.wait([
-                    PlanService.isPremium(),
-                    PlanService.getCategoryLimit(),
-                  ]).then((r) => (r[0] as bool, r[1] as int)),
-                  builder: (_, snap) {
-                    if (snap.connectionState != ConnectionState.done) {
-                      return const SizedBox.shrink();
-                    }
-
-                    final isPremium = snap.data?.$1 ?? false;
-                    final limit =
-                        snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
-                    final warningThreshold = isPremium
-                        ? RemoteConfigService.instance.categoryWarningThreshold
-                        : limit; // Free has no warning, goes straight to red at limit
-
-                    final current = _customCategories.length;
-                    final isAtLimit = current >= limit;
-                    final isWarning = current >= warningThreshold && !isAtLimit;
-
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                // Category count — no cap (single full version)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.category_rounded,
+                          size: 14,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        decoration: BoxDecoration(
-                          color: isAtLimit
-                              ? colorScheme.errorContainer
-                              : isWarning
-                              ? Color.lerp(
-                                  colorScheme.surfaceContainerHigh,
-                                  colorScheme.error,
-                                  0.3,
-                                ) // Amber-ish
-                              : colorScheme.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(20),
+                        const SizedBox(width: 6),
+                        Text(
+                          l10n.categoryCountTotal(_customCategories.length),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isAtLimit
-                                  ? Icons.lock_rounded
-                                  : Icons.category_rounded,
-                              size: 14,
-                              color: isAtLimit
-                                  ? colorScheme.onErrorContainer
-                                  : colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              isAtLimit
-                                  ? l10n.categoryLimitReached(current, limit)
-                                  : isWarning
-                                  ? l10n.categoryWarning(current, limit)
-                                  : l10n.categoryCount(current, limit),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: isAtLimit
-                                    ? colorScheme.onErrorContainer
-                                    : colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                      ],
+                    ),
+                  ),
                 ),
 
                 // Custom category list (default categories are hidden here)
@@ -278,22 +224,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                 ),
               ],
             ),
-      floatingActionButton: FutureBuilder<bool>(
-        future: PlanService.canAddCategory(_customCategories.length),
-        builder: (_, snap) {
-          final canAdd = snap.data ?? true;
-          return FloatingActionButton.extended(
-            onPressed: _openAddSheet,
-            icon: Icon(canAdd ? Icons.add_rounded : Icons.lock_rounded),
-            label: Text(canAdd ? l10n.newCategoryFab : l10n.limitReachedFab),
-            backgroundColor: canAdd
-                ? colorScheme.primary
-                : colorScheme.surfaceContainerHigh,
-            foregroundColor: canAdd
-                ? colorScheme.onPrimary
-                : colorScheme.onSurfaceVariant,
-          );
-        },
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddSheet,
+        icon: const Icon(Icons.add_rounded),
+        label: Text(l10n.newCategoryFab),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
     );
   }
@@ -550,49 +486,6 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
             ),
 
             const SizedBox(height: 24),
-
-            // Free-plan note
-            FutureBuilder<(bool, int)>(
-              future: Future.wait([
-                PlanService.isPremium(),
-                PlanService.getCategoryLimit(),
-              ]).then((r) => (r[0] as bool, r[1] as int)),
-              builder: (_, snap) {
-                final isPremium = snap.data?.$1 ?? false;
-                final limit =
-                    snap.data?.$2 ?? PlanService.freeMaxCustomCategories;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        isPremium
-                            ? Icons.workspace_premium_rounded
-                            : Icons.info_outline_rounded,
-                        size: 16,
-                        color: isPremium
-                            ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          isPremium
-                              ? l10n.premiumUnlimitedCategories
-                              : l10n.freePlanCategoryNote(limit),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isPremium
-                                ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
 
             SizedBox(
               width: double.infinity,

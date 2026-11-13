@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/ads/ad_service.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/notifications/notification_service.dart';
-import '../../core/plan/plan_service.dart';
 import '../../core/services/analytics_service.dart';
 import '../../core/streak/streak_service.dart';
 import '../../core/utils/screen_security.dart';
@@ -51,8 +50,6 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
   // Timer
   int _timerSeconds = 0;
   int _remaining = 0;
-  bool _isPremium = false;
-  bool _undoUsedToday = false;
   Timer? _countdownTimer;
 
   late final AnimationController _revealController;
@@ -87,12 +84,8 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
 
   Future<void> _loadInitialSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final premium = await PlanService.isPremium();
-    final undoUsed = await PlanService.hasUsedUndoToday();
     if (mounted) {
       setState(() {
-        _isPremium = premium;
-        _undoUsedToday = undoUsed;
         _timerSeconds = prefs.getInt('notif_timer_seconds') ?? 0;
       });
     }
@@ -177,9 +170,6 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
     try {
       // Test notifications are practice — don't affect score or streak.
       if (!widget.isPractice) {
-        // Fetch premium status fresh — _isPremium may still be false if
-        // grading happens before _loadInitialSettings() resolves.
-        final isPremiumNow = await PlanService.isPremium();
         final now = DateTime.now();
         _lastScoreId = await DatabaseHelper.instance.insertScoreRecord(
           ScoreRecord(
@@ -212,7 +202,6 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
         if (StreakService.instance.isChallengeActive) {
           final result = await StreakService.instance.recordChallengeAnswer(
             isCorrect: isCorrect,
-            isPremiumUser: isPremiumNow,
           );
 
           if (mounted && result.outcome == ChallengeAnswerOutcome.failed) {
@@ -231,8 +220,6 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
               MaterialPageRoute(
                 builder: (_) => ChallengeCompleteScreen(
                   duration: c.duration,
-                  questionsEarned: c.questionsEarned,
-                  categoriesEarned: c.categoriesEarned,
                   isBadgeUnlocked: c.badgeUnlocked,
                   title: c.title.isEmpty ? null : c.title,
                 ),
@@ -261,9 +248,10 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
     }
 
     // Auto-close logic:
-    // Close if Correct OR if user is Free OR if Premium used their Undo already.
-    // Tests sessions stay open on Wrong answers to allow unlimited Undo.
-    if (_isCorrect || !_isPremium || (!widget.isPractice && _undoUsedToday)) {
+    // Close after a correct answer (nothing else to do). After a wrong answer
+    // the screen stays open so the user can use Undo — available to everyone
+    // now that the app is a single full version.
+    if (_isCorrect) {
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) {
         _close();
@@ -272,9 +260,7 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
   }
 
   Future<void> _undoGrade() async {
-    if (!_graded || !_isPremium || (!widget.isPractice && _undoUsedToday)) {
-      return;
-    }
+    if (!_graded) return;
 
     try {
       // If it was a recorded score (not practice), delete it from local DB
@@ -282,17 +268,10 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
         await DatabaseHelper.instance.deleteScoreRecord(_lastScoreId!);
       }
 
-      if (!widget.isPractice) {
-        await PlanService.consumeUndo();
-      }
-
       setState(() {
         _graded = false;
         _isCorrect = false;
         _lastScoreId = null;
-        if (!widget.isPractice) {
-          _undoUsedToday = true;
-        }
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -517,20 +496,14 @@ class _NotificationQuestionScreenState extends State<NotificationQuestionScreen>
 
               const SizedBox(height: 24),
 
-              if (!_isCorrect &&
-                  _isPremium &&
-                  (widget.isPractice || !_undoUsedToday))
+              if (!_isCorrect)
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _undoGrade,
                         icon: const Icon(Icons.undo_rounded, size: 18),
-                        label: Text(
-                          widget.isPractice
-                              ? l10n.undoButton
-                              : l10n.undoOncePerDay,
-                        ),
+                        label: Text(l10n.undoButton),
                       ),
                     ),
                   ],
