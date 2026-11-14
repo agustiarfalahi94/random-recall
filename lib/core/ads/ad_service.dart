@@ -264,6 +264,10 @@ class AdService {
         onAdLoaded: (_) {
           _bannerLoaded = true;
           _bannerRetryMinutes = 1; // healthy again — reset the backoff
+          debugPrint(
+            'AdService: banner loaded '
+            '(${_bannerAd?.size.width}x${_bannerAd?.size.height})',
+          );
           _refreshBannerVisible();
         },
         onAdFailedToLoad: (ad, error) {
