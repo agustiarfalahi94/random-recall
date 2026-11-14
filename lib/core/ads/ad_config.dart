@@ -55,8 +55,9 @@ abstract final class AdMobConfig {
   /// form and the Settings → "Ad privacy settings" row can be exercised from a
   /// country where Google would not show a form.
   ///
-  /// Defaults to `eea` in debug builds and `disabled` in release builds (the
-  /// release default wins regardless of `--dart-define`). Override with:
+  /// Defaults to `disabled` — i.e. the device's real region — in **both** debug
+  /// and release builds, so a plain `flutter run` serves ads without needing a
+  /// define. A define is also ignored in release builds. Opt in with:
   ///
   /// ```bash
   /// flutter run --dart-define=UMP_DEBUG_GEOGRAPHY=eea      # GDPR form
@@ -68,6 +69,6 @@ abstract final class AdMobConfig {
   /// override (and logs an error) on unregistered devices.
   static const String debugConsentGeography = String.fromEnvironment(
     'UMP_DEBUG_GEOGRAPHY',
-    defaultValue: kReleaseMode ? 'disabled' : 'eea',
+    defaultValue: 'disabled',
   );
 }

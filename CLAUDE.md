@@ -4,7 +4,7 @@
 
 ## Quick facts
 
-- **Random Recall**: Flutter quiz/notification app (`com.inkpebble.randomrecall`), v0.14.0+53, Flutter 3.41.6, Firebase stack + AdMob (**ads enabled** — `kAdsEnabled = true` in `lib/core/ads/ad_service.dart`), sqflite, provider, l10n EN/ID.
+- **Random Recall**: Flutter quiz/notification app (`com.inkpebble.randomrecall`), v0.14.1+54, Flutter 3.41.6, Firebase stack + AdMob (**ads enabled** — `kAdsEnabled = true` in `lib/core/ads/ad_service.dart`), sqflite, provider, l10n EN/ID.
 - **One full version, no subscription**: every feature is unlocked for everyone, ads are the only revenue. There is no paywall, entitlement, or IAP SDK — don't add one back.
 - **Default branch is `develop`**; release = merge to `main` + tag `vX.Y.Z` (CI runs on tags/PRs only).
 - **Validation before any commit:** `flutter analyze` (must be 0 issues — CI is strict), `dart format --set-exit-if-changed lib/ test/`, `flutter test` (105/105).

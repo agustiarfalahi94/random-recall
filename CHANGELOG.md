@@ -5,6 +5,12 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.14.1] — 2026-11-14
+
+### Changed
+- **Debug builds now serve ads without a `--dart-define`.** `AdMobConfig.debugConsentGeography` defaulted to `eea`, which on a device outside a consent-required region left `canRequestAds()` false whenever no consent message was published — i.e. a plain `flutter run` (or a locally built debug APK) showed no ads at all. The default is now `disabled` (the device's real region); forcing a geography for consent-form testing is opt-in via `--dart-define=UMP_DEBUG_GEOGRAPHY=eea|us`.
+- `AdService` now logs a line when the banner finishes loading (`AdService: banner loaded (320x50)`), so ad rendering can be confirmed from `adb logcat -s AdService` without a screenshot.
+
 ## [0.14.0] — 2026-11-13
 
 The subscription tier is gone. Random Recall now ships as **one full version**: every feature is unlocked for every user, there is no paywall and no IAP SDK, and ads (now on, with Google's UMP consent flow) are the only revenue stream. The challenge rewards also stopped handing out slot increases that had nothing left to unlock.
