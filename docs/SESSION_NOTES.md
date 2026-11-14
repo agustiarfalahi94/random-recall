@@ -9,7 +9,7 @@
 ## 1. Project at a glance
 
 - **App:** Random Recall — Flutter quiz/notification app (questions + categories + score tracking, challenge mode, streak, ads — single full version, no subscriptions).
-- **Version:** `0.14.0+53` (pubspec.yaml).
+- **Version:** `0.14.1+54` (pubspec.yaml).
 - **Stack:** Flutter 3.41.6 / Dart 3.11.4 · Firebase (Auth, Firestore, Storage, Analytics, Crashlytics, Performance, Remote Config, App Check) · AdMob (`google_mobile_ads`, **enabled**) · sqflite local DB · `provider` state mgmt · l10n EN/ID.
 - **Model:** ONE full version — every feature unlocked for every user, no subscription, no IAP SDK. Ads are the only revenue.
 - **Android:** package `com.inkpebble.randomrecall`, minSdk 24, R8 enabled, release keystore `android/app/release-keystore.jks` (gitignored), `key.properties` (gitignored).
@@ -31,6 +31,7 @@
 | 0.13.16 | Dependency update pass: Firebase majors (core 4 / auth 6 / firestore 6 / analytics 12 / crashlytics 5 / app_check 0.4 / remote_config 6 / storage 13 / performance 0.11), `flutter_local_notifications` 22, `google_mobile_ads` 9, `purchases_flutter` 10, `workmanager` 0.10, `device_info_plus` 13, `app_settings` 7 (8.x is SPM-only — skipped), `google_sign_in` 7, `timezone` 0.11, `flutter_lints` 6, `desugar_jdk_libs` 2.1.4. Skips: `intl` 0.20.3 (SDK-locked), `app_settings` 8 (SPM) |
 | 0.13.17 | Google Sign-In fix (serverClientId + account linking), deferred AdMob init (cold start) |
 | 0.13.18 | Black launch screen fix (v31 theme variants), shared CI debug keystore (upgradeable test APKs) |
+| 0.14.1 | Debug ad/consent defaults fixed — debug builds serve ads with no `--dart-define` (`debugConsentGeography` default `disabled`), banner-load log added for logcat QA |
 | 0.14.0 | **Single full version** — subscription tier removed (no paywall, no IAP, no entitlement), ads on for everyone with the UMP consent flow + Settings → Ad privacy, all AdMob IDs in one file, release-logs PII fixed, CI builds the Play AAB |
 | 0.13.21 | **Ads switched OFF** (`kAdsEnabled = false`) — fixes typing lag in the question/answer fields caused by the AdMob platform view sitting above every screen |
 
@@ -72,11 +73,12 @@ Branches: `develop` & `main` in sync. Working tree should be clean after commits
 
 - **AdMob — ads are ENABLED** (`kAdsEnabled = true`). Every user sees ads (single full version). Mechanics: UMP consent is gathered before the SDK is initialised (`canRequestAds` gates everything, see §12), banner hidden while the keyboard is up and on `AddEditQuestionScreen` (platform-view typing lag), interstitials after organic answers only (≤5/day, ≥10 min apart), exponential backoff on load failures (1 → 10 min), test-unit IDs in debug / placeholder release IDs until the real ones arrive.
   **Still required before upload:** the three real IDs in `lib/core/ads/ad_config.dart` (`appId`, `bannerAdUnitId`, `interstitialAdUnitId`) — that is the *only* file to edit, the manifest App ID is injected from it by Gradle — and a **message published in AdMob → Privacy & messaging** so the consent form and the Settings → Ad privacy row actually have something to show.
-  **Local UMP testing:** debug builds pretend the device is in the EEA, so the consent form and the Settings row appear without a VPN. Override with `--dart-define=UMP_DEBUG_GEOGRAPHY=eea|us|disabled`; the stored consent is only cleared by wiping the app's data, so do that to see the form a second time (the device must be listed in `AdMobConfig.testDeviceIds`).
+  **Local UMP testing:** the debug geography defaults to `disabled` (the device's real region), so a plain `flutter run`/debug APK **serves ads without any define**. To test the consent form and the Settings row from a region Google does not treat as consent-required, run `flutter run --dart-define=UMP_DEBUG_GEOGRAPHY=eea` (or `us`) — that only shows a form once a message is published in AdMob → Privacy & messaging; the stored consent is only cleared by wiping the app's data (the device must be listed in `AdMobConfig.testDeviceIds`).
 - **No IAP / no entitlement** — RevenueCat and `purchases_flutter` were removed. Do not add a client-trusted `is_premium` flag back (it used to be restored from the user-writable Firestore doc, i.e. self-grantable).
 - **iOS**: dependency upgrades changed iOS plugin versions — run `flutter build ios --no-codesign` to validate before any iOS release. **STATUS: explicitly deferred — iOS is not a near-term target ("maybe next year, maybe never"). Do NOT spend time on iOS validation unless the user says they're targeting iOS.** (Note: `app_settings` 8.x was skipped because it requires Swift Package Manager; revisit that choice only if iOS becomes real.)
 - **Play Store**: release signing exists locally; CI release signing + Play upload steps are commented out in the workflow ("FUTURE" section in `CI_CD_SETUP.md`). Data Safety form + privacy policy needed.
 - Firestore rules: deployed ✅ (100 KB write cap live).
+- **Device test 2026-11-14 (Xiaomi 12T / 22071212AG, Android 15, Wi-Fi):** installed the `0.14.0+53` debug APK. With Private DNS set to `dns.adguard.com` **no ad can load** — GMS logs `CronetUrlRequest: net::ERR_CONNECTION_REFUSED` and `Ad failed to load : 0`, because AdGuard refuses the ad domains. Turning Private DNS off fixes it immediately. With it off: `canRequestAds=true`, `banner loaded (320x50)`, and the banner is visible on Home, Settings and Profile, absent on the question screen (`enterExcludedScreen()`), and back on Home after closing it. Question-screen screenshots are black **by design** — `MainActivity` sets `FLAG_SECURE` around quiz screens via `lib/core/utils/screen_security.dart`; use `uiautomator dump` (`grep 'Test Ad'`) to verify the banner structurally instead of `screencap`. Note: the "Ad privacy settings" row does not appear in Settings while the debug geography is `disabled` and no consent message is published — that is the documented UMP behaviour, not a bug.
 - **Production-readiness audit (2026-11-13) — code is launch-ready, the release package is not.** Verified good: per-user Firestore rules with default deny, App Check wired (Play Integrity in release), no keystore/`google-services.json`/`key.properties`/`.env` in git, `targetSdk 36` / `minSdk 24` / `versionCode 52`, Crashlytics + Analytics wired, seven maintained docs. Still open: **Play App Signing SHA-1 not registered in Firebase** (Google Sign-In will fail for Play installs — the top blocker), App Check *enforced* per product in the Firebase console, real AdMob IDs + a published consent message, privacy-policy and account-deletion URLs, Data Safety form, store assets, closed testing (12 testers / 14 days). CI now also builds the Play AAB on `v*` tags. PII in release logs and the dead RevenueCat proguard keeps were fixed in the same pass.
 
 ## 9. Files map (key ones)
@@ -266,7 +268,7 @@ developer account while the AdMob account and its payouts stay with the owner).
   literals left. The App ID deliberately has no Dart getter — Gradle injects it
   into the manifest, so nothing reads it at runtime.
 - **Debug UMP geography**: `AdMobConfig.debugConsentGeography` (defaults to
-  `eea` in debug, `disabled` in release) is turned into a
+  `disabled`, i.e. the real region, in every build) is turned into a
   `ConsentDebugSettings(debugGeography:, testIdentifiers:)` by
   `AdService._consentDebugSettings()`. Release builds always pass `null`, so a
   `--dart-define` cannot leak into production. Override per run:
