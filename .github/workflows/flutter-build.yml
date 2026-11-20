@@ -248,8 +248,16 @@ jobs:
           name: random-recall-release.apk
           path: ./
 
-      # Only the release-signed APK is published. Debug builds are made
-      # locally for device testing — see CLAUDE.md.
+      - name: Download release AAB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: random-recall-release.aab
+          path: ./
+
+      # The release-signed APK is for testers; the AAB is the file the Play
+      # Console accepts. Both come off the same tag build, so the download here
+      # and the Play upload are byte-identical builds of the same commit.
+      # Debug builds are made locally for device testing — see AGENTS.md.
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -258,4 +266,5 @@ jobs:
           gh release create "$TAG_NAME" \
             --title "Random Recall $TAG_NAME" \
             --generate-notes \
-            "app-release.apk#RandomRecall-$TAG_NAME.apk"
+            "app-release.apk#RandomRecall-$TAG_NAME.apk" \
+            "app-release.aab#RandomRecall-$TAG_NAME.aab"
