@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,6 +44,18 @@ class AdService {
 
   BannerAd? _bannerAd;
   bool _bannerLoaded = false;
+
+  /// Screen width the banner should fit, reported by [ensureBannerLoaded].
+  double? _bannerWidth;
+
+  /// Width the currently loaded ad was sized for (null while none is loaded).
+  double? _loadedForWidth;
+
+  /// True once `MobileAds.initialize()` finished — loads before that would fail.
+  bool _sdkReady = false;
+
+  /// Guards against an out-of-order async size lookup replacing a newer ad.
+  int _bannerLoadToken = 0;
 
   /// Backoff for banner reloads after a failure (no fill, offline, or blocked).
   int _bannerRetryMinutes = 1;
@@ -95,7 +108,10 @@ class AdService {
       );
     }
     await _loadFrequencyState();
-    _loadBannerAd();
+    _sdkReady = true;
+    // The banner itself is requested by AdBannerWidget once it knows the real
+    // screen width; if a widget mounted before the SDK was ready, load now.
+    if (_bannerWidth != null) _loadBannerAd();
     _preloadInterstitialAd();
   }
 
@@ -252,17 +268,57 @@ class AdService {
 
   BannerAd? get bannerAd => _bannerLoaded ? _bannerAd : null;
 
-  void _loadBannerAd() {
+  /// Asks for a banner that fits [width] (device-independent pixels).
+  ///
+  /// Called from [AdBannerWidget.didChangeDependencies] — the only place where
+  /// `MediaQuery.sizeOf` is valid and where we know the real screen width. Safe
+  /// to call repeatedly: a loaded ad of the same width is reused, and a call
+  /// before `MobileAds.initialize()` simply records the width to load later.
+  void ensureBannerLoaded(double width) {
+    if (!kAdsEnabled) return;
+    final w = width.roundToDouble();
+    if (w <= 0) return;
+    _bannerWidth = w;
+    if (!_sdkReady || !_canRequestAds) return;
+    if (_bannerLoaded && _loadedForWidth == w) return;
+    _loadBannerAd();
+  }
+
+  Future<void> _loadBannerAd() async {
     if (!_canRequestAds) return;
+    final width = _bannerWidth ?? AdSize.banner.width.toDouble();
     _bannerAd?.dispose();
+    _bannerAd = null;
     _bannerLoaded = false;
+    _loadedForWidth = null;
+    _refreshBannerVisible();
+
+    final token = ++_bannerLoadToken;
+
+    // Anchored adaptive banner: fills the width with the right height for the
+    // current orientation. Falls back to the standard 320x50 banner if the
+    // platform can't size it.
+    AdSize size = AdSize.banner;
+    try {
+      final adaptive = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(
+        width.round(),
+      );
+      if (adaptive != null) size = adaptive;
+    } catch (e) {
+      debugPrint('AdService: adaptive banner size unavailable ($e)');
+    }
+    // A newer request (rotation, wider screen) or a consent withdrawal won the
+    // race while we awaited the size.
+    if (token != _bannerLoadToken || !_canRequestAds) return;
+
     _bannerAd = BannerAd(
       adUnitId: AdMobConfig.resolvedBannerAdUnitId,
-      size: AdSize.banner,
+      size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (_) {
           _bannerLoaded = true;
+          _loadedForWidth = width;
           _bannerRetryMinutes = 1; // healthy again — reset the backoff
           debugPrint(
             'AdService: banner loaded '
@@ -274,17 +330,28 @@ class AdService {
           ad.dispose();
           _bannerAd = null;
           _bannerLoaded = false;
+          _loadedForWidth = null;
           _refreshBannerVisible();
           debugPrint(
-            'AdService: banner load failed (${error.code}) — retrying in '
-            '$_bannerRetryMinutes min',
+            'AdMob Banner failed to load: code=${error.code}, '
+            'domain=${error.domain}, message=${error.message}',
           );
+          // Non-fatal: ads are best-effort and must never disturb the user.
+          FirebaseCrashlytics.instance
+              .recordError(
+                error,
+                StackTrace.current,
+                reason: 'AdMob banner load failed (code ${error.code})',
+                fatal: false,
+              )
+              .ignore();
           final delay = Duration(minutes: _bannerRetryMinutes);
           _bannerRetryMinutes = (_bannerRetryMinutes * 2).clamp(
             1,
             _bannerRetryMaxMinutes,
           );
-          Future.delayed(delay, _loadBannerAd);
+          debugPrint('AdService: retrying banner in $_bannerRetryMinutes min');
+          Future.delayed(delay, () => _loadBannerAd());
         },
       ),
     )..load();
@@ -294,6 +361,9 @@ class AdService {
 
   void _preloadInterstitialAd() {
     if (!_canRequestAds) return;
+    // No production interstitial unit configured yet — don't fire requests that
+    // can only fail.
+    if (!AdMobConfig.hasRealInterstitial) return;
     if (_interstitialAd != null) return;
     InterstitialAd.load(
       adUnitId: AdMobConfig.resolvedInterstitialAdUnitId,

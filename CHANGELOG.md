@@ -5,6 +5,21 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.14.2] — 2026-11-18
+
+### Fixed
+- **The banner never asked for its first ad.** `AdBannerWidget` only mounts once an ad is already loaded, so requesting the banner from inside it deadlocked: nothing ever triggered the first request (`canRequestAds=true` with no `banner loaded` line). `_AdBannerWrapper` in `main.dart` is now a `StatefulWidget` that requests the banner in `didChangeDependencies`, where `MediaQuery.sizeOf(context).width` is available for the adaptive size, and re-requests it on rotation.
+
+### Added
+- **Production AdMob IDs wired in.** `ad_config.dart` now carries the real Android App ID (`ca-app-pub-5748487724665031~8799782807`) and banner unit (`…/2809264532`); Gradle injects the App ID into the manifest for release/profile builds while debug keeps Google's sample App ID, so a plain release build serves real ads with no further edits.
+- **Anchored adaptive banner.** The banner now requests `AdSize.getLargeAnchoredAdaptiveBannerAdSize(screenWidth)` (falling back to the standard 320×50 banner if the platform can't size it), so it fills the width instead of being letterboxed on tall phones. The width comes from `MediaQuery.sizeOf` inside `AdBannerWidget.didChangeDependencies`, guarded to run once per mount.
+- `ACCESS_NETWORK_STATE` is now declared explicitly in the manifest (the ads SDK uses it to pick ads for the current connection).
+
+### Changed
+- **Profile builds use the production units too** — `resolved*AdUnitId` keys off `kDebugMode` rather than `kReleaseMode`, so only debug builds get Google's sample IDs.
+- **Banner failures are reported as non-fatal Crashlytics events** with the full `code`/`domain`/`message`, in addition to the logcat line, and the retry keeps its exponential backoff.
+- **Interstitials are skipped while the unit ID is still a placeholder** (`AdMobConfig.hasRealInterstitial`) instead of firing requests that can only fail.
+
 ## [0.14.1] — 2026-11-14
 
 ### Changed

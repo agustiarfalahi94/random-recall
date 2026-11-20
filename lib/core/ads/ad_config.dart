@@ -17,8 +17,11 @@ abstract final class AdMobConfig {
   // NOTE: the Gradle build script parses `appId` out of this file. Keep the
   // declaration below on one line in single quotes, or the build will stop with
   // an explicit error.
-  static const String appId = 'ca-app-pub-REPLACE/REPLACE';
-  static const String bannerAdUnitId = 'ca-app-pub-REPLACE/REPLACE';
+  static const String appId = 'ca-app-pub-5748487724665031~8799782807';
+  static const String bannerAdUnitId = 'ca-app-pub-5748487724665031/2809264532';
+  // No production interstitial unit exists yet. While this stays a
+  // placeholder, interstitials are skipped entirely (no failed requests);
+  // paste the real unit ID here to enable them in release builds.
   static const String interstitialAdUnitId = 'ca-app-pub-REPLACE/REPLACE';
 
   // ── Google's public sample ad units (never edit these) ─────────────────────
@@ -27,16 +30,21 @@ abstract final class AdMobConfig {
   static const String testInterstitialAdUnitId =
       'ca-app-pub-3940256099942544/1033173712';
 
-  /// True once the three real values above have been filled in.
+  /// True once the App ID and banner unit are real (interstitials optional).
   static bool get isConfigured =>
-      !appId.contains('REPLACE') &&
-      !bannerAdUnitId.contains('REPLACE') &&
+      !appId.contains('REPLACE') && !bannerAdUnitId.contains('REPLACE');
+
+  /// Whether a real interstitial unit has been filled in yet.
+  static bool get hasRealInterstitial =>
       !interstitialAdUnitId.contains('REPLACE');
 
+  // Debug builds get Google's sample units; every other build type (release and
+  // profile) gets the production units. Keep in sync with the Gradle manifest
+  // placeholder, which follows the same split.
   static String get resolvedBannerAdUnitId =>
-      kReleaseMode ? bannerAdUnitId : testBannerAdUnitId;
+      kDebugMode ? testBannerAdUnitId : bannerAdUnitId;
   static String get resolvedInterstitialAdUnitId =>
-      kReleaseMode ? interstitialAdUnitId : testInterstitialAdUnitId;
+      kDebugMode ? testInterstitialAdUnitId : interstitialAdUnitId;
 
   // ── Device testing ─────────────────────────────────────────────────────────
 
