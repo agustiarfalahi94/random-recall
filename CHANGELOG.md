@@ -20,6 +20,13 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 - **Banner failures are reported as non-fatal Crashlytics events** with the full `code`/`domain`/`message`, in addition to the logcat line, and the retry keeps its exponential backoff.
 - **Interstitials are skipped while the unit ID is still a placeholder** (`AdMobConfig.hasRealInterstitial`) instead of firing requests that can only fail.
 
+### CI, docs & store listing
+- **The release AAB is now published on GitHub Releases**, next to the APK. It was an artifact only, so the one file the Play Console accepts could only be fetched from a workflow run that expires after 90 days; the `release` job now downloads both and attaches `RandomRecall-vX.Y.Z.aab`.
+- **The Play Store listing lives in `store/`**: `PLAY_STORE_LISTING.md` (name, short/long description in EN and ID, store settings, Data Safety draft, asset inventory), `RELEASE_NOTES.md` (the 500-character "What's new" blocks), `assets/` (512px icon, 1024×500 feature graphic in EN and ID, five 1080×1920 framed screenshots) and `raw/` (the untouched 1220×2712 captures).
+- **Store graphics are generated, not hand-drawn**: `tools/make_store_graphics.py` builds the feature graphics and icon from `assets/icon/app_icon.png`, and `tools/make_store_screenshots.py` frames the raw captures onto a 1080×1920 canvas. A raw 20:9 phone capture breaks Play's "long side at most twice the short side" rule, which is why the framing exists.
+- **`AGENTS.md` now requires two things per task**: the app is force-stopped on any test device before the turn ends (a left-running app heats the phone and drains the battery), and no change goes unwritten — `CHANGELOG.md`, `docs/SESSION_NOTES.md`, `README.md`, `CI_CD_SETUP.md`, the version lines and `store/` move in the same commit as the code.
+- **`CI_CD_SETUP.md` reflects how Play uploads actually work** — no "Play pulls from GitHub" option exists, only AAB uploads are accepted, and every upload needs a higher `versionCode`.
+
 ## [0.14.1] — 2026-11-14
 
 ### Changed

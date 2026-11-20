@@ -2,7 +2,7 @@
 
 ## Overview
 
-This GitHub Actions workflow automates testing and building for Random Recall. **Currently, it does NOT deploy to Play Store** (we're not live yet), but it's fully ready for when you launch.
+This GitHub Actions workflow automates testing and building for Random Recall. **Currently, it does not push to the Play Store** — a `v*` tag produces a signed APK and AAB attached to a GitHub Release, and either one is uploaded by hand.
 
 ---
 
@@ -189,36 +189,40 @@ After successful build:
 
 ---
 
-## Future: Enabling Play Store Deployment
+## Play Store deployment — the honest version
 
-When you're ready to launch on Play Store (Step 1 of going live):
+Google Play has **no "pull from GitHub"** option. Nothing in the Play Console watches a repo,
+branch, Release or tag. An upload happens only when something *pushes* an `.aab` at it: a human
+in the Console, or the Play Developer API. So the convenient version of the idea — "CI builds it,
+Play takes it from there" — needs one extra piece: CI must do the pushing, with a service account.
 
-### Step 1: Create Google Play Service Account
+| Option | What it means | Verdict |
+|---|---|---|
+| **A. Tag → GitHub Release → manual upload** | CI builds the signed AAB on a `v*` tag and attaches it to the Release; you drag it into the Console | **What is set up now.** No secrets, no moving parts |
+| **B. Tag → CI pushes to the internal track** | Same build, uploaded by `r0adkll/upload-google-play`; you promote it in the Console | Recommended once the app exists in Play |
+| **C. Merge to main → auto-production** | A merge publishes with no human gate | Not recommended — a review rejection cannot be undone by a revert |
 
-1. Go to: `https://play.google.com/console`
-2. Settings → API access → Create service account
-3. Download JSON credentials file
-4. **Keep this file SAFE** (it's like your password)
+Two hard rules that shape all of it:
 
-### Step 2: Add GitHub Secret
+1. **Play accepts AAB only.** No APK on any track (APK upload was shut down for new apps).
+   The `app-release.apk` on a Release exists for testers, not for Play.
+2. **Every upload needs a higher `versionCode`.** Uploading `0.14.2+55` twice is rejected even
+   when the bytes are identical. Bump `version` in `pubspec.yaml` for every upload.
 
-1. Go to your GitHub repo
-2. Settings → Secrets and variables → Actions
-3. Click "New repository secret"
-4. Name: `PLAY_STORE_CREDENTIALS`
-5. Paste the JSON file contents
-6. Save
+### Enabling option B (push to the internal track)
 
-### Step 3: Enable Deployment in Workflow
-
-In `.github/workflows/flutter-build.yml`, uncomment these sections:
-- `Upload to Play Store (Internal Testing)` - for develop branch
-- `Upload to Play Store (Beta)` - for staging branch (if you create it)
-- `Upload to Play Store (Production)` - for main branch
-
-### Step 4: Test Deployment
-
-Push to develop branch → Check Actions tab → See automatic upload!
+1. Play Console → Settings → **API access** → link a Google Cloud project.
+2. Create a **service account**, then invite it in Play Console → **Users and permissions**
+   with *Release to testing tracks*. A service account without a Play permission uploads
+   nothing and fails with a confusing 401.
+3. Create a JSON key for it and add it as the repo secret `PLAY_STORE_CREDENTIALS`.
+4. The app must already exist in Play from **one manual upload** — the API cannot create the
+   first release.
+5. Uncomment the upload step at the bottom of the `build` job in
+   `.github/workflows/flutter-build.yml`, set `track: internal`, `status: completed`, and keep
+   production as a manual promotion in the Console.
+6. Add Play App Signing's SHA-1 (Play Console → App integrity) to Firebase, or Google Sign-In
+   breaks for everyone who installed from Play.
 
 ---
 
@@ -292,19 +296,22 @@ This is **legitimate, professional, and real**.
 ## Common Questions
 
 ### Q: Will this deploy to Play Store now?
-**A:** No, deployment is commented out. Nothing goes to Play Store until you uncomment those lines.
+**A:** No. A `v*` tag builds and attaches the signed APK and AAB to a GitHub Release; you upload the
+AAB yourself. Pushing to Play needs the service-account step above.
 
 ### Q: What if tests fail?
 **A:** Pipeline stops, notifies you, blocks the merge. You fix it locally, push again.
 
 ### Q: Can I download the APK to test?
-**A:** Yes! After successful build, download from Actions → Artifacts.
+**A:** Yes — from the GitHub Release of the tag (release-signed, so Google Sign-In works), or from
+Actions → Artifacts on that run.
 
 ### Q: What if someone merges broken code?
 **A:** They can't. Tests must pass before merge (if you set branch protection).
 
 ### Q: How do I set up branch protection?
-**A:** Repo → Settings → Branches → Add rule. Require status checks to pass.
+**A:** Already done: repository rulesets protect both `develop` and `main`, so every change lands
+through a PR and the checks must pass. Direct pushes are rejected.
 
 ---
 
