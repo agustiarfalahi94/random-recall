@@ -571,9 +571,24 @@ class _HomeGateState extends State<_HomeGate> {
 ///   • sits ABOVE the system gesture zone / navigation bar
 ///   • stays behind the keyboard (keyboard overlays it — same behaviour as
 ///     Baby Tracker by NIGHP SOFTWARE)
-class _AdBannerWrapper extends StatelessWidget {
+class _AdBannerWrapper extends StatefulWidget {
   const _AdBannerWrapper({required this.child});
   final Widget child;
+
+  @override
+  State<_AdBannerWrapper> createState() => _AdBannerWrapperState();
+}
+
+class _AdBannerWrapperState extends State<_AdBannerWrapper> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The banner can only be requested from somewhere that is always mounted:
+    // AdBannerWidget itself is only built when an ad is already loaded. This
+    // also re-requests on rotation (MediaQuery change), which is why the width
+    // is passed down rather than captured once.
+    AdService.instance.ensureBannerLoaded(MediaQuery.sizeOf(context).width);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -599,7 +614,7 @@ class _AdBannerWrapper extends StatelessWidget {
                   bottom: mq.padding.bottom + bottomPad,
                 ),
               ),
-              child: child,
+              child: widget.child,
             ),
 
             // Banner: positioned above the system gesture/nav zone. Hidden
