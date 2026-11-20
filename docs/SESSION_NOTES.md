@@ -349,3 +349,40 @@ those regions, so English is the right default. The US-states message is the sam
 **Device hygiene:** every task that touches a device ends with
 `adb shell am force-stop com.inkpebble.randomrecall`, plus restoring anything changed for the
 capture (`policy_control null` for immersive mode, `accelerometer_rotation 1`).
+
+---
+
+## 14. Public privacy policy (2026-11-20)
+
+**The URL that blocked two things at once.** Play requires a privacy policy URL and an account
+(deletion) URL for any app with accounts; AdMob's GDPR/US-states messages refuse to publish
+without one. Neither existed, so every ad-consent route dead-ended.
+
+**Where it lives:** `docs/privacy/index.html` (policy, English then Bahasa Indonesia on one
+page), `docs/privacy/delete-account.html` (Play's "delete account" requirement), and
+`docs/privacy/style.css`. `docs/.nojekyll` stops Jekyll from touching the folder, so raw files
+are served as-is.
+
+**Pages configuration** — branch source, not an Actions workflow, because a workflow would be a
+second deployment path to maintain:
+
+```bash
+gh api -X POST repos/<owner>/<repo>/pages \
+  -f 'source[branch]=main' -f 'source[path]=/docs'
+```
+
+Resulting URLs (both stable, both on `main`):
+
+- `https://agustiarfalahi94.github.io/random-recall/privacy/`
+- `https://agustiarfalahi94.github.io/random-recall/privacy/delete-account.html`
+
+**Content rules that came out of the code, not from a template:** notifications are local
+(`flutter_local_notifications` + `workmanager`, no FCM), so the policy can promise no question
+text leaves the device for reminders; there is no Firebase Storage upload in `lib/`, so no photo
+collection is declared; Analytics events carry correctness/timing/hour but never the question
+or answer text. Re-check those three claims against the code if the notification or sync layer
+changes.
+
+**Gotcha:** Pages only serves from `main` (or `gh-pages`), so the policy is live only after the
+docs PR lands on `main` — a `develop`-only merge leaves a 404 that looks like a broken Pages
+setup.

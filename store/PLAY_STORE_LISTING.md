@@ -121,7 +121,7 @@ Ada pertanyaan, masukan, atau bug? Kirim dari Settings → Send feedback di dala
 | Feature graphic (default) | `feature-graphic-en.png` | 1024×500 PNG | ✅ |
 | Feature graphic (id-ID) | `feature-graphic-id.png` | 1024×500 PNG | ✅ |
 | Phone screenshots (en-US) | `screenshots/home.png`, `question.png`, `answer.png`, `questions.png`, `settings.png` | 1080×1920 PNG | ✅ 5 of 8 |
-| Phone screenshots (id-ID) | — | 1080×1920 | ⬜ needs a pass with the app set to Bahasa Indonesia |
+| Phone screenshots (id-ID) | `screenshots/id/home.png`, `question.png`, `answer.png`, `questions.png`, `settings.png` | 1080×1920 | ✅ 5 of 8 |
 | 7" / 10" tablet screenshots | — | — | ⬜ only if tablet support is claimed |
 
 Play's limits: 2–8 screenshots per device type, each side between 320 and 3840 px, and the
@@ -135,10 +135,15 @@ long side no more than twice the short side. A raw 1220×2712 capture (20:9) bre
 | App name | Random Recall: Daily Practice |
 | Category | Education |
 | Tags | Study, Flashcards, Learning |
-| Contact email | *(the address that goes on the listing — same one as the privacy policy)* |
-| Website | *(optional; the privacy policy page works)* |
-| Privacy policy URL | **required** — not built yet |
+| Contact email | `agustiarfalahi@gmail.com` |
+| Website | https://agustiarfalahi94.github.io/random-recall/privacy/ |
+| Privacy policy URL | https://agustiarfalahi94.github.io/random-recall/privacy/ |
+| Account deletion URL | https://agustiarfalahi94.github.io/random-recall/privacy/delete-account.html |
 | Ads | Yes, contains ads |
+
+Both URLs are served by GitHub Pages from `docs/privacy/` on `main` (see
+`docs/SESSION_NOTES.md` §14 for how Pages is configured). Edit the pages there, never by
+hand in the Pages branch.
 
 ## Data safety (draft — verify against the real SDKs before submitting)
 

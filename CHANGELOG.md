@@ -26,6 +26,7 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 - **Store graphics are generated, not hand-drawn**: `tools/make_store_graphics.py` builds the feature graphics and icon from `assets/icon/app_icon.png`, and `tools/make_store_screenshots.py` frames the raw captures onto a 1080×1920 canvas. A raw 20:9 phone capture breaks Play's "long side at most twice the short side" rule, which is why the framing exists.
 - **`AGENTS.md` now requires two things per task**: the app is force-stopped on any test device before the turn ends (a left-running app heats the phone and drains the battery), and no change goes unwritten — `CHANGELOG.md`, `docs/SESSION_NOTES.md`, `README.md`, `CI_CD_SETUP.md`, the version lines and `store/` move in the same commit as the code.
 - **`CI_CD_SETUP.md` reflects how Play uploads actually work** — no "Play pulls from GitHub" option exists, only AAB uploads are accepted, and every upload needs a higher `versionCode`.
+- **The privacy policy exists and is public.** `docs/privacy/` now holds a bilingual (English + Bahasa Indonesia) policy and a separate account-deletion page, served by GitHub Pages at `https://agustiarfalahi94.github.io/random-recall/privacy/`. Both are written against what the app actually does: local-first storage, an optional Firebase account, AdMob advertising with Google's consent form, and Analytics/Crashlytics that never receive question text. This was the missing URL blocking the AdMob consent message and the Play listing.
 
 ## [0.14.1] — 2026-11-14
 
