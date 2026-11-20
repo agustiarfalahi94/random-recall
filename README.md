@@ -86,13 +86,27 @@ and performance reporting are disabled in debug builds and handled through
 Firebase services in release builds. Network failures are treated as
 recoverable so local study and notification flows continue.
 
+The public privacy policy and the account-deletion page live in
+`docs/privacy/` and are served by GitHub Pages at
+`https://agustiarfalahi94.github.io/random-recall/privacy/`. They are the URLs
+AdMob and the Play Console point at, so they change only through a PR to
+`main`.
+
 ### CI/CD
 
 GitHub Actions runs dependency installation, localization generation, static
-analysis, formatting and tests on pull requests. Tagged builds produce the
-release APK only after those checks pass; release signing secrets are injected
-only for tag builds. Debug APKs are used as compile checks and are not
-published as release artifacts.
+analysis, formatting and tests on pull requests. Both `develop` and `main` are
+protected, so every change lands through a pull request; CI triggers on PRs and
+on `v*` tags, never on a plain branch push.
+
+A `v*` tag builds the release APK **and** the release AAB after the checks pass
+and attaches both to a GitHub Release. The AAB is what the Play Console accepts;
+the APK is for testers. Release signing secrets are injected only for tag builds,
+and debug APKs are compile checks that are never published.
+
+Uploading to Play is a human step by default: Google Play has no "pull from
+GitHub" option, and only the Play Developer API can push a bundle. See
+[`CI_CD_SETUP.md`](CI_CD_SETUP.md) for the service-account path.
 
 ## Project areas
 
@@ -104,6 +118,12 @@ published as release artifacts.
   keyboard/excluded-screen rules.
 - `firestore.rules` — backend authorization boundary.
 - `.github/workflows/flutter-build.yml` — CI and release pipeline.
+- `store/` — Play Store listing copy, release notes, feature graphics and
+  screenshots (`PLAY_STORE_LISTING.md`, `RELEASE_NOTES.md`, `assets/`, `raw/`).
+- `docs/privacy/` — the public privacy policy and account-deletion pages
+  (GitHub Pages source, English + Bahasa Indonesia).
+- `tools/` — Pillow scripts that regenerate the store graphics and framed
+  screenshots from the source icon and the raw device captures.
 
 ## License and status
 

@@ -294,3 +294,95 @@ If the build dies with `JAVA_HOME is set to an invalid directory`, check
 `dart format --set-exit-if-changed lib/ test/` clean · `flutter test` 105/105 ·
 `flutter build apk --debug` OK.
 
+
+---
+
+## 13. Release + store listing pass (2026-11-20)
+
+**Shipped 0.14.2.** Commit `6e12fa2` (ads: first-banner fix, adaptive size, production
+AdMob IDs). Both branches are ruleset-protected, so the release went through
+PR #40 (`release/0.14.2` → `main`, merge commit) and PR #41 (same branch → `develop`).
+Tag `v0.14.2` pushed; CI built and published the GitHub Release.
+
+**Releasing from a protected repo — the actual sequence:**
+
+```bash
+git checkout develop && git pull
+git checkout -b release/X.Y.Z && git push -u origin release/X.Y.Z
+gh pr create --base main --head release/X.Y.Z
+gh pr merge <n> --merge --auto     # direct merge is refused while checks are pending
+git checkout main && git pull && git tag -a vX.Y.Z -m "…" && git push origin vX.Y.Z
+# then the same branch back into develop — the merge does not carry across
+```
+
+A plain `git push origin develop` is rejected with `GH013 … Changes must be made through a
+pull request`; that is expected, not a broken remote.
+
+**Store screenshots: FLAG_SECURE is the blocker.** Question screens set `FLAG_SECURE`, so
+`adb exec-out screencap` returns pure black (mean pixel value 0 — a quick way to test it).
+Working capture route:
+
+1. Add a temporary `if (const bool.fromEnvironment('SCREENSHOT_MODE')) return;` to both
+   functions in `lib/core/utils/screen_security.dart` (revert with `git checkout --` after).
+2. `flutter build apk --profile --dart-define=SCREENSHOT_MODE=true`.
+3. `zipalign -f -p 4` then `apksigner sign` with the **release keystore**, so the APK installs
+   over the release build with `adb install -r` and keeps the Firebase login and study data.
+   A debug-signed profile build would force an uninstall and a fresh Google Sign-In.
+4. Profile (not debug) matters: debug resolves the sample ad units and prints a debug banner.
+
+**Ad banners ruin store screenshots** (Trip.com, Pinduoduo). Turning wifi + data off before
+launch makes the banner fail to load and collapse, which also moves the bottom tab bar down
+~190 px — always re-check tab bounds with `uiautomator dump` instead of reusing coordinates.
+
+**Play graphic rules that bit us:** a 1220×2712 capture is 20:9, which breaks Play's
+"long side ≤ 2× short side" rule. `tools/make_store_screenshots.py` pads each shot onto a
+1080×1920 canvas with a caption, which fixes the ratio and looks deliberate.
+
+**Never put these in a listing:** the Profile screen (shows the signed-in email and phone
+number) and any screen with personal study content if the user would rather not publish it.
+
+**AdMob consent languages:** the GDPR message's "additional languages" list only offers
+EEA/UK/Swiss official languages (Greek, Hungarian, Icelandic, Italian, …) — Indonesian is not
+there and cannot be added. That is correct: the European message is only shown to users in
+those regions, so English is the right default. The US-states message is the same story.
+
+**Device hygiene:** every task that touches a device ends with
+`adb shell am force-stop com.inkpebble.randomrecall`, plus restoring anything changed for the
+capture (`policy_control null` for immersive mode, `accelerometer_rotation 1`).
+
+---
+
+## 14. Public privacy policy (2026-11-20)
+
+**The URL that blocked two things at once.** Play requires a privacy policy URL and an account
+(deletion) URL for any app with accounts; AdMob's GDPR/US-states messages refuse to publish
+without one. Neither existed, so every ad-consent route dead-ended.
+
+**Where it lives:** `docs/privacy/index.html` (policy, English then Bahasa Indonesia on one
+page), `docs/privacy/delete-account.html` (Play's "delete account" requirement), and
+`docs/privacy/style.css`. `docs/.nojekyll` stops Jekyll from touching the folder, so raw files
+are served as-is.
+
+**Pages configuration** — branch source, not an Actions workflow, because a workflow would be a
+second deployment path to maintain:
+
+```bash
+gh api -X POST repos/<owner>/<repo>/pages \
+  -f 'source[branch]=main' -f 'source[path]=/docs'
+```
+
+Resulting URLs (both stable, both on `main`):
+
+- `https://agustiarfalahi94.github.io/random-recall/privacy/`
+- `https://agustiarfalahi94.github.io/random-recall/privacy/delete-account.html`
+
+**Content rules that came out of the code, not from a template:** notifications are local
+(`flutter_local_notifications` + `workmanager`, no FCM), so the policy can promise no question
+text leaves the device for reminders; there is no Firebase Storage upload in `lib/`, so no photo
+collection is declared; Analytics events carry correctness/timing/hour but never the question
+or answer text. Re-check those three claims against the code if the notification or sync layer
+changes.
+
+**Gotcha:** Pages only serves from `main` (or `gh-pages`), so the policy is live only after the
+docs PR lands on `main` — a `develop`-only merge leaves a 404 that looks like a broken Pages
+setup.

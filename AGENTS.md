@@ -9,9 +9,11 @@
 
 ## Git flow
 
-- Work on **`develop`** (default branch).
-- Release: merge `develop` → `main` locally → push main → annotated tag `vX.Y.Z` → push tag (CI triggers on tags `v*` and PRs; NOT on plain pushes).
-- CI is strict: `flutter analyze` (0 issues required), format check, 105/105 tests, debug APK build, auto GitHub Release.
+- **`develop` and `main` are both ruleset-protected** — a direct `git push` to either is rejected. Every change lands through a PR.
+- Feature/fix work: branch off `develop` → PR into `develop`.
+- Release: branch `release/X.Y.Z` → PR into `main` → merge → annotated tag `vX.Y.Z` → push tag. Then PR the same branch back into `develop` (the merge does not carry over by itself).
+- CI runs on `v*` tags and on PRs only — a plain branch push builds nothing.
+- CI is strict: `flutter analyze` (0 issues required), format check, 105/105 tests, debug APK compile check, and on a `v*` tag a release APK **and** release AAB attached to a GitHub Release (the AAB is the Play upload artifact).
 
 ## Validation (run before finishing any task)
 
@@ -22,6 +24,35 @@ flutter test                    # 105/105
 flutter build apk --debug       # when native code or deps changed
 ```
 
+## Device testing hygiene (required)
+
+A physical device (the 12T, the XTab, the 15) that is left with the app in the foreground keeps the
+screen, sensors and ads alive: it heats up and drains overnight. **Always close the app before you
+end the turn** — it is the last device command of any task that installed, launched or poked at the
+device:
+
+```bash
+adb shell am force-stop com.inkpebble.randomrecall
+```
+
+If a test genuinely has to leave the app open for the user to look at, say so in the final message
+and stop it as soon as they are done.
+
+## Documentation is part of the change (required)
+
+**No change goes unwritten.** Same commit, not "later":
+
+| File | Update when |
+|---|---|
+| `CHANGELOG.md` | Anything user-visible (or a CI/build behaviour change) changes |
+| `docs/SESSION_NOTES.md` | Every working session: what changed, why, the gotcha found |
+| `README.md` | Commands, architecture, CI, features or dependencies change |
+| `CI_CD_SETUP.md` | The workflow, its secrets, or the release path changes |
+| `AGENTS.md` + `pubspec.yaml` | The version moves (both version lines together) |
+| `store/` | Every user-visible release (listing copy, release notes, screenshots, feature graphic) |
+
+A PR whose code is ahead of its documentation is not finished.
+
 ## Constraints
 
 - Do NOT weaken security: Firestore rules, App Check (Play Integrity in release), keystore files.
@@ -29,7 +60,7 @@ flutter build apk --debug       # when native code or deps changed
 - Do NOT change the shared CI debug keystore secret flow.
 - `google_sign_in` 7.x: always pass `serverClientId`; never swallow non-cancel `GoogleSignInException`s; handle `account-exists-with-different-credential` via the linking flow.
 - Localize new user-facing strings (en + id ARB, then `flutter gen-l10n`).
-- Keep CHANGELOG.md + CI_CD_SETUP.md + docs/SESSION_NOTES.md in sync with real changes.
+- Keep CHANGELOG.md + CI_CD_SETUP.md + docs/SESSION_NOTES.md + README.md + store/ in sync with real changes — see "Documentation is part of the change" above.
 
 ## How to report to the user (required)
 
