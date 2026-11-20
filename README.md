@@ -86,6 +86,12 @@ and performance reporting are disabled in debug builds and handled through
 Firebase services in release builds. Network failures are treated as
 recoverable so local study and notification flows continue.
 
+The public privacy policy and the account-deletion page live in
+`docs/privacy/` and are served by GitHub Pages at
+`https://agustiarfalahi94.github.io/random-recall/privacy/`. They are the URLs
+AdMob and the Play Console point at, so they change only through a PR to
+`main`.
+
 ### CI/CD
 
 GitHub Actions runs dependency installation, localization generation, static
@@ -114,6 +120,8 @@ GitHub" option, and only the Play Developer API can push a bundle. See
 - `.github/workflows/flutter-build.yml` — CI and release pipeline.
 - `store/` — Play Store listing copy, release notes, feature graphics and
   screenshots (`PLAY_STORE_LISTING.md`, `RELEASE_NOTES.md`, `assets/`, `raw/`).
+- `docs/privacy/` — the public privacy policy and account-deletion pages
+  (GitHub Pages source, English + Bahasa Indonesia).
 - `tools/` — Pillow scripts that regenerate the store graphics and framed
   screenshots from the source icon and the raw device captures.
 
