@@ -386,3 +386,19 @@ changes.
 **Gotcha:** Pages only serves from `main` (or `gh-pages`), so the policy is live only after the
 docs PR lands on `main` — a `develop`-only merge leaves a 404 that looks like a broken Pages
 setup.
+
+**Indonesian screenshots (Xiaomi 15).** The 15 shoots 1200x2670. Rather than tapping through the
+Settings screen to the language row, the app language was switched the same way a user would:
+Settings gear on Home → Language → Bahasa Indonesia (`app_locale` lives in
+`shared_prefs/FlutterSharedPreferences.xml`; editing it with `run-as` does **not** survive, the
+app rewrites the file at start-up — use the UI).
+
+Crop values differ per device: 96/200 for the 12T (with the ad strip), 140/60 for the 15, whose
+captures were taken with the network off so the banner collapsed and nothing needed cutting at
+the bottom. Captions and crops are now per locale in `tools/make_store_screenshots.py`; it writes
+`store/assets/screenshots/` and `store/assets/screenshots/id/`. The English output is byte-stable
+across runs, so regenerating it never shows up as a diff.
+
+**Screenshot content is the user's own notes.** The first practice question was about a vape
+pod, which has no business on a Play listing, so the pass skipped forward (skipping records no
+answer) to a photography question instead. Check every capture's text before publishing it.
