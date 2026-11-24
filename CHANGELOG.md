@@ -5,6 +5,17 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.14.3] — 2026-11-25
+
+### Fixed
+- **16 KB page-size crash risk removed.** Play flagged `base/lib/arm64-v8a/libtoolChecker.so` (and the x86_64 copy) as built against an NDK that is not 16 KB aligned — the kind of native library that crashes on 16 KB-page devices, and that Play blocks updates for from February 2027. The library came from RootBeer 0.1.0, bundled by `flutter_jailbreak_detection` 1.10.0 (unmaintained since 2023). The app now uses the maintained fork `flutter_jailbreak_detection_plus` 1.10.8, which carries RootBeer 0.1.1; every 64-bit `.so` in the bundle is 16 KB aligned (`LOAD` align `0x4000`+). The old plugin's AGP-8 namespace shim in `android/build.gradle.kts` is gone with it.
+- **DEX obfuscation raised out of Play's warning band.** `proguard-rules.pro` blanket-kept `com.google.firebase.**` and `com.google.android.gms.**`, which left those AARs entirely unrenamed and put Play's obfuscation metric at 18% (below the 25% threshold, "fix by Feb 2027"). Both AARs ship their own consumer ProGuard rules, so the keeps were redundant and are removed. Measured on the built bundles: DEX 15.72 MB → 10.93 MB.
+
+### Changed
+- **Version 0.14.3 (56)** — a new `versionCode` is required because 55 is already on Play.
+
+---
+
 ## [0.14.2] — 2026-11-18
 
 ### Fixed

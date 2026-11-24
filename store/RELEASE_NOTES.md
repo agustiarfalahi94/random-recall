@@ -5,6 +5,30 @@ uploaded; the top block always matches the version currently in `pubspec.yaml`.
 
 ---
 
+## 0.14.3 (56)
+
+**en-US**
+
+```
+Compatibility update: Random Recall is now built for newer Android devices with 16 KB memory
+pages, so it keeps working (and keeps installing) as phones and Play itself move to that format.
+Smaller app download, too.
+
+No feature changes.
+```
+
+**id-ID**
+
+```
+Pembaruan kompatibilitas: Random Recall kini dibangun untuk perangkat Android baru dengan
+halaman memori 16 KB, jadi aplikasi tetap berjalan (dan tetap bisa dipasang) saat ponsel dan
+Play beralih ke format tersebut. Ukuran unduhan juga lebih kecil.
+
+Tidak ada perubahan fitur.
+```
+
+---
+
 ## 0.14.2 (55)
 
 **en-US**

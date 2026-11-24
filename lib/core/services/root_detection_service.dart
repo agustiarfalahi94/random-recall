@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
+import 'package:flutter_jailbreak_detection_plus/flutter_jailbreak_detection_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Detects rooted/jailbroken devices.
@@ -27,7 +27,7 @@ class RootDetectionService {
   Future<bool> detect() async {
     if (!Platform.isAndroid && !Platform.isIOS) return false;
     try {
-      _isRooted = await FlutterJailbreakDetection.jailbroken;
+      _isRooted = await FlutterJailbreakDetectionPlus.jailbroken;
     } catch (e) {
       debugPrint('RootDetectionService: detection failed: $e');
       _isRooted = false;
