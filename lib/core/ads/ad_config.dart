@@ -54,7 +54,7 @@ abstract final class AdMobConfig {
   /// `Add the following test device ID: XXXX` to the console on first run).
   static const List<String> testDeviceIds = [
     '83E09F11EC864330DDCC14D0732D7D30', // Xiaomi 15
-    '511C623543A19E3BE41273359A5C2BE8', // Xiaomi 12T
+    '5D3CF4F41CC3120913A9E49299188C0E', // Xiaomi 12T
   ];
 
   // ── Debug-only UMP geography override ──────────────────────────────────────
