@@ -402,3 +402,53 @@ across runs, so regenerating it never shows up as a diff.
 **Screenshot content is the user's own notes.** The first practice question was about a vape
 pod, which has no business on a Play listing, so the pass skipped forward (skipping records no
 answer) to a photography question instead. Check every capture's text before publishing it.
+
+---
+
+## 15. AdMob US-states consent validated on device (2026-11-24)
+
+**The hash in `testDeviceIds` had gone stale, and it fails silently.** `AdMobConfig.testDeviceIds`
+listed `511C623543A19E3BE41273359A5C2BE8` for the Xiaomi 12T, but the UMP SDK printed
+`5D3CF4F41CC3120913A9E49299188C0E` — an unlisted device means `UMP_DEBUG_GEOGRAPHY=us` is **ignored
+without an error**, so the consent form never appears and it looks like a broken console message
+instead of a wrong device ID. The SDK does say so, but only as a console line:
+
+```
+Use new ConsentDebugSettings.Builder().addTestDeviceHashedId("5D3CF4F41CC3120913A9E49299188C0E") to set this as a debug device.
+```
+
+`testDeviceIds` now carries the current 12T hash. **When the override "does nothing", grep the UMP
+log for `addTestDeviceHashedId` before touching AdMob** — Android's advertising ID hash changes with
+a factory reset or a cleared GMS data store, so this is a recurring, not a one-time, gotcha.
+
+**Why the validation build was a profile build.** The 12T runs the release-signed `0.14.2+55` APK and
+is not debuggable, so `flutter run` cannot attach and a debug build would resolve Google's sample ad
+units. The build used the real App ID and units with the debug consent geography enabled:
+
+```bash
+flutter build apk --profile --dart-define=UMP_DEBUG_GEOGRAPHY=us
+zipalign -f -p 4 app-profile.apk app-profile-aligned.apk
+apksigner sign --ks android/app/release-keystore.jks ... app-profile-aligned.apk
+```
+
+Signing it with the **release keystore** let it install over the existing release app, so the app's
+data and its stored consent survived — no uninstall, no re-login.
+
+**What the device proved** (Xiaomi 12T / `22071212AG`, Android 15, US-states message published):
+
+- `AdService: UMP debug geography = us` and `canRequestAds=true`.
+- The SDK stored a US-privacy signal: `IABGPP_GppSID=7`, `IABGPP_HDR_GppString=DBABL~BAAAAAAAAg`.
+- Settings → **Ad privacy settings** appeared (the `FutureBuilder` on
+  `getPrivacyOptionsRequirementStatus()` returning `required`, which only happens once a message is
+  published) and opened **My data preferences** with "Allow the sale or sharing of my data" /
+  "Don't sell or share my data" / "Save and close". Screenshot: `device-validation/us-consent.png`.
+- Nothing was saved, so the tester's consent choice is unchanged.
+
+**Limits of this proof:** one regulated state matched, which confirms the message is live and the
+opt-out form renders — it does **not** prove the targeting list. That is an AdMob console value
+(US states → Targeting = all current and future supported states); check it there. The EEA/GDPR
+message was not exercised in this pass.
+
+**Restore afterwards.** The original release APK was reinstalled from the pre-install copy and the
+app force-stopped; `versionName=0.14.2`, `versionCode=55` unchanged. MIUI raised its battery-saver
+screen over the app on cold launch both times — `adb shell input keyevent 4` returns to the app.
