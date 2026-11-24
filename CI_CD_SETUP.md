@@ -64,7 +64,7 @@ The subscription tier was removed: Random Recall is a single full version, every
 
 ### Root/jailbreak detection (informational)
 
-Added 2026-08-06: `lib/core/services/root_detection_service.dart` detects rooted/jailbroken devices via `flutter_jailbreak_detection`. The signal is (1) logged to Firebase Analytics (`device_root_status` event) for developer visibility and (2) shown to the user once via a dismissible dialog on first app open. Nothing is blocked. The unmaintained plugin required two compatibility shims in `android/build.gradle.kts` (AGP 8 namespace + per-plugin JVM-target matching), verified with a successful debug APK build.
+Added 2026-08-06 (plugin replaced 2026-11-25, see `docs/SESSION_NOTES.md` §16): `lib/core/services/root_detection_service.dart` detects rooted/jailbroken devices via `flutter_jailbreak_detection_plus`. The signal is (1) logged to Firebase Analytics (`device_root_status` event) for developer visibility and (2) shown to the user once via a dismissible dialog on first app open. Nothing is blocked. The original plugin (`flutter_jailbreak_detection` 1.10.0) was replaced by the maintained fork because its bundled RootBeer 0.1.0 shipped a `libtoolChecker.so` that Play rejected as not 16 KB aligned; the fork's RootBeer 0.1.1 is aligned. This removed the AGP-8 namespace shim from `android/build.gradle.kts` (the fork declares its own namespace); the per-plugin JVM-target shim stays for other old plugins.
 
 ### Security hardening (2026-08-06, v0.13.15)
 

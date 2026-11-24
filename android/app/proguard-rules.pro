@@ -2,9 +2,12 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# Firebase
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
+# Firebase / Google Play services are NOT kept here on purpose: every one of
+# those AARs ships its own consumer ProGuard rules (e.g.
+# firebase-common-22.2.0/proguard.txt) that keep exactly the reflective entry
+# points. Blanket keeping `com.google.firebase.**` and `com.google.android.gms.**`
+# left their whole codebase unrenamed, which is what pushed Play's DEX
+# obfuscation metric down to 18% (the threshold is 25%).
 
 # Keep crash stack traces readable (de-obfuscate using build/debug-info/)
 -keepattributes SourceFile,LineNumberTable

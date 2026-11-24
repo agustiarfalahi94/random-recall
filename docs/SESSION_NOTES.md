@@ -452,3 +452,60 @@ message was not exercised in this pass.
 **Restore afterwards.** The original release APK was reinstalled from the pre-install copy and the
 app force-stopped; `versionName=0.14.2`, `versionCode=55` unchanged. MIUI raised its battery-saver
 screen over the app on cold launch both times — `adb shell input keyevent 4` returns to the app.
+
+## 16. Play production caveats fixed (2026-11-25) — 16 KB native libs + DEX obfuscation
+
+The app is live on Play (`com.inkpebble.randomrecall`, internal production release `0.14.2 (55)`), and
+the Play Console -> Production page raised two blocking issues with a February 2027 deadline:
+
+1. **"Your app could crash on 16 KB devices"** — named `base/lib/arm64-v8a/libtoolChecker.so` and
+   `base/lib/x86_64/libtoolChecker.so`.
+2. **"DEX code optimization is below your threshold"** — Obfuscation 18%, threshold 25%.
+
+**Where `libtoolChecker.so` actually comes from.** Not Flutter, not the ads SDK: it is RootBeer's native
+library, bundled by `flutter_jailbreak_detection` 1.10.0 — a package last published in 2023 that pinned
+`com.scottyab:rootbeer:0.1.0`, compiled against a pre-NDK-r28 toolchain. Trace it with:
+
+```bash
+find "$HOME/.gradle/caches" -name 'libtoolChecker.so'   # -> .../transformed/rootbeer-0.1.0/jni/...
+```
+
+**Fix:** swapped to `flutter_jailbreak_detection_plus` 1.10.8 (maintained fork, same MethodChannel, class
+renamed `FlutterJailbreakDetection` -> `FlutterJailbreakDetectionPlus`, RootBeer 0.1.1). Only
+`lib/core/services/root_detection_service.dart` changed. The AGP-8 namespace shim for the old plugin in
+`android/build.gradle.kts` was deleted — the fork declares its own namespace.
+
+**How to verify 16 KB support without a device** (Play's console report is slow and vague): unzip the AAB
+and read the ELF `LOAD` segment alignment of every 64-bit `.so`; it must be `0x4000` (16 KB) or larger.
+Python one-liner in this repo's history is enough — parse `e_phoff` at `0x20`, then `p_align` at offset
+48 of each 64-bit program header. Current bundle: all 64-bit libs pass (`libapp`, `libflutter`,
+`libdartjni`, `libsqlite3`, `libdatastore_shared_counter`, `libtoolChecker`). `armeabi-v7a` is still 4 KB
+aligned, which is fine — the requirement is 64-bit only.
+
+**Why obfuscation sat at 18%.** `proguard-rules.pro` kept `com.google.firebase.**` and
+`com.google.android.gms.**` in full. Every Firebase/Play-services AAR already ships consumer ProGuard
+rules (e.g. `firebase-common-22.2.0/proguard.txt`), so the blanket keeps renamed nothing in the largest
+part of the DEX. Removing them (and keeping `io.flutter.**`, which Flutter does need) took the bundle
+from 15.72 MB of DEX to 10.93 MB. Play's percentage only refreshes after the next upload + processing.
+
+**Deliberately not done:** `-repackageclasses ''` / `-allowaccessmodification`. They would push the
+metric further but change class names wholesale, and no device was attached this session to smoke-test
+a release build — not worth risking a production update that Tama cannot roll back cheaply.
+
+**Play's "3 actions recommended" are advisory, not blocking:** edge-to-edge display and deprecated
+edge-to-edge APIs are raised against the Flutter engine's own DEX (this app never calls
+`SystemChrome`/`SystemUiMode`, and no `statusBarColor`/`navigationBarColor` exists in `res/values*`),
+and "recompile with 16 KB alignment" is the same item as issue 1, resolved by the plugin swap.
+
+**Still outstanding — Play App Signing fingerprints.** Google Play re-signs every upload, so the
+certificate Firebase must trust is Google's, not the local keystore's
+(`CN=Agustiar Falahi ... D3:A4:D2:EE:...`, upload key). Console-supplied app signing certificate:
+
+- SHA-1: `04:0C:9B:9E:B7:71:0F:70:56:00:DA:02:D3:CA:BD:92:DF:1C:EA:BD`
+- SHA-256: `98:A6:84:38:52:66:D0:02:A8:06:41:5D:59:C6:BC:7E:1E:41:B5:8A:B3:EF:77:29:3E:82:E0:2A:B4:79:6E:15`
+
+`android/app/google-services.json` still lists only the upload-key and debug hashes. Until the Play
+SHA-1 is added in Firebase (Project settings -> Your apps -> Add fingerprint) **and** the regenerated
+`google-services.json` is committed, Google Sign-In fails silently for everyone who installed from Play.
+The SHA-256 additionally belongs in Firebase App Check -> Play Integrity settings, or release App Check
+tokens stay unverified.
