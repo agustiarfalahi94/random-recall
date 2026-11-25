@@ -91,7 +91,26 @@ Every GitHub Actions runner generates a **random debug keystore**, so APKs from 
 |---|---|
 | `D8:3D:DF:7A:0C:69:B8:AC:46:C6:B2:5B:43:F1:E6:6B:56:BF:5C:91` | CI test APKs (shared debug keystore) |
 | `A6:47:FF:68:C3:3F:36:3D:EC:6A:ED:76:C0:E9:94:89:DE:E0:64:E4` | Local debug builds (`flutter run`) |
-| `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` | Release keystore (GitHub distribution APK + Play Store production) |
+| `D3:A4:D2:EE:B9:94:1B:35:05:61:64:9B:ED:90:53:2E:96:8E:A0:BD` | Release keystore (GitHub distribution APK, and the AAB before Play re-signs it) |
+| `04:0C:9B:9E:B7:71:0F:70:56:00:DA:02:D3:CA:BD:92:DF:1C:EA:BD` | **Play Store installs** — Google Play App Signing, i.e. the certificate the app actually carries when installed from Play (added 2026-11-25) |
+
+Play re-signs every upload with its own app-signing certificate, so the release-keystore row above is
+*not* what a Play-installed app presents: without the `04:0C:…` row, sign-in from Play fails silently
+while GitHub APKs keep working. The matching **SHA-256**
+`98:A6:84:38:52:66:D0:02:A8:06:41:5D:59:C6:BC:7E:1E:41:B5:8A:B3:EF:77:29:3E:82:E0:2A:B4:79:6E:15`
+belongs in Firebase **App Check → Play Integrity** (not in `google-services.json` — that file only
+holds SHA-1 `certificate_hash` entries); without it release App Check tokens are unverified.
+
+`android/app/google-services.json` is **gitignored** and injected by CI from the
+`GOOGLE_SERVICES_JSON_BASE64` secret, so a new fingerprint needs both steps — otherwise the AAB that CI
+attaches to a GitHub Release still ships the old certificate list:
+
+```bash
+gh secret set GOOGLE_SERVICES_JSON_BASE64 < <(base64 -w 0 android/app/google-services.json)
+```
+
+And because the certificate list is compiled into the APK, a fingerprint change only takes effect in a
+build made *after* the new file is in place — bump `versionCode` and rebuild.
 
 ### GitHub distribution APK (release-signed) — 2026-08-07
 

@@ -509,3 +509,51 @@ SHA-1 is added in Firebase (Project settings -> Your apps -> Add fingerprint) **
 `google-services.json` is committed, Google Sign-In fails silently for everyone who installed from Play.
 The SHA-256 additionally belongs in Firebase App Check -> Play Integrity settings, or release App Check
 tokens stay unverified.
+
+## 17. Play signing fingerprints wired in (2026-11-25) — 0.14.4 (57)
+
+Section 16 left one gap: Firebase knew the upload-key and debug certificates but not Google Play's
+app-signing certificate, so a Play-installed build could not sign in. The console side is now done by
+the user (Project settings -> Your apps -> Add fingerprint, twice; App Check -> Play Integrity for the
+SHA-256), and the regenerated `google-services.json` is installed locally and in the CI secret by this
+section's change.
+
+**What the new file contains.** Three `client_type: 1` Android OAuth clients, one per signing
+certificate — `d3a4d2ee…` (upload key), `a647ff68…` (debug), `040c9b9e…` (Play app signing) — plus the
+unchanged `client_type: 3` web client `737631418905-koc163…`, which is the `serverClientId` v7 sign-in
+requires. Verify in one line:
+
+```bash
+grep -c certificate_hash android/app/google-services.json   # must print 3
+```
+
+SHA-256 exists nowhere in the file: Play Integrity validates it only against the App Check settings in
+the console, so there is nothing to commit for it.
+
+**The certificate hashes are not compiled into the app.** The google-services plugin only emits
+`google_app_id`, `gcm_defaultSenderId`, `google_api_key`, `project_id` and `default_web_client_id`
+(`build/app/generated/res/processReleaseGoogleServices/values/values.xml`); confirm on a finished bundle
+with `unzip -p app.aab base/resources.pb | strings | grep -c 040c9b` → 0. Credential Manager validates
+the installed signature **server-side** against the Android OAuth clients registered in the Firebase
+project, so **the console step is the actual fix** — the JSON is a local mirror of that registration.
+Anyone debugging a future sign-in failure should check the Firebase fingerprint list first, not the
+bundled file.
+
+**The file is gitignored** (`.gitignore` line 53) and is injected at build time by CI from the
+`GOOGLE_SERVICES_JSON_BASE64` repository secret. Local builds use whatever sits in
+`android/app/google-services.json`; a tag build uses the secret. Rotating fingerprints therefore means
+re-setting that secret too, otherwise CI's release AAB — the one attached to a GitHub Release — still
+carries the old copy:
+
+```bash
+base64 -w 0 android/app/google-services.json   # -> paste into GOOGLE_SERVICES_JSON_BASE64
+```
+
+**Why 0.14.4 (57).** 56 was built and smoke-tested on the Xiaomi 15 but never uploaded; it was cheaper to
+cut a clean versionCode than to reason about which console state 56 was built in. 0.14.3 (56)'s
+release-notes block in `store/RELEASE_NOTES.md` is marked superseded so it is not uploaded by mistake.
+
+**Gotcha for future signing changes.** Any new certificate (a new upload key, Play key rotation, a
+second developer's debug key) needs the same three steps: add SHA-1 in Firebase, re-download
+`google-services.json`, rebuild with a higher `versionCode`. There is no way to pick the file up at
+runtime.

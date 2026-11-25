@@ -5,6 +5,19 @@ Format: **Added** · **Fixed** · **Changed** · **Removed** · **Improved**
 
 ---
 
+## [0.14.4] — 2026-11-25
+
+### Fixed
+- **Sign-in from Play was fixed at the source of truth: the Firebase project had no certificate for Google's app-signing key.** `android/app/google-services.json` carried only the upload-key (`d3a4d2ee…`) and debug (`a647ff68…`) certificates, while Google Play re-signs every upload with its own app-signing certificate (`04:0C:9B:9E:…:BD`). Credential Manager checks the calling app's signature against the Android OAuth clients registered in the project, so with only two certificates registered, `google_sign_in` returned `canceled` silently for everyone who installed from the store. The Play SHA-1 is now registered (and the matching SHA-256 in Firebase App Check → Play Integrity); the regenerated file is installed locally and re-injected into CI's `GOOGLE_SERVICES_JSON_BASE64` secret.
+
+### Changed
+- **Version 0.14.4 (57)** — 56 was built and smoke-tested but never uploaded; 57 is the same code built against the refreshed `google-services.json`, so the local file, the CI secret and the console agree.
+
+### Note
+- The app-signing certificate list is **not** compiled into the APK: the bundle only packages `google_app_id` and `default_web_client_id` from that file, and Credential Manager validates the caller against the fingerprints registered in the Firebase project. The console step is therefore the fix; the JSON refresh keeps local and CI builds consistent with it.
+
+---
+
 ## [0.14.3] — 2026-11-25
 
 ### Fixed
